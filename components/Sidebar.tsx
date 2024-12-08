@@ -30,7 +30,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
-  const { data: session, status } = useSession();
+  const { data: session } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   return (

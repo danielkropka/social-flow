@@ -7,6 +7,7 @@ import { socialAccounts } from "@/data/accounts";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import Image from "next/image";
 
 export function AccountSelectionStep() {
   const {
@@ -152,10 +153,11 @@ export function AccountSelectionStep() {
                           >
                             <div className="relative">
                               <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                                <img
+                                <Image
                                   src={account.avatar}
                                   alt={account.name}
-                                  className="w-full h-full object-cover"
+                                  fill
+                                  className="object-cover"
                                 />
                               </div>
                               <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border border-gray-100">
@@ -190,7 +192,7 @@ export function AccountSelectionStep() {
               color: "#6b7280",
             }}
           >
-            Nie znaleziono kont dla zapytania "{searchQuery}"
+            Nie znaleziono kont dla zapytania &quot;{searchQuery}&quot;;
           </motion.div>
         )}
       </div>

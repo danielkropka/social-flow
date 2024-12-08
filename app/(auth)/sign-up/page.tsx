@@ -109,9 +109,11 @@ export default function SignUp() {
       toast.success("Account created successfully");
       router.push("/dashboard");
       router.refresh();
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Registration error:", error);
-      toast.error(error.message || "An unexpected error occurred");
+      toast.error(
+        error instanceof Error ? error.message : "An unexpected error occurred"
+      );
     } finally {
       setIsLoading(false);
     }

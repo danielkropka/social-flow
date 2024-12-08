@@ -1,5 +1,4 @@
 import { useRef, useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +6,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Slider } from "@/components/ui/slider";
+import Image from "next/image";
 
 interface VideoThumbnailModalProps {
   isOpen: boolean;
@@ -128,11 +128,14 @@ export function VideoThumbnailModal({
                   : "Nowa miniatura"}
               </p>
               <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <img
-                  src={currentFrame || currentThumbnail}
-                  alt="Podgląd miniatury"
-                  className="w-full h-full object-contain"
-                />
+                {(currentFrame || currentThumbnail) && (
+                  <Image
+                    src={currentFrame || currentThumbnail || ""}
+                    alt="Podgląd miniatury"
+                    className="w-full h-full object-contain"
+                    fill
+                  />
+                )}
               </div>
             </div>
           </div>

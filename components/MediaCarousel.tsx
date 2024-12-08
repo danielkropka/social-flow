@@ -5,8 +5,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import { MediaPreview } from "@/components/MediaPreview";
-import { useMediaQuery } from "@/hooks/use-media-query";
 
 interface MediaCarouselProps {
   files: File[];
@@ -19,7 +17,7 @@ export function MediaCarousel({ files, urls }: MediaCarouselProps) {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      {videos.map((url, index) => (
+      {videos.map((url) => (
         <div key={url} className="relative mx-auto">
           <video
             src={url}

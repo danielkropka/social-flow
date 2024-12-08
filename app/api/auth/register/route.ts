@@ -9,7 +9,7 @@ export async function POST(req: Request) {
 
     const hashedPassword = await hash(password, 10);
 
-    const user = await db.user.create({
+    await db.user.create({
       data: {
         email,
         name: `${firstName} ${lastName}`,
@@ -23,13 +23,13 @@ export async function POST(req: Request) {
       success: true,
       message: "Registration successful",
     });
-  } catch (error: any) {
+  } catch (error: Error | unknown) {
     console.error("Registration error:", error);
     return NextResponse.json(
       {
         success: false,
         error: "Registration failed",
-        details: error.message,
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );

@@ -33,9 +33,11 @@ export default function PlansPage() {
 
       // Przekieruj do Stripe Checkout
       window.location.href = data.url;
-    } catch (error: any) {
+    } catch (error: Error | unknown) {
       console.error("Subscription error:", error);
-      toast.error(error.message || "Failed to start subscription");
+      toast.error(
+        error instanceof Error ? error.message : "Failed to start subscription"
+      );
     } finally {
       setIsLoading(false);
     }

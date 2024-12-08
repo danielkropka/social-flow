@@ -21,7 +21,7 @@ export default function PlatformsSection() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {platforms.map((platform, index) => (
+          {platforms.map((platform) => (
             <motion.div
               key={platform.name}
               initial={{ opacity: 0, y: 20 }}
