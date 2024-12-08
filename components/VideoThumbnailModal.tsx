@@ -89,13 +89,6 @@ export function VideoThumbnailModal({
     captureFrame();
   };
 
-  const handleSave = () => {
-    if (currentFrame) {
-      onThumbnailSelect(currentFrame);
-      onClose();
-    }
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
