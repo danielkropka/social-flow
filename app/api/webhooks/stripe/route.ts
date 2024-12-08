@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       console.log("Price details:", price); // Debug log
 
       const planId = price.product as string;
-      const interval = price.recurring?.interval || "month";
+      const interval = price.recurring?.interval || "MONTHLY";
 
       // Aktualizuj użytkownika
       const updatedUser = await db.user.update({

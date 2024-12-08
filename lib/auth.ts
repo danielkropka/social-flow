@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
           image: profile.picture,
           plan: "free",
           planStatus: PlanStatus.ACTIVE,
-          planInterval: PlanInterval.MONTHLY,
+          planInterval: PlanInterval.MONTH,
         };
       },
     }),

@@ -15,8 +15,8 @@ enum PlanStatus {
 }
 
 enum PlanInterval {
-    MONTHLY
-    YEARLY
+    MONTH
+    YEAR
 }
 
 model Account {
@@ -51,7 +51,7 @@ model User {
     stripeCustomerId String?
     plan             String       @default("free")
     planStatus       PlanStatus   @default(ACTIVE)
-    planInterval     PlanInterval @default(MONTHLY)
+    planInterval     PlanInterval @default(MONTH)
     planActiveUntil  DateTime?
 }
 
