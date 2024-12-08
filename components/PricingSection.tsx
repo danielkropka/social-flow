@@ -7,6 +7,7 @@ import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { loadStripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
+import { STRIPE_PLANS } from "@/config/stripe";
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -16,38 +17,6 @@ export default function PricingSection() {
   const { data: session } = useSession();
   const router = useRouter();
   const [isAnnual, setIsAnnual] = useState(false);
-
-  const plans = [
-    {
-      id: "PODSTAWOWY",
-      name: "Podstawowy",
-      monthlyPrice: 30,
-      yearlyPrice: 288,
-      description:
-        "Idealne rozwiązanie dla początkujących twórców i małych firm, które chcą efektywnie zarządzać swoją obecnością w social mediach.",
-      features: [
-        "Do 5 połączonych kont social media",
-        "Nieograniczona liczba zaplanowanych postów",
-        "Podstawowe statystyki i analityka",
-        "10 podstawowych szablonów postów",
-      ],
-    },
-    {
-      id: "TWORCA",
-      name: "Twórca",
-      monthlyPrice: 60,
-      yearlyPrice: 576,
-      description:
-        "Zaawansowane narzędzie dla profesjonalistów i firm, które chcą maksymalizować zasięgi i engagement swojego contentu.",
-      features: [
-        "Nielimitowana liczba kont social media",
-        "Nieograniczona liczba zaplanowanych postów",
-        "Szczegółowe statystyki i analityka",
-        "30+ profesjonalnych szablonów postów",
-        "Automatyczne sugestie najlepszych godzin publikacji",
-      ],
-    },
-  ];
 
   const handleSubscribe = async (planId: string) => {
     if (!session) {
@@ -67,15 +36,18 @@ export default function PricingSection() {
         }),
       });
 
-      const { sessionId } = await response.json();
-      const stripe = await stripePromise;
-
-      if (stripe) {
-        const { error } = await stripe.redirectToCheckout({ sessionId });
-        if (error) {
-          console.error("Stripe error:", error);
-        }
+      if (!response.ok) {
+        throw new Error("Network response was not ok");
       }
+
+      const data = await response.json();
+
+      if (!data.url) {
+        throw new Error("No checkout URL received");
+      }
+
+      // Przekieruj użytkownika bezpośrednio na stronę checkout
+      window.location.href = data.url;
     } catch (error) {
       console.error("Payment error:", error);
     }
@@ -127,7 +99,7 @@ export default function PricingSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {plans.map((plan, index) => (
+          {Object.values(STRIPE_PLANS).map((plan, index) => (
             <motion.div
               key={plan.id}
               initial={{ opacity: 0, y: 20 }}
@@ -180,7 +152,7 @@ export default function PricingSection() {
                 className="mt-auto w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors h-12 flex items-center justify-center"
                 onClick={() => handleSubscribe(plan.id)}
               >
-                {session ? "Wybierz plan" : "Zaloguj się aby wybrać"}
+                Wybierz plan
               </Button>
             </motion.div>
           ))}

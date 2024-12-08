@@ -55,8 +55,8 @@ export async function POST(req: Request) {
         planId: plan.id,
         interval,
       },
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard/plans?canceled=true`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/#pricing?success=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/#pricing?canceled=true`,
     });
 
     return NextResponse.json({ url: checkoutSession.url });

@@ -14,6 +14,15 @@ export default function Navbar() {
     setIsOpen(!isOpen);
   };
 
+  const handleScroll = (e: React.MouseEvent<HTMLAnchorElement>, id: string) => {
+    e.preventDefault();
+    const element = document.querySelector(id);
+    if (element) {
+      element.scrollIntoView({ behavior: "smooth" });
+      setIsOpen(false);
+    }
+  };
+
   const AuthButtons = () => {
     if (session?.user) {
       return (
@@ -60,15 +69,31 @@ export default function Navbar() {
           {/* Desktop menu */}
           <div className="hidden lg:flex items-center gap-8">
             <Link
-              href="#features"
+              href="#reviews"
               className="text-gray-600 hover:text-gray-900"
+              onClick={(e) => handleScroll(e, "#reviews")}
             >
-              Funkcje
+              Opinie
             </Link>
-            <Link href="#pricing" className="text-gray-600 hover:text-gray-900">
+            <Link
+              href="#platforms"
+              className="text-gray-600 hover:text-gray-900"
+              onClick={(e) => handleScroll(e, "#platforms")}
+            >
+              Platformy
+            </Link>
+            <Link
+              href="#pricing"
+              className="text-gray-600 hover:text-gray-900"
+              onClick={(e) => handleScroll(e, "#pricing")}
+            >
               Cennik
             </Link>
-            <Link href="#faq" className="text-gray-600 hover:text-gray-900">
+            <Link
+              href="#faq"
+              className="text-gray-600 hover:text-gray-900"
+              onClick={(e) => handleScroll(e, "#faq")}
+            >
               FAQ
             </Link>
             <div className="flex items-center gap-4">
@@ -95,23 +120,30 @@ export default function Navbar() {
         <div className="lg:hidden border-t border-gray-200 bg-white">
           <div className="max-w-7xl mx-auto px-4 py-4 space-y-4">
             <Link
-              href="#features"
+              href="#reviews"
               className="block text-gray-600 hover:text-gray-900"
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => handleScroll(e, "#reviews")}
             >
-              Funkcje
+              Opinie
+            </Link>
+            <Link
+              href="#platforms"
+              className="block text-gray-600 hover:text-gray-900"
+              onClick={(e) => handleScroll(e, "#platforms")}
+            >
+              Platformy
             </Link>
             <Link
               href="#pricing"
               className="block text-gray-600 hover:text-gray-900"
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => handleScroll(e, "#pricing")}
             >
               Cennik
             </Link>
             <Link
               href="#faq"
               className="block text-gray-600 hover:text-gray-900"
-              onClick={() => setIsOpen(false)}
+              onClick={(e) => handleScroll(e, "#faq")}
             >
               FAQ
             </Link>

@@ -153,7 +153,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           {isProfileOpen && (
             <div className="absolute bottom-full left-0 right-0 m-3 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
               <Link
-                href="/dashboard/plans"
+                href="/#pricing"
                 className="w-full px-4 py-3 flex items-center gap-3 text-gray-600 hover:bg-gray-50 transition-colors"
               >
                 <Layout className="h-4 w-4" />

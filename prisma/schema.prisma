@@ -7,6 +7,18 @@ generator client {
     provider = "prisma-client-js"
 }
 
+enum PlanStatus {
+    ACTIVE
+    CANCELLED
+    EXPIRED
+    SUSPENDED
+}
+
+enum PlanInterval {
+    MONTHLY
+    YEARLY
+}
+
 model User {
     id            String    @id @default(auto()) @map("_id") @db.ObjectId
     name          String?
@@ -22,8 +34,10 @@ model User {
     stripePriceId          String?
     stripeCurrentPeriodEnd DateTime?
 
-    plan       String @default("free")
-    planStatus String @default("active")
+    plan            String       @default("free")
+    planStatus      PlanStatus   @default(ACTIVE)
+    planInterval    PlanInterval @default(MONTHLY)
+    planActiveUntil DateTime?
 }
 
 model Account {

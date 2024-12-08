@@ -41,7 +41,7 @@ const reviews: Review[] = [
 
 export default function ReviewsSection() {
   return (
-    <section className="py-16 lg:py-24 relative">
+    <section className="py-16 lg:py-24 relative" id="reviews">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50/50 to-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
