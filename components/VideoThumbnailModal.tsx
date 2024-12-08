@@ -20,7 +20,6 @@ export function VideoThumbnailModal({
   isOpen,
   onClose,
   videoUrl,
-  onThumbnailSelect,
   currentThumbnail,
 }: VideoThumbnailModalProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
