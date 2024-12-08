@@ -5,13 +5,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { loadStripe } from "@stripe/stripe-js";
 import { useRouter } from "next/navigation";
 import { STRIPE_PLANS } from "@/config/stripe";
-
-const stripePromise = loadStripe(
-  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-);
 
 export default function PricingSection() {
   const { data: session } = useSession();
