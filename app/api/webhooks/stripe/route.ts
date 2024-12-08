@@ -1,13 +1,9 @@
-import { headers } from "next/headers";
 import Stripe from "stripe";
-import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import { db } from "@/lib/prisma";
 import { PlanInterval } from "@prisma/client";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
-});
-
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
 export async function POST(req: Request) {
@@ -24,33 +20,46 @@ export async function POST(req: Request) {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
+      console.log("Session data:", session); // Debug log
 
-      // Pobierz metadane z sesji
-      const { planId, interval } = session.metadata as {
-        planId: string;
-        interval: "monthly" | "yearly";
-      };
+      // Pobierz informacje o produkcie
+      const lineItems = await stripe.checkout.sessions.listLineItems(
+        session.id
+      );
+      console.log("Line items:", lineItems); // Debug log
 
-      // Zaktualizuj plan użytkownika w bazie danych
-      await db.user.update({
+      const priceId = lineItems.data[0].price?.id;
+      console.log("Price ID:", priceId); // Debug log
+
+      // Pobierz cenę i jej szczegóły
+      const price = await stripe.prices.retrieve(priceId!);
+      console.log("Price details:", price); // Debug log
+
+      const planId = price.product as string;
+      const interval = price.recurring?.interval || "month";
+
+      // Aktualizuj użytkownika
+      const updatedUser = await db.user.update({
         where: {
           email: session.customer_email!,
         },
         data: {
           stripeCustomerId: session.customer as string,
           plan: planId,
+          planStatus: "ACTIVE",
           planInterval: interval.toUpperCase() as PlanInterval,
           planActiveUntil: new Date(session.expires_at * 1000),
         },
       });
+
+      console.log("Updated user:", updatedUser); // Debug log
     }
 
-    return NextResponse.json({ received: true });
+    return new Response(null, { status: 200 });
   } catch (error) {
     console.error("Webhook error:", error);
-    return NextResponse.json(
-      { error: "Webhook handler failed" },
-      { status: 400 }
-    );
+    return new Response(JSON.stringify({ error: "Webhook handler failed" }), {
+      status: 400,
+    });
   }
 }

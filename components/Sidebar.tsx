@@ -139,7 +139,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 {session?.user?.name ?? "Użytkownik"}
               </span>
               <span className="text-xs text-gray-500 truncate w-full">
-                {session?.user?.email}
+                {session?.user?.plan}
               </span>
             </div>
             <ChevronDown
