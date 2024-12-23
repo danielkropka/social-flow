@@ -7,9 +7,14 @@ import { VideoThumbnailModal } from "./VideoThumbnailModal";
 interface MediaPreviewProps {
   file: File;
   previewUrl: string;
+  className?: string;
 }
 
-export function MediaPreview({ file, previewUrl }: MediaPreviewProps) {
+export function MediaPreview({
+  file,
+  previewUrl,
+  className,
+}: MediaPreviewProps) {
   const isVideo = file.type.startsWith("video/");
   const [thumbnailUrl, setThumbnailUrl] = useState(previewUrl);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -20,7 +25,7 @@ export function MediaPreview({ file, previewUrl }: MediaPreviewProps) {
         <video
           src={previewUrl}
           controls
-          className="max-h-[50vh] mx-auto rounded-lg"
+          className={`max-h-[50vh] mx-auto rounded-lg ${className}`}
           poster={thumbnailUrl}
         >
           <source src={previewUrl} type={file.type} />
@@ -52,7 +57,7 @@ export function MediaPreview({ file, previewUrl }: MediaPreviewProps) {
       <img
         src={previewUrl}
         alt={file.name}
-        className="max-w-[50vh] object-contain mx-auto"
+        className={`max-w-[50vh] object-contain mx-auto ${className}`}
       />
     </ImagePreviewModal>
   );

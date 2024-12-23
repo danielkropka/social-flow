@@ -41,7 +41,6 @@ export default function PricingSection() {
         throw new Error("No checkout URL received");
       }
 
-      // Przekieruj użytkownika bezpośrednio na stronę checkout
       window.location.href = data.url;
     } catch (error) {
       console.error("Payment error:", error);

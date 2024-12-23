@@ -26,6 +26,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
+import { toast } from "sonner";
 
 const getMinScheduleTime = () => {
   const now = new Date();
@@ -79,6 +80,9 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
     scheduledDate,
     setScheduledDate,
     setCurrentStep,
+    content,
+    mediaUrls,
+    setContent,
   } = usePostCreation();
 
   const [isCustomText, setIsCustomText] = useState(false);
@@ -96,17 +100,37 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
     },
   });
 
-  const onSubmit = (data: PostFormValues) => {
-    if (data.scheduledDate) {
-      const minTime = getMinScheduleTime();
-      if (data.scheduledDate < minTime) {
-        form.setValue("scheduledDate", minTime);
-        return;
+  const handlePublish = async () => {
+    try {
+      const currentText = form.getValues("text.default");
+      const response = await fetch("/api/posts", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          content: currentText,
+          mediaUrls,
+          accountIds: selectedAccounts,
+          scheduledDate: scheduledDate,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to publish post");
       }
+
+      onPublish();
+    } catch (error) {
+      toast.error("Wystąpił błąd podczas publikowania posta");
     }
+  };
+
+  const onSubmit = async (data: PostFormValues) => {
     setPostText(data.text);
+    setContent(data.text.default);
     setScheduledDate(data.scheduledDate);
-    onPublish();
+    await handlePublish();
   };
 
   return (
@@ -303,9 +327,7 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
           >
             Wstecz
           </Button>
-          <Button type="submit">
-            {form.watch("scheduledDate") ? "Zaplanuj" : "Opublikuj"}
-          </Button>
+          <Button>{scheduledDate ? "Zaplanuj post" : "Opublikuj post"}</Button>
         </div>
       </form>
     </Card>

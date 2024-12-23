@@ -16,13 +16,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json();
-    console.log("Received request body:", body); // Debug log
-
     const { planId, interval } = body;
-
-    // Debug logs
-    console.log("Looking for plan:", planId);
-    console.log("Available plans:", Object.keys(STRIPE_PLANS));
 
     const plan = STRIPE_PLANS[planId as keyof typeof STRIPE_PLANS];
     if (!plan) {

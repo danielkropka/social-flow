@@ -11,6 +11,7 @@ export function FileUploadStep() {
     setSelectedFiles,
     setPreviewUrls,
     setCurrentStep,
+    setMediaUrls,
   } = usePostCreation();
 
   const handleFileSelect = (files: File[]) => {
@@ -34,6 +35,7 @@ export function FileUploadStep() {
     setSelectedFiles(files);
     const urls = files.map((file) => URL.createObjectURL(file));
     setPreviewUrls(urls);
+    setMediaUrls(urls);
     setCurrentStep(2);
   };
 
@@ -58,13 +60,15 @@ export function FileUploadStep() {
         onDragOver={handleDragOver}
       >
         {previewUrls.length > 0 ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
             {previewUrls.map((url, index) => (
-              <MediaPreview
-                key={url}
-                file={selectedFiles[index]}
-                previewUrl={url}
-              />
+              <div key={url} className="aspect-square">
+                <MediaPreview
+                  file={selectedFiles[index]}
+                  previewUrl={url}
+                  className="w-full h-full object-cover rounded-lg"
+                />
+              </div>
             ))}
           </div>
         ) : (

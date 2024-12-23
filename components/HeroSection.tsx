@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button } from "./ui/button";
+import { Button, buttonVariants } from "./ui/button";
 import PricingSection from "./PricingSection";
 import PlatformsSection from "./PlatformsSection";
 import ReviewsSection from "./ReviewsSection";
 import { motion } from "framer-motion";
 import FaqSection from "./FaqSection";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { useSession } from "next-auth/react";
 
 export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(true);
+  const { data: session } = useSession();
 
   useEffect(() => {
     const handleResize = () => {
@@ -128,10 +132,16 @@ export default function HeroSection() {
                 width: isMobile ? "100%" : "50%",
               }}
             >
-              <Button className="h-12 text-lg relative overflow-hidden group bg-white border-2 border-blue-600 text-blue-600 hover:text-white">
+              <Link
+                href={session ? "/dashboard" : "/sign-in"}
+                className={cn(
+                  buttonVariants(),
+                  "h-12 text-lg relative overflow-hidden group bg-white border-2 border-blue-600 text-blue-600 hover:text-white"
+                )}
+              >
                 <span className="relative z-10">Wypróbuj za darmo</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              </Button>
+              </Link>
               <span className="text-sm text-gray-500 text-center mt-2">
                 Bez wymaganej karty kredytowej
               </span>

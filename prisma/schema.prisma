@@ -19,6 +19,18 @@ enum PlanInterval {
     YEAR
 }
 
+enum MediaType {
+    IMAGE
+    VIDEO
+}
+
+enum Provider {
+    FACEBOOK
+    INSTAGRAM
+    TWITTER
+    LINKEDIN
+}
+
 model Account {
     id                String  @id @default(auto()) @map("_id") @db.ObjectId
     userId            String  @db.ObjectId
@@ -39,20 +51,22 @@ model Account {
 }
 
 model User {
-    id            String    @id @default(auto()) @map("_id") @db.ObjectId
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    password      String?
-    image         String?
-    accounts      Account[]
-    sessions      Session[]
+    id                String             @id @default(auto()) @map("_id") @db.ObjectId
+    name              String?
+    email             String?            @unique
+    emailVerified     DateTime?
+    password          String?
+    image             String?
+    connectedAccounts ConnectedAccount[]
+    accounts          Account[]
+    sessions          Session[]
 
     stripeCustomerId String?
     plan             String       @default("free")
     planStatus       PlanStatus   @default(ACTIVE)
     planInterval     PlanInterval @default(MONTH)
     planActiveUntil  DateTime?
+    Post             Post[]
 }
 
 model Session {
@@ -61,4 +75,66 @@ model Session {
     userId       String   @db.ObjectId
     expires      DateTime
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Media {
+    id        String    @id @default(auto()) @map("_id") @db.ObjectId
+    url       String
+    type      MediaType
+    postId    String    @db.ObjectId
+    post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+    createdAt DateTime  @default(now())
+
+    @@index([postId])
+}
+
+model Post {
+    id          String    @id @default(auto()) @map("_id") @db.ObjectId
+    content     String
+    published   Boolean   @default(false)
+    publishedAt DateTime?
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+
+    // Relacje
+    userId                String                 @db.ObjectId
+    user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    media                 Media[]
+    postConnectedAccounts PostConnectedAccount[]
+
+    @@index([userId])
+}
+
+model ConnectedAccount {
+    id                String    @id @default(auto()) @map("_id") @db.ObjectId
+    provider          Provider
+    providerAccountId String
+    accessToken       String
+    refreshToken      String?
+    expiresAt         DateTime?
+    name              String // nazwa konta np. "Moja Firma Facebook"
+    username          String // nazwa użytkownika w danym serwisie
+    profileImage      String? // zdjęcie profilowe konta
+
+    // Relacje
+    userId                String                 @db.ObjectId
+    user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+    postConnectedAccounts PostConnectedAccount[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@unique([provider, providerAccountId])
+    @@index([userId])
+}
+
+model PostConnectedAccount {
+    id                 String           @id @default(auto()) @map("_id") @db.ObjectId
+    postId             String           @db.ObjectId
+    connectedAccountId String           @db.ObjectId
+    post               Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+    connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+    @@index([postId])
+    @@index([connectedAccountId])
 }

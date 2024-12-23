@@ -16,12 +16,16 @@ interface PostCreationContextType {
   postText: PostText;
   scheduledDate: Date | undefined;
   currentStep: number;
+  content: string;
+  mediaUrls: string[];
   setSelectedFiles: (files: File[]) => void;
   setPreviewUrls: (urls: string[]) => void;
   setSelectedAccounts: (accounts: string[]) => void;
   setPostText: (text: PostText) => void;
   setScheduledDate: (date: Date | undefined) => void;
   setCurrentStep: (step: number) => void;
+  setContent: (content: string) => void;
+  setMediaUrls: (urls: string[]) => void;
 }
 
 const PostCreationContext = createContext<PostCreationContextType | undefined>(
@@ -39,6 +43,8 @@ export function PostCreationProvider({
   const [postText, setPostText] = useState<PostText>({ default: "" });
   const [scheduledDate, setScheduledDate] = useState<Date>();
   const [currentStep, setCurrentStep] = useState(1);
+  const [content, setContent] = useState("");
+  const [mediaUrls, setMediaUrls] = useState<string[]>([]);
 
   return (
     <PostCreationContext.Provider
@@ -49,12 +55,16 @@ export function PostCreationProvider({
         postText,
         scheduledDate,
         currentStep,
+        mediaUrls,
+        content,
         setSelectedFiles,
         setPreviewUrls,
         setSelectedAccounts,
         setPostText,
         setScheduledDate,
         setCurrentStep,
+        setContent,
+        setMediaUrls,
       }}
     >
       {children}

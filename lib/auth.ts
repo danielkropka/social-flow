@@ -21,6 +21,7 @@ export const authOptions: NextAuthOptions = {
           plan: "free",
           planStatus: PlanStatus.ACTIVE,
           planInterval: PlanInterval.MONTH,
+          planActiveUntil: new Date(),
         };
       },
     }),
@@ -52,7 +53,16 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
-        return user;
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          image: user.image,
+          plan: user.plan,
+          planStatus: user.planStatus,
+          planInterval: user.planInterval,
+          planActiveUntil: user.planActiveUntil || new Date(),
+        };
       },
     }),
   ],
@@ -67,6 +77,7 @@ export const authOptions: NextAuthOptions = {
         token.planStatus = user.planStatus;
         token.planInterval = user.planInterval;
       }
+
       return token;
     },
     async session({ session, token }) {
@@ -75,6 +86,10 @@ export const authOptions: NextAuthOptions = {
         session.user.plan = token.plan as string;
         session.user.planStatus = token.planStatus as string;
         session.user.planInterval = token.planInterval as string;
+        session.user.planActiveUntil = token.planActiveUntil as Date;
+        session.user.email = token.email;
+        session.user.name = token.name;
+        session.user.image = token.image as string;
       }
       return session;
     },

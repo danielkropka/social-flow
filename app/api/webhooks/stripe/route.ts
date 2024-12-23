@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { headers } from "next/headers";
 import { db } from "@/lib/prisma";
 import { PlanInterval } from "@prisma/client";
+import { NextResponse } from "next/server";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -20,46 +21,40 @@ export async function POST(req: Request) {
 
     if (event.type === "checkout.session.completed") {
       const session = event.data.object as Stripe.Checkout.Session;
-      console.log("Session data:", session); // Debug log
+      const userId = session.client_reference_id;
+      const subscriptionId = session.subscription as string;
 
-      // Pobierz informacje o produkcie
-      const lineItems = await stripe.checkout.sessions.listLineItems(
-        session.id
-      );
-      console.log("Line items:", lineItems); // Debug log
+      if (!userId) {
+        return new NextResponse("No user ID", { status: 400 });
+      }
 
-      const priceId = lineItems.data[0].price?.id;
-      console.log("Price ID:", priceId); // Debug log
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const planId = subscription.items.data[0].plan.id;
+      const interval =
+        subscription.items.data[0].price.recurring?.interval || "month";
 
-      // Pobierz cenę i jej szczegóły
-      const price = await stripe.prices.retrieve(priceId!);
-      console.log("Price details:", price); // Debug log
-
-      const planId = price.product as string;
-      const interval = price.recurring?.interval || "MONTHLY";
-
-      // Aktualizuj użytkownika
       const updatedUser = await db.user.update({
         where: {
-          email: session.customer_email!,
+          id: userId,
         },
         data: {
           stripeCustomerId: session.customer as string,
           plan: planId,
           planStatus: "ACTIVE",
           planInterval: interval.toUpperCase() as PlanInterval,
-          planActiveUntil: new Date(session.expires_at * 1000),
+          planActiveUntil: new Date(subscription.current_period_end * 1000),
         },
       });
 
-      console.log("Updated user:", updatedUser); // Debug log
+      return NextResponse.json(updatedUser);
     }
 
-    return new Response(null, { status: 200 });
+    return NextResponse.json({ status: "success" });
   } catch (error) {
     console.error("Webhook error:", error);
-    return new Response(JSON.stringify({ error: "Webhook handler failed" }), {
-      status: 400,
-    });
+    return new NextResponse(
+      JSON.stringify({ error: "Webhook handler failed" }),
+      { status: 400 }
+    );
   }
 }

@@ -5,6 +5,7 @@ declare module "next-auth" {
     plan: string;
     planStatus: string;
     planInterval: string;
+    planActiveUntil: Date;
   }
 
   interface Session {
