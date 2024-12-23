@@ -1,6 +1,5 @@
 "use client";
 
-import { db } from "@/lib/prisma";
 import moment from "moment";
 import "moment/locale/pl";
 import { DateRangePicker } from "@/components/DateRangePicker";
@@ -21,17 +20,25 @@ moment.locale("pl");
 interface ConnectedAccount {
   id: string;
   name: string;
-  provider: string;
+  provider: Provider;
 }
 
 interface PostConnectedAccount {
   connectedAccount: ConnectedAccount;
 }
 
+interface Post {
+  id: string;
+  content: string;
+  publishedAt: Date;
+  media: Media[];
+  postConnectedAccounts: PostConnectedAccount[];
+}
+
 export default function PostsPage() {
   const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
   const [platform, setPlatform] = useState<Provider | "ALL">("ALL");
-  const [posts, setPosts] = useState<any[]>([]);
+  const [posts, setPosts] = useState<Post[]>([]);
 
   const handleFilter = async () => {
     const params = new URLSearchParams();

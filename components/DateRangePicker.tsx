@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
 import { DateRange } from "react-day-picker";
-import { SelectSingleEventHandler } from "react-day-picker";
 
 interface DateRangePickerProps {
   value: DateRange | undefined;

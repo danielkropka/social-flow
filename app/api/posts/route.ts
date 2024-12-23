@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     });
 
     // Dodaj powiązania z kontami
-    const postConnections = await db.postConnectedAccount.createMany({
+    await db.postConnectedAccount.createMany({
       data: accountIds.map((accountId: string) => ({
         postId: post.id,
         connectedAccountId: accountId,

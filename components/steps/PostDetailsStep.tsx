@@ -80,7 +80,6 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
     scheduledDate,
     setScheduledDate,
     setCurrentStep,
-    content,
     mediaUrls,
     setContent,
   } = usePostCreation();
@@ -122,7 +121,9 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
 
       onPublish();
     } catch (error) {
-      toast.error("Wystąpił błąd podczas publikowania posta");
+      if (error instanceof Error) {
+        toast.error("Wystąpił błąd podczas publikowania posta");
+      }
     }
   };
 

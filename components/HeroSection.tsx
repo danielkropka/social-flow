@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Button, buttonVariants } from "./ui/button";
+import { buttonVariants } from "./ui/button";
 import PricingSection from "./PricingSection";
 import PlatformsSection from "./PlatformsSection";
 import ReviewsSection from "./ReviewsSection";
