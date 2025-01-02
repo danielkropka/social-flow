@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       await stripe.subscriptions.update(user.stripeSubscriptionId, {
         items: [
           {
-            id: user.stripePriceId ?? undefined,
+            id: user.stripeSubscriptionId,
             price: STRIPE_PLANS[planId].priceId[interval],
           },
         ],
@@ -49,6 +49,7 @@ export async function POST(req: Request) {
       // Utwórz nową sesję checkout
       const checkoutSession = await stripe.checkout.sessions.create({
         client_reference_id: session.user.id,
+        customer_email: session.user.email!,
         mode: "subscription",
         payment_method_types: ["card"],
         line_items: [
@@ -57,6 +58,10 @@ export async function POST(req: Request) {
             quantity: 1,
           },
         ],
+        metadata: {
+          planId,
+          interval,
+        },
         success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
         cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
       });
