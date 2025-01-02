@@ -144,7 +144,8 @@ export default function PricingSection() {
               </ul>
               <Button
                 className="mt-auto w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors h-12 flex items-center justify-center"
-                onClick={() => handleSubscribe(plan.id)}
+                onClick={() => handleSubscribe(plan.key)}
+                disabled={session?.user?.plan === plan.id}
               >
                 Wybierz plan
               </Button>

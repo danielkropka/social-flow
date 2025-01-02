@@ -30,6 +30,7 @@ export async function POST(req: Request) {
 
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const planId = subscription.items.data[0].plan.id;
+      const priceId = subscription.items.data[0].price.id;
       const interval =
         subscription.items.data[0].price.recurring?.interval || "month";
 
@@ -39,6 +40,8 @@ export async function POST(req: Request) {
         },
         data: {
           stripeCustomerId: session.customer as string,
+          stripeSubscriptionId: subscriptionId,
+          stripePriceId: priceId,
           plan: planId,
           planStatus: "ACTIVE",
           planInterval: interval.toUpperCase() as PlanInterval,

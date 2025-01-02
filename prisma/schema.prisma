@@ -61,12 +61,15 @@ model User {
     accounts          Account[]
     sessions          Session[]
 
-    stripeCustomerId String?
-    plan             String       @default("free")
-    planStatus       PlanStatus   @default(ACTIVE)
-    planInterval     PlanInterval @default(MONTH)
-    planActiveUntil  DateTime?
-    Post             Post[]
+    stripeCustomerId     String?
+    stripeSubscriptionId String?
+    stripePriceId        String?
+
+    plan            String       @default("free")
+    planStatus      PlanStatus   @default(ACTIVE)
+    planInterval    PlanInterval @default(MONTH)
+    planActiveUntil DateTime?
+    Post            Post[]
 }
 
 model Session {

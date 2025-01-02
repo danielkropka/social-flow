@@ -1,6 +1,7 @@
 export const STRIPE_PLANS = {
   basic: {
-    id: "basic",
+    key: "basic",
+    id: "prod_RMU94PRJsMwxD4",
     name: "Podstawowy",
     monthlyPrice: 30,
     yearlyPrice: 288,
@@ -18,7 +19,8 @@ export const STRIPE_PLANS = {
     ],
   },
   creator: {
-    id: "creator",
+    key: "creator",
+    id: "prod_RMUAeeAnYcfXEI",
     name: "Twórca",
     monthlyPrice: 60,
     yearlyPrice: 576,
