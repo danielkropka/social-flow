@@ -1,5 +1,4 @@
 import React from "react";
-import { motion } from "framer-motion";
 import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
 
 export default function PlatformsSection() {
