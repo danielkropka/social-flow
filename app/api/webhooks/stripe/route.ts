@@ -80,6 +80,8 @@ export async function POST(req: Request) {
       const subscription = event.data.object as Stripe.Subscription;
       customerId = subscription.customer as string;
 
+      console.log(subscription);
+
       try {
         await db.user.update({
           where: { stripeCustomerId: customerId },

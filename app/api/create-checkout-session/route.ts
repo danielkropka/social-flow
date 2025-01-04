@@ -1,3 +1,5 @@
+import { STRIPE_PLANS } from "@/config/stripe";
+import { PlanInterval } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -8,9 +10,12 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { priceId, email } = body;
-
-    console.log("Received request with:", { priceId, email });
+    const { priceId, email, planKey, interval } = body as {
+      priceId: string;
+      email: string;
+      planKey: keyof typeof STRIPE_PLANS;
+      interval: PlanInterval;
+    };
 
     // Validate that priceId and email are provided
     if (!priceId || !email) {
@@ -20,6 +25,8 @@ export async function POST(req: Request) {
         { status: 400 }
       );
     }
+
+    const plan = STRIPE_PLANS[planKey as keyof typeof STRIPE_PLANS];
 
     const session: Stripe.Checkout.Session =
       await stripe.checkout.sessions.create({
@@ -31,6 +38,10 @@ export async function POST(req: Request) {
             quantity: 1,
           },
         ],
+        metadata: {
+          subscriptionType: plan.key.toUpperCase(),
+          subscriptionInterval: interval,
+        },
         mode: "subscription",
         success_url: `${req.headers.get(
           "origin"

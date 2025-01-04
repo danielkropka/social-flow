@@ -11,7 +11,7 @@ export default function PricingSection() {
   const { data: session } = useSession();
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const handleSubscribe = async (priceId: string) => {
+  const handleSubscribe = async (priceId: string, key: string) => {
     const stripe = await loadStripe(
       process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
     );
@@ -21,7 +21,12 @@ export default function PricingSection() {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ priceId, email: session?.user?.email }),
+      body: JSON.stringify({
+        priceId,
+        email: session?.user?.email,
+        planKey: key,
+        interval: isAnnual ? "YEAR" : "MONTH",
+      }),
     });
 
     const checkoutSession = await response.json();
@@ -117,7 +122,8 @@ export default function PricingSection() {
                 className="mt-auto w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors h-12 flex items-center justify-center"
                 onClick={() =>
                   handleSubscribe(
-                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!
+                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!,
+                    plan.key
                   )
                 }
               >
