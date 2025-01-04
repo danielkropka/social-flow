@@ -19,12 +19,20 @@ export async function POST(req: Request) {
   try {
     const body = await req.text();
     event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-  } catch (err: any) {
-    console.error("Webhook signature verification failed.", err);
-    return NextResponse.json(
-      { error: `Webhook Error: ${err.message}` },
-      { status: 400 }
-    );
+  } catch (err: unknown) {
+    if (err instanceof Error) {
+      console.error("Webhook signature verification failed.", err);
+      return NextResponse.json(
+        { error: `Webhook Error: ${err.message}` },
+        { status: 400 }
+      );
+    } else {
+      console.error("An unknown error occurred.");
+      return NextResponse.json(
+        { error: "An unknown error occurred." },
+        { status: 400 }
+      );
+    }
   }
 
   switch (event.type) {
