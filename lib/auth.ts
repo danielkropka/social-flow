@@ -4,6 +4,9 @@ import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { db } from "./prisma";
 import { compare } from "bcryptjs";
+import { PlanInterval } from "@prisma/client";
+import { PlanType } from "@prisma/client";
+import { PlanStatus } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -45,6 +48,11 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           image: user.image,
+          subscriptionType: user.subscriptionType,
+          subscriptionStatus: user.subscriptionStatus,
+          subscriptionStart: user.subscriptionStart || new Date(),
+          subscriptionEnd: user.subscriptionEnd || new Date(),
+          subscriptionInterval: user.subscriptionInterval,
         };
       },
     }),
@@ -59,6 +67,11 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.email = user.email;
         token.image = user.image;
+        token.subscriptionType = user.subscriptionType;
+        token.subscriptionStatus = user.subscriptionStatus;
+        token.subscriptionStart = user.subscriptionStart;
+        token.subscriptionEnd = user.subscriptionEnd;
+        token.subscriptionInterval = user.subscriptionInterval;
       }
 
       return token;
@@ -69,6 +82,13 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.image = token.image as string;
+        session.user.subscriptionType = token.subscriptionType as PlanType;
+        session.user.subscriptionStatus =
+          token.subscriptionStatus as PlanStatus;
+        session.user.subscriptionStart = token.subscriptionStart as Date;
+        session.user.subscriptionEnd = token.subscriptionEnd as Date;
+        session.user.subscriptionInterval =
+          token.subscriptionInterval as PlanInterval;
       }
       return session;
     },
