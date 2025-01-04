@@ -14,8 +14,8 @@ export async function POST(req: Request) {
         email,
         name: `${firstName} ${lastName}`,
         password: hashedPassword,
-        plan: "free",
-        planStatus: "ACTIVE",
+        subscriptionType: "FREE",
+        subscriptionStatus: "INACTIVE",
       },
     });
 

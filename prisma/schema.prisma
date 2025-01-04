@@ -9,9 +9,8 @@ generator client {
 
 enum PlanStatus {
     ACTIVE
-    CANCELLED
+    INACTIVE
     EXPIRED
-    SUSPENDED
 }
 
 enum PlanType {
