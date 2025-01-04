@@ -1,9 +1,5 @@
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import Stripe from "stripe";
-import { STRIPE_PLANS } from "@/config/stripe";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/prisma";
+import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
@@ -11,71 +7,47 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const body = await req.json();
+    const { priceId, email } = body;
+
+    console.log("Received request with:", { priceId, email });
+
+    // Validate that priceId and email are provided
+    if (!priceId || !email) {
+      console.error("Missing required fields: priceId or email");
+      return NextResponse.json(
+        { error: "Missing required fields: priceId or email" },
+        { status: 400 }
+      );
     }
 
-    const body = await req.json();
-    const { planId, interval } = body as {
-      planId: keyof typeof STRIPE_PLANS;
-      interval: "monthly" | "yearly";
-    };
-
-    // Pobierz aktualną subskrypcję użytkownika
-    const user = await db.user.findUnique({
-      where: { id: session.user.id },
-    });
-
-    if (user?.stripeSubscriptionId) {
-      // Zaktualizuj istniejącą subskrypcję
-      await stripe.subscriptions.update(user.stripeSubscriptionId, {
-        items: [
-          {
-            id: user.stripeSubscriptionId,
-            price: STRIPE_PLANS[planId].priceId[interval],
-          },
-        ],
-      });
-
-      return NextResponse.json({
-        message: "Subscription updated",
-        toast: {
-          title: "Sukces",
-          description: `Twoja subskrypcja została pomyślnie zaktualizowana do planu ${STRIPE_PLANS[planId].name}`,
-        },
-      });
-    } else {
-      // Utwórz nową sesję checkout
-      const checkoutSession = await stripe.checkout.sessions.create({
-        client_reference_id: session.user.id,
-        customer_email: session.user.email!,
-        mode: "subscription",
+    const session: Stripe.Checkout.Session =
+      await stripe.checkout.sessions.create({
+        customer_email: email,
         payment_method_types: ["card"],
         line_items: [
           {
-            price: STRIPE_PLANS[planId].priceId[interval],
+            price: priceId,
             quantity: 1,
           },
         ],
-        metadata: {
-          planId,
-          interval,
-        },
-        success_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?success=true`,
-        cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/dashboard?canceled=true`,
+        mode: "subscription",
+        success_url: `${req.headers.get(
+          "origin"
+        )}/?success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}/?cancel`,
       });
 
-      return NextResponse.json({
-        url: checkoutSession.url,
-        toast: {
-          title: "Przekierowanie",
-          description: "Przekierowujemy Cię do strony płatności...",
-        },
-      });
-    }
+    return NextResponse.json({ id: session.id });
   } catch (error) {
-    console.error("Error:", error);
-    return new NextResponse("Error", { status: 500 });
+    console.error("Error creating checkout session:", error);
+    return NextResponse.json(
+      {
+        error: error instanceof Error ? error.message : "Unknown error",
+      },
+      {
+        status: 500,
+      }
+    );
   }
 }

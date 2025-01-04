@@ -2,48 +2,32 @@
 
 import { Button } from "./ui/button";
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { STRIPE_PLANS } from "@/config/stripe";
+import { loadStripe } from "@stripe/stripe-js";
 
 export default function PricingSection() {
   const { data: session } = useSession();
-  const router = useRouter();
   const [isAnnual, setIsAnnual] = useState(false);
 
-  const handleSubscribe = async (planId: string) => {
-    if (!session) {
-      router.push("/sign-in");
-      return;
-    }
+  const handleSubscribe = async (priceId: string) => {
+    const stripe = await loadStripe(
+      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+    );
 
-    try {
-      const response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          planId,
-          interval: isAnnual ? "yearly" : "monthly",
-        }),
-      });
+    const response = await fetch("/api/create-checkout-session", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ priceId, email: session?.user?.email }),
+    });
 
-      if (!response.ok) {
-        throw new Error("Network response was not ok");
-      }
+    const checkoutSession = await response.json();
 
-      const data = await response.json();
-
-      if (!data.url) {
-        throw new Error("No checkout URL received");
-      }
-
-      window.location.href = data.url;
-    } catch (error) {
-      console.error("Payment error:", error);
+    if (checkoutSession.id) {
+      stripe?.redirectToCheckout({ sessionId: checkoutSession.id });
     }
   };
 
@@ -93,23 +77,10 @@ export default function PricingSection() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {Object.values(STRIPE_PLANS).map((plan, index) => (
-            <motion.div
+          {Object.values(STRIPE_PLANS).map((plan) => (
+            <div
               key={plan.id}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -2 }}
-              style={{
-                background: "white",
-                padding: "2rem",
-                borderRadius: "0.75rem",
-                border: "1px solid rgb(229 231 235)",
-                boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-                display: "flex",
-                flexDirection: "column",
-              }}
+              className="bg-white p-8 rounded-lg border border-gray-200 shadow-sm flex flex-col transform transition-transform duration-200 hover:-translate-y-1"
             >
               <h3 className="text-xl font-bold text-gray-900">{plan.name}</h3>
               <p className="mt-2 text-gray-600 text-sm">{plan.description}</p>
@@ -144,12 +115,15 @@ export default function PricingSection() {
               </ul>
               <Button
                 className="mt-auto w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors h-12 flex items-center justify-center"
-                onClick={() => handleSubscribe(plan.key)}
-                disabled={session?.user?.plan === plan.id}
+                onClick={() =>
+                  handleSubscribe(
+                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!
+                  )
+                }
               >
                 Wybierz plan
               </Button>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

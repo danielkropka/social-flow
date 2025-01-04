@@ -22,26 +22,9 @@ export default function PlatformsSection() {
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
           {platforms.map((platform) => (
-            <motion.div
+            <div
               key={platform.name}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.2 }}
-              whileHover={{
-                boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                y: -2,
-              }}
-              style={{
-                background: "white",
-                padding: "1.5rem",
-                borderRadius: "0.75rem",
-                border: "1px solid rgb(229 231 235)",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                textAlign: "center",
-              }}
+              className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col items-center text-center transform transition-transform duration-200 hover:-translate-y-1 hover:shadow-md"
             >
               <div className="w-16 h-16 flex items-center justify-center mb-4">
                 <platform.icon className={`w-10 h-10 ${platform.color}`} />
@@ -50,7 +33,7 @@ export default function PlatformsSection() {
                 {platform.name}
               </h3>
               <p className="text-sm text-gray-600">{platform.description}</p>
-            </motion.div>
+            </div>
           ))}
         </div>
       </div>

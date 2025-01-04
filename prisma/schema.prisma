@@ -14,6 +14,12 @@ enum PlanStatus {
     SUSPENDED
 }
 
+enum PlanType {
+    FREE
+    BASIC
+    PRO
+}
+
 enum PlanInterval {
     MONTH
     YEAR
@@ -61,15 +67,14 @@ model User {
     accounts          Account[]
     sessions          Session[]
 
-    stripeCustomerId     String?
-    stripeSubscriptionId String?
-    stripePriceId        String?
+    stripeCustomerId     String?       @unique
+    subscriptionStatus   PlanStatus?
+    subscriptionType     PlanType?
+    subscriptionInterval PlanInterval?
+    subscriptionStart    DateTime?
+    subscriptionEnd      DateTime?
 
-    plan            String       @default("free")
-    planStatus      PlanStatus   @default(ACTIVE)
-    planInterval    PlanInterval @default(MONTH)
-    planActiveUntil DateTime?
-    Post            Post[]
+    Post Post[]
 }
 
 model Session {

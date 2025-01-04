@@ -2,7 +2,6 @@ import { NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { PlanStatus, PlanInterval } from "@prisma/client";
 import { db } from "./prisma";
 import { compare } from "bcryptjs";
 
@@ -12,18 +11,6 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name,
-          email: profile.email,
-          image: profile.picture,
-          plan: "free",
-          planStatus: PlanStatus.ACTIVE,
-          planInterval: PlanInterval.MONTH,
-          planActiveUntil: new Date(),
-        };
-      },
     }),
     CredentialsProvider({
       name: "credentials",
@@ -58,10 +45,6 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           image: user.image,
-          plan: user.plan,
-          planStatus: user.planStatus,
-          planInterval: user.planInterval,
-          planActiveUntil: user.planActiveUntil || new Date(),
         };
       },
     }),
@@ -73,9 +56,9 @@ export const authOptions: NextAuthOptions = {
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.plan = user.plan;
-        token.planStatus = user.planStatus;
-        token.planInterval = user.planInterval;
+        token.name = user.name;
+        token.email = user.email;
+        token.image = user.image;
       }
 
       return token;
@@ -83,10 +66,6 @@ export const authOptions: NextAuthOptions = {
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
-        session.user.plan = token.plan as string;
-        session.user.planStatus = token.planStatus as string;
-        session.user.planInterval = token.planInterval as string;
-        session.user.planActiveUntil = token.planActiveUntil as Date;
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.image = token.image as string;

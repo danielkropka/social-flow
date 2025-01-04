@@ -6,8 +6,8 @@ export const STRIPE_PLANS = {
     monthlyPrice: 30,
     yearlyPrice: 288,
     priceId: {
-      monthly: process.env.STRIPE_BASIC_MONTHLY_PRICE_ID,
-      yearly: process.env.STRIPE_BASIC_YEARLY_PRICE_ID,
+      monthly: "price_1QTlBZBwgdNuxyCVRmsQ8NEx",
+      yearly: "price_1QTlBZBwgdNuxyCVFOgWgYEm",
     },
     description:
       "Idealne rozwiązanie dla początkujących twórców i małych firm, które chcą efektywnie zarządzać swoją obecnością w social mediach.",
@@ -25,8 +25,8 @@ export const STRIPE_PLANS = {
     monthlyPrice: 60,
     yearlyPrice: 576,
     priceId: {
-      monthly: process.env.STRIPE_PRO_MONTHLY_PRICE_ID,
-      yearly: process.env.STRIPE_PRO_YEARLY_PRICE_ID,
+      monthly: "price_1QTlCEBwgdNuxyCVZRfjet35",
+      yearly: "price_1QTlCEBwgdNuxyCVm76imsC9",
     },
     description:
       "Zaawansowane narzędzie dla profesjonalistów i firm, które chcą maksymalizować zasięgi i engagement swojego contentu.",
