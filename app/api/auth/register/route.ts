@@ -15,7 +15,7 @@ export async function POST(req: Request) {
         name: `${firstName} ${lastName}`,
         password: hashedPassword,
         subscriptionType: "FREE",
-        subscriptionStatus: "INACTIVE",
+        subscriptionStatus: "INCOMPLETE",
       },
     });
 

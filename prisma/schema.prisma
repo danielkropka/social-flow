@@ -8,9 +8,14 @@ generator client {
 }
 
 enum PlanStatus {
+    INCOMPLETE
+    INCOMPLETE_EXPIRED
+    TRIALING
     ACTIVE
-    INACTIVE
-    EXPIRED
+    PAST_DUE
+    CANCELED
+    UNPAID
+    PAUSED
 }
 
 enum PlanType {
