@@ -1,5 +1,5 @@
 import { db } from "@/lib/prisma";
-import { PlanInterval } from "@prisma/client";
+import { PlanInterval, PlanStatus } from "@prisma/client";
 import { PlanType } from "@prisma/client";
 import { addMonths } from "date-fns";
 import { addYears } from "date-fns";
@@ -15,6 +15,8 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event: Stripe.Event;
+  let customerId: string;
+  let customerEmail: string;
 
   try {
     const body = await req.text();
@@ -38,8 +40,8 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed":
       const session = event.data.object as Stripe.Checkout.Session;
-      const customerId = session.customer as string;
-      const customerEmail = session.customer_email as string;
+      customerId = session.customer as string;
+      customerEmail = session.customer_email as string;
 
       const subscriptionType = session.metadata?.subscriptionType || "BASIC";
       const subscriptionInterval =
@@ -72,6 +74,32 @@ export async function POST(req: Request) {
         console.error("Error processing user:", error);
       }
 
+      break;
+
+    case "customer.subscription.updated":
+      const subscription = event.data.object as Stripe.Subscription;
+      customerId = subscription.customer as string;
+
+      try {
+        await db.user.update({
+          where: { stripeCustomerId: customerId },
+          data: {
+            subscriptionStatus: subscription.status.toUpperCase() as PlanStatus,
+            subscriptionType: subscription.items.data[0].plan
+              .nickname as PlanType,
+            subscriptionInterval:
+              subscription.items.data[0].plan.interval.toUpperCase() as PlanInterval,
+            subscriptionStart: new Date(subscription.start_date * 1000),
+            subscriptionEnd: new Date(subscription.current_period_end * 1000),
+          },
+        });
+
+        console.log(
+          `Subscription for customer ID ${customerId} updated successfully.`
+        );
+      } catch (error) {
+        console.error("Error updating subscription:", error);
+      }
       break;
     default:
       console.log(`Unhandled event type ${event.type}`);
