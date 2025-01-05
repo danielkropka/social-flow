@@ -61,7 +61,7 @@ export const authOptions: NextAuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, trigger, user }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -72,6 +72,26 @@ export const authOptions: NextAuthOptions = {
         token.subscriptionStart = user.subscriptionStart;
         token.subscriptionEnd = user.subscriptionEnd;
         token.subscriptionInterval = user.subscriptionInterval;
+      }
+
+      if (trigger === "update") {
+        try {
+          const updatedUser = await db.user.findUnique({
+            where: { email: token.email! },
+          });
+
+          if (updatedUser) {
+            token.name = updatedUser.name;
+            token.image = updatedUser.image;
+            token.subscriptionType = updatedUser.subscriptionType;
+            token.subscriptionStatus = updatedUser.subscriptionStatus;
+            token.subscriptionStart = updatedUser.subscriptionStart;
+            token.subscriptionEnd = updatedUser.subscriptionEnd;
+            token.subscriptionInterval = updatedUser.subscriptionInterval;
+          }
+        } catch (error) {
+          console.error("Error refreshing session data:", error);
+        }
       }
 
       return token;
