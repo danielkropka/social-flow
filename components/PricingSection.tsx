@@ -8,7 +8,7 @@ import { STRIPE_PLANS } from "@/config/stripe";
 import { loadStripe } from "@stripe/stripe-js";
 
 export default function PricingSection() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const [isAnnual, setIsAnnual] = useState(false);
 
   const handleSubscribe = async (priceId: string, key: string) => {
@@ -32,8 +32,10 @@ export default function PricingSection() {
     const checkoutSession = await response.json();
 
     if (checkoutSession.id) {
-      stripe?.redirectToCheckout({ sessionId: checkoutSession.id });
+      await stripe?.redirectToCheckout({ sessionId: checkoutSession.id });
     }
+
+    await update();
   };
 
   return (

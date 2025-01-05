@@ -3,7 +3,6 @@ import { PlanInterval, PlanStatus } from "@prisma/client";
 import { PlanType } from "@prisma/client";
 import { addMonths } from "date-fns";
 import { addYears } from "date-fns";
-import { useSession } from "next-auth/react";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
@@ -14,7 +13,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature")!;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-  const { update } = useSession();
 
   let event: Stripe.Event;
   let customerId: string;
@@ -71,7 +69,6 @@ export async function POST(req: Request) {
           },
         });
 
-        await update();
         console.log(`User with email ${customerEmail} processed successfully.`);
       } catch (error) {
         console.error("Error processing user:", error);
@@ -101,8 +98,6 @@ export async function POST(req: Request) {
             subscriptionEnd: new Date(subscription.current_period_end * 1000),
           },
         });
-
-        await update();
 
         console.log(
           `Subscription for customer ID ${customerId} updated successfully.`
