@@ -126,6 +126,10 @@ export default function PricingSection() {
                     plan.key
                   )
                 }
+                disabled={
+                  session?.user?.subscriptionType === plan.key.toUpperCase() &&
+                  session?.user?.subscriptionStatus === "ACTIVE"
+                }
               >
                 Wybierz plan
               </Button>

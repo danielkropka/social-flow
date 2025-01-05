@@ -45,7 +45,7 @@ export async function POST(req: Request) {
         mode: "subscription",
         success_url: `${req.headers.get(
           "origin"
-        )}/?success?session_id={CHECKOUT_SESSION_ID}`,
+        )}/?success&session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${req.headers.get("origin")}/?cancel`,
       });
 
