@@ -141,7 +141,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               <span className="text-xs text-gray-500 truncate w-full">
                 {session?.user?.subscriptionType === "BASIC"
                   ? "Plan Podstawowy"
-                  : session?.user?.subscriptionType === "PRO"
+                  : session?.user?.subscriptionType === "CREATOR"
                   ? "Plan Twórca"
                   : "Plan darmowy"}
               </span>
