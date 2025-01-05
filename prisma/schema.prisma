@@ -21,7 +21,7 @@ enum PlanStatus {
 enum PlanType {
     FREE
     BASIC
-    PRO
+    CREATOR
 }
 
 enum PlanInterval {
