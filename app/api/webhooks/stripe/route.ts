@@ -79,16 +79,19 @@ export async function POST(req: Request) {
     case "customer.subscription.updated":
       const subscription = event.data.object as Stripe.Subscription;
       customerId = subscription.customer as string;
-
-      console.log(subscription.items.data);
+      const planName = subscription.items.data[0].plan.product;
 
       try {
         await db.user.update({
           where: { stripeCustomerId: customerId },
           data: {
             subscriptionStatus: subscription.status.toUpperCase() as PlanStatus,
-            subscriptionType: subscription.items.data[0].plan
-              .nickname as PlanType,
+            subscriptionType:
+              planName === "prod_RMUAeeAnYcfXEI"
+                ? "CREATOR"
+                : planName === "prod_RMU94PRJsMwxD4"
+                ? "BASIC"
+                : "FREE",
             subscriptionInterval:
               subscription.items.data[0].plan.interval.toUpperCase() as PlanInterval,
             subscriptionStart: new Date(subscription.start_date * 1000),
