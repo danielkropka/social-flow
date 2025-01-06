@@ -130,10 +130,17 @@ export default function PricingSection() {
                 }
                 disabled={
                   session?.user?.subscriptionType === plan.key.toUpperCase() &&
-                  session?.user?.subscriptionStatus === "ACTIVE"
+                  session?.user?.subscriptionStatus === "ACTIVE" &&
+                  session?.user?.subscriptionInterval ===
+                    (isAnnual ? "YEAR" : "MONTH")
                 }
               >
-                Wybierz plan
+                {session?.user?.subscriptionType === plan.key.toUpperCase() &&
+                session?.user?.subscriptionStatus === "ACTIVE" &&
+                session?.user?.subscriptionInterval ===
+                  (isAnnual ? "YEAR" : "MONTH")
+                  ? "Aktywny plan"
+                  : "Wybierz plan"}
               </Button>
             </div>
           ))}

@@ -42,6 +42,10 @@ export async function POST(req: Request) {
           subscriptionType: plan.key.toUpperCase(),
           subscriptionInterval: interval,
         },
+        allow_promotion_codes: true,
+        tax_id_collection: {
+          enabled: true,
+        },
         mode: "subscription",
         success_url: `${req.headers.get(
           "origin"

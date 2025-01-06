@@ -43,29 +43,11 @@ export async function POST(req: Request) {
       customerId = session.customer as string;
       customerEmail = session.customer_email as string;
 
-      const subscriptionType = session.metadata?.subscriptionType || "BASIC";
-      const subscriptionInterval =
-        session.metadata?.subscriptionInterval || "MONTH";
-
-      // Calculate subscription end date based on interval
-      let subscriptionEnd: Date;
-      if (subscriptionInterval.toLowerCase() === "year") {
-        subscriptionEnd = addYears(new Date(), 1);
-      } else {
-        // Default to monthly if not specified
-        subscriptionEnd = addMonths(new Date(), 1);
-      }
-
       try {
         await db.user.update({
           where: { email: customerEmail },
           data: {
             stripeCustomerId: customerId,
-            subscriptionStatus: "ACTIVE",
-            subscriptionType: subscriptionType as PlanType,
-            subscriptionInterval: subscriptionInterval as PlanInterval,
-            subscriptionStart: new Date(),
-            subscriptionEnd: subscriptionEnd,
           },
         });
 
@@ -76,26 +58,34 @@ export async function POST(req: Request) {
 
       break;
 
-    case "customer.subscription.updated":
-      const subscription = event.data.object as Stripe.Subscription;
-      customerId = subscription.customer as string;
-      const planName = subscription.items.data[0].plan.product;
+    case "invoice.payment_succeeded":
+      const invoice = event.data.object as Stripe.Invoice;
+      customerId = invoice.customer as string;
+      const subscription = invoice.subscription as string;
 
       try {
+        // Pobierz dane subskrypcji z Stripe
+        const stripeSubscription = await stripe.subscriptions.retrieve(
+          subscription
+        );
+        const planItem = stripeSubscription.items.data[0];
+
+        // Zaktualizuj dane użytkownika w bazie danych
         await db.user.update({
           where: { stripeCustomerId: customerId },
           data: {
-            subscriptionStatus: subscription.status.toUpperCase() as PlanStatus,
+            subscriptionStatus:
+              stripeSubscription.status.toUpperCase() as PlanStatus,
             subscriptionType:
-              planName === "prod_RMUAeeAnYcfXEI"
+              planItem.plan.product === "prod_RMUAeeAnYcfXEI"
                 ? "CREATOR"
-                : planName === "prod_RMU94PRJsMwxD4"
-                ? "BASIC"
-                : "FREE",
+                : "BASIC",
             subscriptionInterval:
-              subscription.items.data[0].plan.interval.toUpperCase() as PlanInterval,
-            subscriptionStart: new Date(subscription.start_date * 1000),
-            subscriptionEnd: new Date(subscription.current_period_end * 1000),
+              planItem.plan.interval.toUpperCase() as PlanInterval,
+            subscriptionStart: new Date(stripeSubscription.start_date * 1000),
+            subscriptionEnd: new Date(
+              stripeSubscription.current_period_end * 1000
+            ),
           },
         });
 
@@ -106,9 +96,62 @@ export async function POST(req: Request) {
         console.error("Error updating subscription:", error);
       }
       break;
+
+    case "customer.subscription.updated":
+      const updatedSubscription = event.data.object as Stripe.Subscription;
+      customerId = updatedSubscription.customer as string;
+
+      try {
+        await updateSubscription(
+          updatedSubscription.id,
+          updatedSubscription.items.data[0].price.id
+        );
+
+        await db.user.update({
+          where: { stripeCustomerId: customerId },
+          data: {
+            subscriptionType:
+              updatedSubscription.items.data[0].plan.product ===
+              "prod_RMUAeeAnYcfXEI"
+                ? "CREATOR"
+                : "BASIC",
+            subscriptionInterval:
+              updatedSubscription.items.data[0].plan.interval.toUpperCase() as PlanInterval,
+            subscriptionStart: new Date(updatedSubscription.start_date * 1000),
+            subscriptionEnd: new Date(
+              updatedSubscription.current_period_end * 1000
+            ),
+          },
+        });
+      } catch (error) {
+        console.error("Error updating subscription:", error);
+      }
+      break;
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
 
   return NextResponse.json({ received: true });
+}
+
+async function updateSubscription(subscriptionId: string, newPriceId: string) {
+  try {
+    const updatedSubscription = await stripe.subscriptions.update(
+      subscriptionId,
+      {
+        items: [
+          {
+            id: subscriptionId,
+            price: newPriceId,
+          },
+        ],
+        proration_behavior: "create_prorations",
+      }
+    );
+
+    return updatedSubscription;
+  } catch (error) {
+    console.error("Error updating subscription:", error);
+    throw error;
+  }
 }
