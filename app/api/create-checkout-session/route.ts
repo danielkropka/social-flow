@@ -47,6 +47,9 @@ export async function POST(req: Request) {
         tax_id_collection: {
           enabled: true,
         },
+        customer_update: {
+          name: "auto",
+        },
         mode: "subscription",
         success_url: `${req.headers.get(
           "origin"
