@@ -10,9 +10,10 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { priceId, email, planKey, interval } = body as {
+    const { priceId, email, customerId, planKey, interval } = body as {
       priceId: string;
       email: string;
+      customerId: string | undefined;
       planKey: keyof typeof STRIPE_PLANS;
       interval: PlanInterval;
     };
@@ -30,6 +31,7 @@ export async function POST(req: Request) {
 
     const session: Stripe.Checkout.Session =
       await stripe.checkout.sessions.create({
+        customer: customerId,
         customer_email: email,
         payment_method_types: ["card"],
         line_items: [

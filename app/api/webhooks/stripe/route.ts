@@ -100,7 +100,7 @@ export async function POST(req: Request) {
 
       try {
         await updateSubscription(
-          updatedSubscription.id,
+          updatedSubscription,
           updatedSubscription.items.data[0].price.id
         );
 
@@ -131,14 +131,17 @@ export async function POST(req: Request) {
   return NextResponse.json({ received: true });
 }
 
-async function updateSubscription(subscriptionId: string, newPriceId: string) {
+async function updateSubscription(
+  subscription: Stripe.Subscription,
+  newPriceId: string
+) {
   try {
     const updatedSubscription = await stripe.subscriptions.update(
-      subscriptionId,
+      subscription.id,
       {
         items: [
           {
-            id: subscriptionId,
+            id: subscription.id,
             price: newPriceId,
           },
         ],

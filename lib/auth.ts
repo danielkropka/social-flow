@@ -48,6 +48,7 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           image: user.image,
+          stripeCustomerId: user.stripeCustomerId || "",
           subscriptionType: user.subscriptionType,
           subscriptionStatus: user.subscriptionStatus,
           subscriptionStart: user.subscriptionStart || new Date(),
@@ -67,6 +68,7 @@ export const authOptions: NextAuthOptions = {
         token.name = user.name;
         token.email = user.email;
         token.image = user.image;
+        token.stripeCustomerId = user.stripeCustomerId;
         token.subscriptionType = user.subscriptionType;
         token.subscriptionStatus = user.subscriptionStatus;
         token.subscriptionStart = user.subscriptionStart;
@@ -83,6 +85,7 @@ export const authOptions: NextAuthOptions = {
           if (updatedUser) {
             token.name = updatedUser.name;
             token.image = updatedUser.image;
+            token.stripeCustomerId = updatedUser.stripeCustomerId;
             token.subscriptionType = updatedUser.subscriptionType;
             token.subscriptionStatus = updatedUser.subscriptionStatus;
             token.subscriptionStart = updatedUser.subscriptionStart;
@@ -102,6 +105,7 @@ export const authOptions: NextAuthOptions = {
         session.user.email = token.email;
         session.user.name = token.name;
         session.user.image = token.image as string;
+        session.user.stripeCustomerId = token.stripeCustomerId as string;
         session.user.subscriptionType = token.subscriptionType as PlanType;
         session.user.subscriptionStatus =
           token.subscriptionStatus as PlanStatus;
