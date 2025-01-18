@@ -13,7 +13,6 @@ import { useSession } from "next-auth/react";
 
 export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(true);
-  const { data: session } = useSession();
 
   useEffect(() => {
     const handleResize = () => {

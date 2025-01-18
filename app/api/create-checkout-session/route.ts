@@ -11,7 +11,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { priceId, email, customerId, planKey, interval, isFreeTrial } =
+    const { priceId, email, customerId, planKey, interval, isFreeTrial } =
       body as {
         priceId: string;
         email: string;
