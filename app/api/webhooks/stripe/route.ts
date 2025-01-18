@@ -54,7 +54,9 @@ export async function POST(req: Request) {
           },
         });
 
-        console.log(`User with email ${customerEmail} processed successfully.`);
+        console.log(
+          `User ${customerEmail || customer} processed successfully.`
+        );
       } catch (error) {
         console.error("Error processing user:", error);
       }
