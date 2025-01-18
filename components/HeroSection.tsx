@@ -9,7 +9,6 @@ import { motion } from "framer-motion";
 import FaqSection from "./FaqSection";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
-import { useSession } from "next-auth/react";
 
 export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(true);
