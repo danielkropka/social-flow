@@ -35,28 +35,26 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed":
       const session = event.data.object as Stripe.Checkout.Session;
-      const customer = session.customer as Stripe.Customer;
-
-      console.log(session);
-      console.log(customer);
+      const customer = session.customer as string;
+      const customerEmail = session.customer_email as string;
       try {
         await db.user.update({
           where: {
-            ...(customer.email
-              ? { email: customer.email }
-              : { stripeCustomerId: customer.id }),
+            ...(customerEmail
+              ? { email: customerEmail }
+              : { stripeCustomerId: customer }),
           },
           data: {
-            ...(customer.email && { stripeCustomerId: customer.id }),
+            ...(customerEmail && {
+              stripeCustomerId: customer,
+            }),
             ...(session.metadata?.gotFreeTrial === "true" && {
               gotFreeTrial: true,
             }),
           },
         });
 
-        console.log(
-          `User with email ${customer.email} processed successfully.`
-        );
+        console.log(`User with email ${customerEmail} processed successfully.`);
       } catch (error) {
         console.error("Error processing user:", error);
       }
