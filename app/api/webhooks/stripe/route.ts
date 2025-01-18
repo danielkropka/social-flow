@@ -37,6 +37,8 @@ export async function POST(req: Request) {
       const session = event.data.object as Stripe.Checkout.Session;
       const customer = session.customer as Stripe.Customer;
 
+      console.log(session);
+      console.log(customer);
       try {
         await db.user.update({
           where: {
