@@ -53,6 +53,17 @@ export default function HeroSection() {
     }),
   };
 
+  const handleScrollToSection = (
+    event: React.MouseEvent<HTMLAnchorElement>,
+    sectionId: string
+  ) => {
+    event.preventDefault();
+    const section = document.querySelector(sectionId);
+    if (section) {
+      section.scrollIntoView({ behavior: "smooth" });
+    }
+  };
+
   return (
     <div className="relative overflow-hidden">
       {/* Background */}
@@ -133,7 +144,8 @@ export default function HeroSection() {
               }}
             >
               <Link
-                href={session ? "/dashboard" : "/sign-in"}
+                href="#pricing"
+                onClick={(e) => handleScrollToSection(e, "#pricing")}
                 className={cn(
                   buttonVariants(),
                   "h-12 text-lg relative overflow-hidden group bg-white border-2 border-blue-600 text-blue-600 hover:text-white"
@@ -142,9 +154,6 @@ export default function HeroSection() {
                 <span className="relative z-10">Wypróbuj za darmo</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
-              <span className="text-sm text-gray-500 text-center mt-2">
-                Bez wymaganej karty kredytowej
-              </span>
             </motion.section>
           </motion.div>
 

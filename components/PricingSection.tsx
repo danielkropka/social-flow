@@ -1,40 +1,76 @@
 "use client";
 
 import { Button } from "./ui/button";
-import { useState } from "react";
-import { Check } from "lucide-react";
+import { useState, useTransition } from "react";
+import { Check, Loader2 } from "lucide-react";
 import { useSession } from "next-auth/react";
 import { STRIPE_PLANS } from "@/config/stripe";
 import { loadStripe } from "@stripe/stripe-js";
+import { Switch } from "./ui/switch";
+import { toast } from "sonner";
 
 export default function PricingSection() {
   const { data: session } = useSession();
-  const [isAnnual, setIsAnnual] = useState(false);
+  const [isAnnual, setIsAnnual] = useState(true);
+  const [isLoading, startTransition] = useTransition();
+  const [isFreeTrial, setIsFreeTrial] = useState(true);
 
-  const handleSubscribe = async (priceId: string, key: string) => {
-    const stripe = await loadStripe(
-      process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-    );
+  const handleSubscribe = (priceId: string, key: string) => {
+    startTransition(async () => {
+      const stripe = await loadStripe(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+      );
 
-    const response = await fetch("/api/create-checkout-session", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        priceId,
-        email: session?.user?.email,
-        customerId: session?.user?.stripeCustomerId,
-        planKey: key,
-        interval: isAnnual ? "YEAR" : "MONTH",
-      }),
+      let response: Response;
+
+      console.log(session?.user.subscriptionType);
+
+      if (
+        session?.user.subscriptionType &&
+        session?.user.subscriptionType !== "FREE"
+      ) {
+        response = await fetch("/api/create-billing-portal-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            customerId: session?.user.stripeCustomerId,
+          }),
+        });
+
+        const billingPortalSession = await response.json();
+
+        if (billingPortalSession.url) {
+          window.location.href = billingPortalSession.url;
+        }
+
+        return;
+      }
+
+      response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          priceId,
+          email: session?.user?.email,
+          customerId: session?.user?.stripeCustomerId,
+          planKey: key,
+          interval: isAnnual ? "YEAR" : "MONTH",
+          isFreeTrial,
+        }),
+      });
+
+      const checkoutSession = await response.json();
+
+      if (checkoutSession.error && response.status === 400) {
+        toast.error(checkoutSession.error);
+      } else {
+        await stripe?.redirectToCheckout({ sessionId: checkoutSession.id });
+      }
     });
-
-    const checkoutSession = await response.json();
-
-    if (checkoutSession.id) {
-      await stripe?.redirectToCheckout({ sessionId: checkoutSession.id });
-    }
   };
 
   return (
@@ -80,6 +116,20 @@ export default function PricingSection() {
               </span>
             </button>
           </div>
+        </div>
+        <div className="flex justify-center mb-12">
+          <label className="flex items-center space-x-3">
+            <span className="text-sm font-medium text-gray-900">
+              Bezpłatna wersja próbna
+            </span>
+            <Switch
+              checked={isFreeTrial}
+              onCheckedChange={() => {
+                setIsFreeTrial(!isFreeTrial);
+              }}
+              className="text-blue-600"
+            />
+          </label>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -127,19 +177,10 @@ export default function PricingSection() {
                     plan.key
                   )
                 }
-                disabled={
-                  session?.user?.subscriptionType === plan.key.toUpperCase() &&
-                  session?.user?.subscriptionStatus === "ACTIVE" &&
-                  session?.user?.subscriptionInterval ===
-                    (isAnnual ? "YEAR" : "MONTH")
-                }
+                disabled={isLoading}
               >
-                {session?.user?.subscriptionType === plan.key.toUpperCase() &&
-                session?.user?.subscriptionStatus === "ACTIVE" &&
-                session?.user?.subscriptionInterval ===
-                  (isAnnual ? "YEAR" : "MONTH")
-                  ? "Aktywny plan"
-                  : "Wybierz plan"}
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                {isFreeTrial ? "Wypróbuj za darmo przez 7 dni" : "Wybierz plan"}
               </Button>
             </div>
           ))}

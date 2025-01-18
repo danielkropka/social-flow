@@ -3,7 +3,8 @@
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSession } from "next-auth/react";
 
 export default function DashboardLayout({
   children,
@@ -11,6 +12,12 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+
+  const { update } = useSession();
+
+  useEffect(() => {
+    update();
+  }, []);
 
   return (
     <PostCreationProvider>

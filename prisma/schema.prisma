@@ -70,8 +70,10 @@ model User {
     connectedAccounts ConnectedAccount[]
     accounts          Account[]
     sessions          Session[]
+    gotFreeTrial      Boolean?           @default(false)
 
     stripeCustomerId     String?       @unique
+    stripeSubscriptionId String?       @unique
     subscriptionStatus   PlanStatus?
     subscriptionType     PlanType?
     subscriptionInterval PlanInterval?

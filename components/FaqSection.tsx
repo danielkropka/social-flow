@@ -15,7 +15,7 @@ export default function FaqSection() {
     {
       question: "Jak długo trwa darmowy okres próbny?",
       answer:
-        "Oferujemy 14-dniowy okres próbny, podczas którego możesz przetestować wszystkie funkcje platformy bez żadnych zobowiązań.",
+        "Oferujemy 7-dniowy okres próbny, podczas którego możesz przetestować wszystkie funkcje platformy bez żadnych zobowiązań.",
     },
     {
       question: "Jakie platformy społecznościowe są wspierane?",
@@ -40,7 +40,7 @@ export default function FaqSection() {
     {
       question: "Czy mogę otrzymać zwrot pieniędzy?",
       answer:
-        "Tak, oferujemy 14-dniowy okres zwrotu pieniędzy, podczas którego możesz zrezygnować z subskrypcji bez żadnych dodatkowych kosztów.",
+        "Tak, oferujemy 7-dniowy okres zwrotu pieniędzy, podczas którego możesz zrezygnować z subskrypcji bez żadnych dodatkowych kosztów.",
     },
   ];
 

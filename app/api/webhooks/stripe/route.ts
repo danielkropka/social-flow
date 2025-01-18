@@ -12,8 +12,6 @@ export async function POST(req: Request) {
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
   let event: Stripe.Event;
-  let customerId: string;
-  let customerEmail: string;
 
   try {
     const body = await req.text();
@@ -37,18 +35,26 @@ export async function POST(req: Request) {
   switch (event.type) {
     case "checkout.session.completed":
       const session = event.data.object as Stripe.Checkout.Session;
-      customerId = session.customer as string;
-      customerEmail = session.customer_email as string;
+      const customer = session.customer as Stripe.Customer;
 
       try {
-        await db.user.update({
-          where: { email: customerEmail },
-          data: {
-            stripeCustomerId: customerId,
-          },
-        });
+        if (customer.email) {
+          await db.user.update({
+            where: { email: customer.email },
+            data: {
+              stripeCustomerId: customer.id,
+              ...(session.metadata?.gotFreeTrial === "true" && {
+                gotFreeTrial: true,
+              }),
+            },
+          });
 
-        console.log(`User with email ${customerEmail} processed successfully.`);
+          console.log(
+            `User with email ${customer.email} processed successfully.`
+          );
+        } else {
+          console.log("User was not found");
+        }
       } catch (error) {
         console.error("Error processing user:", error);
       }
@@ -57,7 +63,7 @@ export async function POST(req: Request) {
 
     case "invoice.payment_succeeded":
       const invoice = event.data.object as Stripe.Invoice;
-      customerId = invoice.customer as string;
+      const customerId = invoice.customer as string;
       const subscription = invoice.subscription as string;
 
       try {
@@ -71,6 +77,7 @@ export async function POST(req: Request) {
         await db.user.update({
           where: { stripeCustomerId: customerId },
           data: {
+            stripeSubscriptionId: stripeSubscription.id,
             subscriptionStatus:
               stripeSubscription.status.toUpperCase() as PlanStatus,
             subscriptionType:
@@ -87,41 +94,10 @@ export async function POST(req: Request) {
         });
 
         console.log(
-          `Subscription for customer ID ${customerId} updated successfully.`
+          `Subscription for customer ID ${customerId} created successfully.`
         );
       } catch (error) {
-        console.error("Error updating subscription:", error);
-      }
-      break;
-
-    case "customer.subscription.updated":
-      const updatedSubscription = event.data.object as Stripe.Subscription;
-      customerId = updatedSubscription.customer as string;
-
-      try {
-        await updateSubscription(
-          updatedSubscription,
-          updatedSubscription.items.data[0].price.id
-        );
-
-        await db.user.update({
-          where: { stripeCustomerId: customerId },
-          data: {
-            subscriptionType:
-              updatedSubscription.items.data[0].plan.product ===
-              "prod_RMUAeeAnYcfXEI"
-                ? "CREATOR"
-                : "BASIC",
-            subscriptionInterval:
-              updatedSubscription.items.data[0].plan.interval.toUpperCase() as PlanInterval,
-            subscriptionStart: new Date(updatedSubscription.start_date * 1000),
-            subscriptionEnd: new Date(
-              updatedSubscription.current_period_end * 1000
-            ),
-          },
-        });
-      } catch (error) {
-        console.error("Error updating subscription:", error);
+        console.error("Error creating subscription:", error);
       }
       break;
     default:
@@ -129,29 +105,4 @@ export async function POST(req: Request) {
   }
 
   return NextResponse.json({ received: true });
-}
-
-async function updateSubscription(
-  subscription: Stripe.Subscription,
-  newPriceId: string
-) {
-  try {
-    const updatedSubscription = await stripe.subscriptions.update(
-      subscription.id,
-      {
-        items: [
-          {
-            id: subscription.id,
-            price: newPriceId,
-          },
-        ],
-        proration_behavior: "create_prorations",
-      }
-    );
-
-    return updatedSubscription;
-  } catch (error) {
-    console.error("Error updating subscription:", error);
-    throw error;
-  }
 }
