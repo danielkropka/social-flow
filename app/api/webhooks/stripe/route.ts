@@ -38,23 +38,23 @@ export async function POST(req: Request) {
       const customer = session.customer as Stripe.Customer;
 
       try {
-        if (customer.email) {
-          await db.user.update({
-            where: { email: customer.email },
-            data: {
-              stripeCustomerId: customer.id,
-              ...(session.metadata?.gotFreeTrial === "true" && {
-                gotFreeTrial: true,
-              }),
-            },
-          });
+        await db.user.update({
+          where: {
+            ...(customer.email
+              ? { email: customer.email }
+              : { stripeCustomerId: customer.id }),
+          },
+          data: {
+            ...(customer.email && { stripeCustomerId: customer.id }),
+            ...(session.metadata?.gotFreeTrial === "true" && {
+              gotFreeTrial: true,
+            }),
+          },
+        });
 
-          console.log(
-            `User with email ${customer.email} processed successfully.`
-          );
-        } else {
-          console.log("User was not found");
-        }
+        console.log(
+          `User with email ${customer.email} processed successfully.`
+        );
       } catch (error) {
         console.error("Error processing user:", error);
       }
