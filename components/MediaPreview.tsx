@@ -1,6 +1,6 @@
 import { ImagePreviewModal } from "./ImagePreviewModal";
 import { Button } from "./ui/button";
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { Image as ImageIcon } from "lucide-react";
 import { VideoThumbnailModal } from "./VideoThumbnailModal";
