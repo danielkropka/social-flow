@@ -4,7 +4,6 @@ import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
-import DashboardContent from "@/components/DashboardContent";
 import PostsContent from "@/components/PostsContent";
 
 export default function DashboardLayout({
@@ -18,11 +17,11 @@ export default function DashboardLayout({
   const renderContent = () => {
     switch (activeTab) {
       case "dashboard":
-        return <DashboardContent />;
+        return children;
       case "posts":
         return <PostsContent />;
       default:
-        return <DashboardContent />;
+        return children;
     }
   };
 
