@@ -8,15 +8,22 @@ import { STRIPE_PLANS } from "@/config/stripe";
 import { loadStripe } from "@stripe/stripe-js";
 import { Switch } from "./ui/switch";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function PricingSection() {
   const { data: session } = useSession();
   const [isAnnual, setIsAnnual] = useState(true);
   const [isLoading, startTransition] = useTransition();
   const [isFreeTrial, setIsFreeTrial] = useState(true);
+  const router = useRouter();
 
   const handleSubscribe = (priceId: string, key: string) => {
     startTransition(async () => {
+      if (!session?.user) {
+        router.push("/sign-in");
+        return;
+      }
+
       const stripe = await loadStripe(
         process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
       );

@@ -56,7 +56,11 @@ export function VideoThumbnailModal({
       toast.success("Nowa miniaturka została zapisana!");
       onClose();
     } catch (error) {
-      toast.error("Nie udało się zmienić miniaturki");
+      if (error instanceof Error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.error("Nie udało się zmienić miniaturki.");
     }
   };
 
