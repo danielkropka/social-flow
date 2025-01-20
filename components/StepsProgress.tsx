@@ -1,3 +1,4 @@
+import React from "react";
 import { cn } from "@/lib/utils";
 
 interface Step {
@@ -12,7 +13,7 @@ interface StepsProgressProps {
 
 export function StepsProgress({ steps, currentStep }: StepsProgressProps) {
   return (
-    <div className="flex items-center justify-between mb-4 sm:mb-8 px-2 sm:px-4">
+    <div className="flex items-center justify-between mb-8 sm:mb-12 px-2 sm:px-4">
       {steps.map((step, index) => (
         <div
           key={step.number}
@@ -21,7 +22,7 @@ export function StepsProgress({ steps, currentStep }: StepsProgressProps) {
           <div className="flex flex-col items-center relative">
             <div
               className={cn(
-                "w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center text-sm sm:text-base",
+                "w-8 h-8 sm:w-10 sm:h-10 rounded-full flex items-center justify-center text-sm sm:text-base font-bold",
                 step.number <= currentStep
                   ? "bg-blue-600 text-white"
                   : "bg-gray-200 text-gray-600"

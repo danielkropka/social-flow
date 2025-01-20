@@ -5,6 +5,7 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
+import { MediaPreview } from "./MediaPreview";
 
 interface MediaCarouselProps {
   files: File[];
@@ -17,19 +18,13 @@ export function MediaCarousel({ files, urls }: MediaCarouselProps) {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      {videos.map((url) => (
-        <div key={url} className="relative mx-auto">
-          <video
-            src={url}
-            className="max-h-[50vh] mx-auto"
-            preload="metadata"
-            controls
-            onLoadedData={(e) => {
-              const video = e.target as HTMLVideoElement;
-              video.play().then(() => video.pause());
-            }}
-          />
-        </div>
+      {videos.map((url, i) => (
+        <MediaPreview
+          key={url}
+          file={files[i]}
+          previewUrl={url}
+          className="max-h-[50vh] mx-auto"
+        />
       ))}
 
       {images.length > 0 && (
@@ -37,9 +32,9 @@ export function MediaCarousel({ files, urls }: MediaCarouselProps) {
           <CarouselContent>
             {images.map((imgUrl, i) => (
               <CarouselItem key={imgUrl}>
-                <img
-                  src={imgUrl}
-                  alt={files[i].name}
+                <MediaPreview
+                  file={files[i]}
+                  previewUrl={imgUrl}
                   className="max-h-[50vh] mx-auto object-contain"
                 />
               </CarouselItem>

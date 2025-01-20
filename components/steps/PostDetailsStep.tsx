@@ -73,14 +73,13 @@ const getPlatformIcon = (platform: string) => {
 export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
   const {
     selectedFiles,
-    previewUrls,
+    mediaUrls,
     selectedAccounts,
     postText,
     setPostText,
     scheduledDate,
     setScheduledDate,
     setCurrentStep,
-    mediaUrls,
     setContent,
   } = usePostCreation();
 
@@ -140,7 +139,7 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
 
       <div className="mb-6 p-2 sm:p-4 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
-        <MediaCarousel files={selectedFiles} urls={previewUrls} />
+        <MediaCarousel files={selectedFiles} urls={mediaUrls} />
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">

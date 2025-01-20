@@ -22,7 +22,7 @@ export default function RootLayout({
       <body className={cn("bg-white relative", inter.className)}>
         <Providers>
           {children}
-          <Toaster />
+          <Toaster position="top-center" />
         </Providers>
       </body>
     </html>

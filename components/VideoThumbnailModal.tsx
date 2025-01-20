@@ -1,144 +1,107 @@
-import { useRef, useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Slider } from "@/components/ui/slider";
+import { useEffect, useRef, useState } from "react";
+import { Dialog, DialogTitle, DialogContent, DialogHeader } from "./ui/dialog";
+import { Slider } from "./ui/slider";
 import Image from "next/image";
+import { Button } from "./ui/button";
+import { usePostCreation } from "@/context/PostCreationContext";
+import { toast } from "sonner";
 
 interface VideoThumbnailModalProps {
   isOpen: boolean;
-  onClose: () => void;
   videoUrl: string;
-  onThumbnailSelect: (thumbnailUrl: string) => void;
-  currentThumbnail?: string;
+  currentThumbnail: string;
+  onClose: () => void;
 }
 
 export function VideoThumbnailModal({
   isOpen,
-  onClose,
   videoUrl,
   currentThumbnail,
+  onClose,
 }: VideoThumbnailModalProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [currentFrame, setCurrentFrame] = useState<string | null>(
-    currentThumbnail || null
-  );
-  const [duration, setDuration] = useState(0);
-  const [currentTime, setCurrentTime] = useState(0);
+  const { setThumbnailUrl } = usePostCreation();
+  const videoRef = useRef<HTMLVideoElement | null>(null);
   const [isVideoReady, setIsVideoReady] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
 
-  const captureFrame = () => {
-    if (!videoRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-
-    const ctx = canvas.getContext("2d");
-    ctx?.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    setCurrentFrame(canvas.toDataURL("image/jpeg"));
+  const handleVideoLoaded = () => {
+    if (videoRef.current) {
+      setIsVideoReady(true);
+      setDuration(videoRef.current.duration);
+      videoRef.current.currentTime = currentTime;
+    }
   };
 
-  useEffect(() => {
-    const loadVideo = async () => {
-      if (!videoRef.current || !videoUrl) return;
-
-      try {
-        const video = videoRef.current;
-        video.src = videoUrl;
-
-        // Czekamy na załadowanie metadanych
-        await new Promise<void>((resolve) => {
-          const handleLoad = () => {
-            console.log("Video loaded, duration:", video.duration);
-            setDuration(video.duration);
-            setIsVideoReady(true);
-            resolve();
-          };
-
-          if (video.readyState >= 2) {
-            handleLoad();
-          } else {
-            video.addEventListener("loadeddata", handleLoad, { once: true });
-          }
-        });
-      } catch (error) {
-        console.error("Error loading video:", error);
-      }
-    };
-
-    loadVideo();
-  }, [videoUrl]);
-
-  const handleTimeChange = (value: number[]) => {
-    if (!videoRef.current || !isVideoReady) return;
-
+  const handleTimeUpdate = (value: number[]) => {
+    if (!videoRef.current) return;
     const newTime = value[0];
+
     videoRef.current.currentTime = newTime;
     setCurrentTime(newTime);
-    captureFrame();
   };
 
-  const handleVideoTimeUpdate = () => {
-    captureFrame();
+  const captureThumbnail = () => {
+    try {
+      if (!videoRef.current) throw new Error("Video not found");
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const context = canvas.getContext("2d");
+      if (!context) throw new Error("Context not found");
+      context.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      const dataUrl = canvas.toDataURL();
+      setThumbnailUrl(dataUrl);
+
+      toast.success("Nowa miniaturka została zapisana!");
+      onClose();
+    } catch (error) {
+      toast.error("Nie udało się zmienić miniaturki");
+    }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
-          <DialogTitle>Wybierz miniaturę filmu</DialogTitle>
+          <DialogTitle>Wybierz miniaturkę</DialogTitle>
         </DialogHeader>
-
-        <div className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">
-                Aktualna klatka
-              </p>
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                <video
-                  ref={videoRef}
-                  className="w-full h-full object-cover"
-                  onTimeUpdate={handleVideoTimeUpdate}
-                  preload="auto"
-                  muted
-                  playsInline
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-gray-500">
-                {currentFrame === currentThumbnail
-                  ? "Zapisana miniatura"
-                  : "Nowa miniatura"}
-              </p>
-              <div className="aspect-video bg-black rounded-lg overflow-hidden">
-                {(currentFrame || currentThumbnail) && (
-                  <Image
-                    src={currentFrame || currentThumbnail || ""}
-                    alt="Podgląd miniatury"
-                    className="w-full h-full object-contain"
-                    fill
-                  />
-                )}
-              </div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-2 flex flex-col items-center justify-center">
+            <p className="text-sm font-medium text-gray-500 text-left">
+              Nowa miniaturka
+            </p>
+            <div className="w-3/4 h-4/5 overflow-hidden">
+              <video
+                ref={videoRef}
+                src={videoUrl}
+                onLoadedMetadata={handleVideoLoaded}
+                className="w-full h-full object-cover rounded-md shadow-md mx-auto"
+              />
             </div>
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 flex flex-col items-center justify-center">
+            <p className="text-sm font-medium text-gray-500">
+              Aktualna miniaturka
+            </p>
+            <div className="w-3/4 h-4/5 overflow-hidden relative">
+              <Image
+                src={currentThumbnail}
+                alt="Current Thumbnail"
+                className="rounded-md shadow-md"
+                fill
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2 col-span-2">
             <Slider
               value={[currentTime]}
               min={0}
               max={duration}
-              step={0.1}
-              onValueChange={handleTimeChange}
+              step={0.001}
+              onValueChange={handleTimeUpdate}
               className="w-full"
               disabled={!isVideoReady}
             />
@@ -147,6 +110,14 @@ export function VideoThumbnailModal({
                 ? `${Math.floor(currentTime)}/${Math.floor(duration)} sekund`
                 : "Ładowanie..."}
             </div>
+          </div>
+          <div className="col-span-2 flex justify-end">
+            <Button variant="secondary" onClick={onClose} className="mr-2">
+              Anuluj
+            </Button>
+            <Button type="button" onClick={captureThumbnail}>
+              Zapisz miniaturkę
+            </Button>
           </div>
         </div>
       </DialogContent>

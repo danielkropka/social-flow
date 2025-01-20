@@ -16,22 +16,31 @@ import { useSession, signOut } from "next-auth/react";
 import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
-const menuItems = [
-  { href: "/dashboard", icon: PlusCircle, label: "Nowy post", primary: true },
-  { href: "/dashboard/scheduled", icon: Clock, label: "Zaplanowane" },
-  { href: "/dashboard/posts", icon: List, label: "Lista postów" },
-  { href: "/dashboard/accounts", icon: Share2, label: "Połączone konta" },
+const contentCreationItems = [
+  { href: "dashboard", icon: PlusCircle, label: "Nowy post", primary: true },
+  { href: "scheduled", icon: Clock, label: "Zaplanowane" },
+  { href: "posts", icon: List, label: "Lista postów" },
+];
+
+const configurationItems = [
+  { href: "accounts", icon: Share2, label: "Połączone konta" },
 ];
 
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
+  onTabChange: (tab: string) => void;
 }
 
-export function Sidebar({ isOpen, onClose }: SidebarProps) {
+export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+
+  const handleNavigation = (tab: string) => {
+    onTabChange(tab);
+    onClose();
+  };
 
   return (
     <>
@@ -78,45 +87,84 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
         {/* Main navigation */}
         <nav className="flex-1 px-3 py-4 border-b border-gray-100">
-          {menuItems.map((item) => {
-            const isActive = pathname === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={onClose}
-                className={`
-                  group flex items-center gap-3 px-3 py-2.5 mb-1.5
-                  rounded-xl transition-all relative
-                  ${
-                    item.primary
-                      ? "bg-blue-50 text-blue-600 hover:text-white shadow-sm"
-                      : isActive
-                      ? "bg-gray-50 text-gray-900"
-                      : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                  }
-                `}
-              >
-                {item.primary && (
-                  <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                )}
-                <item.icon
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-gray-500 mb-3">
+              Tworzenie treści
+            </h3>
+            {contentCreationItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => handleNavigation(item.href)}
                   className={`
-                  h-5 w-5 flex-shrink-0 relative z-10
-                  ${
-                    item.primary
-                      ? "group-hover:scale-110"
-                      : "group-hover:scale-110"
-                  }
-                  transition-transform duration-200
-                `}
-                />
-                <span className="font-medium text-sm relative z-10">
-                  {item.label}
-                </span>
-              </Link>
-            );
-          })}
+                    group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
+                    rounded-xl transition-all relative
+                    ${
+                      item.primary
+                        ? "bg-blue-50 text-blue-600 hover:text-white shadow-sm"
+                        : isActive
+                        ? "bg-gray-50 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }
+                  `}
+                >
+                  {item.primary && (
+                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                  )}
+                  <item.icon
+                    className={`
+                    h-5 w-5 flex-shrink-0 relative z-10
+                    ${
+                      item.primary
+                        ? "group-hover:scale-110"
+                        : "group-hover:scale-110"
+                    }
+                    transition-transform duration-200
+                  `}
+                  />
+                  <span className="font-medium text-sm relative z-10">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div>
+            <h3 className="text-sm font-semibold text-gray-500 mb-3">
+              Konfiguracja
+            </h3>
+            {configurationItems.map((item) => {
+              const isActive = pathname === item.href;
+              return (
+                <button
+                  key={item.href}
+                  onClick={() => handleNavigation(item.href)}
+                  className={`
+                    group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
+                    rounded-xl transition-all relative
+                    ${
+                      isActive
+                        ? "bg-gray-50 text-gray-900"
+                        : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                    }
+                  `}
+                >
+                  <item.icon
+                    className={`
+                    h-5 w-5 flex-shrink-0 relative z-10
+                    group-hover:scale-110
+                    transition-transform duration-200
+                  `}
+                  />
+                  <span className="font-medium text-sm relative z-10">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </nav>
 
         {/* User profile */}

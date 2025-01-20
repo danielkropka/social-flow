@@ -1,10 +1,11 @@
 "use client";
 
+import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
-import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import DashboardContent from "@/components/DashboardContent";
+import PostsContent from "@/components/PostsContent";
 
 export default function DashboardLayout({
   children,
@@ -12,12 +13,18 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState("dashboard");
 
-  const { update } = useSession();
-
-  useEffect(() => {
-    update();
-  }, []);
+  const renderContent = () => {
+    switch (activeTab) {
+      case "dashboard":
+        return <DashboardContent />;
+      case "posts":
+        return <PostsContent />;
+      default:
+        return <DashboardContent />;
+    }
+  };
 
   return (
     <PostCreationProvider>
@@ -27,8 +34,9 @@ export default function DashboardLayout({
           <Sidebar
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}
+            onTabChange={setActiveTab}
           />
-          <main className="flex-1 overflow-y-auto p-4">{children}</main>
+          <main className="flex-1 overflow-y-auto p-4">{renderContent()}</main>
         </div>
       </div>
     </PostCreationProvider>

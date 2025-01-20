@@ -1,10 +1,9 @@
-"use client";
+import { PostDetailsStep } from "./steps/PostDetailsStep";
 
-import { PostDetailsStep } from "@/components/steps/PostDetailsStep";
 import { usePostCreation } from "@/context/PostCreationContext";
-import { FileUploadStep } from "@/components/steps/FileUploadStep";
-import { StepsProgress } from "@/components/StepsProgress";
-import { AccountSelectionStep } from "@/components/steps/AccountSelectionStep";
+import { FileUploadStep } from "./steps/FileUploadStep";
+import { StepsProgress } from "./StepsProgress";
+import { AccountSelectionStep } from "./steps/AccountSelectionStep";
 import { toast } from "sonner";
 
 export default function DashboardContent() {

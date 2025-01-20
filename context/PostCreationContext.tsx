@@ -11,21 +11,23 @@ type PostText = {
 
 interface PostCreationContextType {
   selectedFiles: File[];
-  previewUrls: string[];
   selectedAccounts: string[];
   postText: PostText;
   scheduledDate: Date | undefined;
   currentStep: number;
   content: string;
   mediaUrls: string[];
+  isTextOnly: boolean;
+  thumbnailUrl: string | null;
   setSelectedFiles: (files: File[]) => void;
-  setPreviewUrls: (urls: string[]) => void;
   setSelectedAccounts: (accounts: string[]) => void;
   setPostText: (text: PostText) => void;
   setScheduledDate: (date: Date | undefined) => void;
   setCurrentStep: (step: number) => void;
   setContent: (content: string) => void;
   setMediaUrls: (urls: string[]) => void;
+  setIsTextOnly: (value: boolean) => void;
+  setThumbnailUrl: (url: string | null) => void;
 }
 
 const PostCreationContext = createContext<PostCreationContextType | undefined>(
@@ -38,33 +40,36 @@ export function PostCreationProvider({
   children: React.ReactNode;
 }) {
   const [selectedFiles, setSelectedFiles] = useState<File[]>([]);
-  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>([]);
   const [postText, setPostText] = useState<PostText>({ default: "" });
   const [scheduledDate, setScheduledDate] = useState<Date>();
   const [currentStep, setCurrentStep] = useState(1);
   const [content, setContent] = useState("");
   const [mediaUrls, setMediaUrls] = useState<string[]>([]);
+  const [isTextOnly, setIsTextOnly] = useState(false);
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null);
 
   return (
     <PostCreationContext.Provider
       value={{
         selectedFiles,
-        previewUrls,
         selectedAccounts,
         postText,
         scheduledDate,
         currentStep,
         mediaUrls,
         content,
+        isTextOnly,
+        thumbnailUrl,
         setSelectedFiles,
-        setPreviewUrls,
         setSelectedAccounts,
         setPostText,
         setScheduledDate,
         setCurrentStep,
         setContent,
         setMediaUrls,
+        setIsTextOnly,
+        setThumbnailUrl,
       }}
     >
       {children}

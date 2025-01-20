@@ -1,6 +1,5 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Facebook, Instagram, Twitter, Search } from "lucide-react";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { usePostCreation } from "@/context/PostCreationContext";
 import { socialAccounts } from "@/data/accounts";
@@ -8,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import Image from "next/image";
+import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+import { Search } from "lucide-react";
 
 export function AccountSelectionStep() {
   const {
     selectedFiles,
-    previewUrls,
+    mediaUrls,
     selectedAccounts,
     setSelectedAccounts,
     setCurrentStep,
@@ -23,11 +24,11 @@ export function AccountSelectionStep() {
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case "facebook":
-        return <Facebook className="h-5 w-5 text-blue-600" />;
+        return <FaFacebook className="h-5 w-5 text-blue-600" />;
       case "instagram":
-        return <Instagram className="h-5 w-5 text-pink-600" />;
+        return <FaInstagram className="h-5 w-5 text-pink-600" />;
       case "twitter":
-        return <Twitter className="h-5 w-5 text-blue-400" />;
+        return <FaTwitter className="h-5 w-5 text-blue-400" />;
       default:
         return null;
     }
@@ -65,7 +66,7 @@ export function AccountSelectionStep() {
 
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
-        <MediaCarousel files={selectedFiles} urls={previewUrls} />
+        <MediaCarousel files={selectedFiles} urls={mediaUrls} />
       </div>
 
       <div className="relative mb-6">
@@ -73,20 +74,12 @@ export function AccountSelectionStep() {
           placeholder="Szukaj kont..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
+          className="pl-10 w-full border border-gray-300 rounded-lg"
         />
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-500" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
       </div>
 
-      <div
-        style={{
-          height: "400px",
-          overflowY: "auto",
-          paddingRight: "8px",
-          marginRight: "-8px",
-        }}
-        className="space-y-6 scroll-smooth"
-      >
+      <div className="h-[400px] overflow-y-auto pr-2 -mr-2 space-y-6 scroll-smooth">
         <AnimatePresence>
           {Object.entries(groupedAccounts).map(
             ([platform, accounts]) =>
@@ -106,74 +99,72 @@ export function AccountSelectionStep() {
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
                     <AnimatePresence>
                       {accounts.map((account) => (
-                        <motion.div
+                        <div
                           key={account.id}
-                          layout
-                          initial={{ opacity: 0, scale: 0.9 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ duration: 0.2 }}
-                          whileHover={{
-                            borderColor: "#2563eb",
-                          }}
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            padding: "0.75rem",
-                            borderRadius: "0.5rem",
-                            border: `1px solid ${
+                          onClick={() => {
+                            setSelectedAccounts(
                               selectedAccounts.includes(account.id)
-                                ? "#2563eb"
-                                : "#e5e7eb"
-                            }`,
-                            backgroundColor: selectedAccounts.includes(
-                              account.id
-                            )
-                              ? "#eff6ff"
-                              : "#ffffff",
-                            cursor: "pointer",
-                            transition: "border-color 0.2s ease",
+                                ? selectedAccounts.filter(
+                                    (id) => id !== account.id
+                                  )
+                                : [...selectedAccounts, account.id]
+                            );
                           }}
                         >
-                          <div
-                            onClick={() => {
-                              setSelectedAccounts(
-                                selectedAccounts.includes(account.id)
-                                  ? selectedAccounts.filter(
-                                      (id) => id !== account.id
-                                    )
-                                  : [...selectedAccounts, account.id]
-                              );
+                          <motion.div
+                            key={account.id}
+                            layout
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            transition={{ duration: 0.2 }}
+                            whileHover={{
+                              borderColor: "#2563eb",
                             }}
                             style={{
                               display: "flex",
                               alignItems: "center",
-                              width: "100%",
+                              padding: "0.75rem",
+                              borderRadius: "0.5rem",
+                              border: `1px solid ${
+                                selectedAccounts.includes(account.id)
+                                  ? "#2563eb"
+                                  : "#e5e7eb"
+                              }`,
+                              backgroundColor: selectedAccounts.includes(
+                                account.id
+                              )
+                                ? "#eff6ff"
+                                : "#ffffff",
+                              cursor: "pointer",
+                              transition: "border-color 0.2s ease",
                             }}
                           >
-                            <div className="relative">
-                              <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                                <Image
-                                  src={account.avatar}
-                                  alt={account.name}
-                                  fill
-                                  className="object-cover"
-                                />
+                            <div className="flex items-center w-full">
+                              <div className="relative">
+                                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
+                                  <Image
+                                    src={account.avatar}
+                                    alt={account.name}
+                                    fill
+                                    className="object-cover"
+                                  />
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border border-gray-100">
+                                  {getPlatformIcon(account.platform)}
+                                </div>
                               </div>
-                              <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border border-gray-100">
-                                {getPlatformIcon(account.platform)}
+                              <div className="min-w-0 ml-3">
+                                <p className="font-medium truncate">
+                                  {account.name}
+                                </p>
+                                <p className="text-sm text-gray-500 truncate">
+                                  {account.accountType}
+                                </p>
                               </div>
                             </div>
-                            <div className="min-w-0 ml-3">
-                              <p className="font-medium truncate">
-                                {account.name}
-                              </p>
-                              <p className="text-sm text-gray-500 truncate">
-                                {account.accountType}
-                              </p>
-                            </div>
-                          </div>
-                        </motion.div>
+                          </motion.div>
+                        </div>
                       ))}
                     </AnimatePresence>
                   </div>

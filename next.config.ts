@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
         hostname: "api.dicebear.com",
       },
     ],
+    dangerouslyAllowSVG: true, // delete this after testing
   },
 };
 
