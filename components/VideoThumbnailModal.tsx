@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogHeader } from "./ui/dialog";
 import { Slider } from "./ui/slider";
 import Image from "next/image";
