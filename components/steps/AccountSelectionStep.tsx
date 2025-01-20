@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { usePostCreation } from "@/context/PostCreationContext";

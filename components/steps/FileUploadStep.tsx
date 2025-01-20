@@ -1,5 +1,4 @@
 import React, { useRef } from "react";
-import { Card } from "@/components/ui/card";
 import { MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "@/constants";
 import { MediaPreview } from "@/components/MediaPreview";
 import { usePostCreation } from "@/context/PostCreationContext";
