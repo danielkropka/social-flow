@@ -17,9 +17,10 @@ export default function DashboardContent() {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <StepsProgress steps={steps} currentStep={currentStep} />
-
+    <div>
+      {currentStep !== 1 && (
+        <StepsProgress steps={steps} currentStep={currentStep} />
+      )}
       {currentStep === 1 && <FileUploadStep />}
 
       {currentStep === 2 && <AccountSelectionStep />}

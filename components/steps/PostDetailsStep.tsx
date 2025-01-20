@@ -134,13 +134,13 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
   };
 
   return (
-    <Card className="p-4 sm:p-6 max-w-4xl mx-auto">
-      <h2 className="text-xl font-semibold mb-4">Szczegóły posta</h2>
-
+    <>
       <div className="mb-6 p-2 sm:p-4 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
         <MediaCarousel files={selectedFiles} urls={mediaUrls} />
       </div>
+
+      <h2 className="text-2xl font-semibold mb-4">Szczegóły posta</h2>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-4">
@@ -330,6 +330,6 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
           <Button>{scheduledDate ? "Zaplanuj post" : "Opublikuj post"}</Button>
         </div>
       </form>
-    </Card>
+    </>
   );
 }

@@ -80,8 +80,7 @@ export function FileUploadStep() {
   };
 
   return (
-    <Card className="p-6 shadow-md rounded-lg bg-white">
-      <h2 className="text-xl font-bold mb-4 text-gray-900">Utwórz post</h2>
+    <>
       <div className="flex border-b mb-4 relative">
         <button
           className={cn(
@@ -167,6 +166,6 @@ export function FileUploadStep() {
         className="hidden"
         onChange={(e) => handleFileSelect(Array.from(e.target.files || []))}
       />
-    </Card>
+    </>
   );
 }

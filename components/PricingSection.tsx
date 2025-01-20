@@ -24,58 +24,66 @@ export default function PricingSection() {
         return;
       }
 
-      const stripe = await loadStripe(
-        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-      );
+      try {
+        const stripe = await loadStripe(
+          process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+        );
 
-      let response: Response;
+        if (!stripe) throw new Error("Wystąpił błąd podczas ładowania Stripe.");
 
-      console.log(session?.user.subscriptionType);
+        let response: Response;
 
-      if (
-        session?.user.subscriptionType &&
-        session?.user.subscriptionType !== "FREE"
-      ) {
-        response = await fetch("/api/create-billing-portal-session", {
+        if (
+          session?.user.subscriptionType &&
+          session?.user.subscriptionType !== "FREE"
+        ) {
+          response = await fetch("/api/create-billing-portal-session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              customerId: session?.user.stripeCustomerId,
+            }),
+          });
+
+          const billingPortalSession = await response.json();
+
+          if (billingPortalSession.error)
+            throw new Error(billingPortalSession.error);
+
+          if (billingPortalSession.url)
+            window.location.href = billingPortalSession.url;
+
+          return;
+        }
+
+        response = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            customerId: session?.user.stripeCustomerId,
+            priceId,
+            email: session?.user?.email,
+            customerId: session?.user?.stripeCustomerId,
+            planKey: key,
+            interval: isAnnual ? "YEAR" : "MONTH",
+            isFreeTrial,
           }),
         });
 
-        const billingPortalSession = await response.json();
+        const checkoutSession = await response.json();
 
-        if (billingPortalSession.url) {
-          window.location.href = billingPortalSession.url;
+        if (checkoutSession.error) throw new Error(checkoutSession.error);
+
+        await stripe.redirectToCheckout({ sessionId: checkoutSession.id });
+      } catch (error) {
+        if (error instanceof Error) {
+          toast.error(error.message);
+          return;
         }
-
-        return;
-      }
-
-      response = await fetch("/api/create-checkout-session", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          priceId,
-          email: session?.user?.email,
-          customerId: session?.user?.stripeCustomerId,
-          planKey: key,
-          interval: isAnnual ? "YEAR" : "MONTH",
-          isFreeTrial,
-        }),
-      });
-
-      const checkoutSession = await response.json();
-
-      if (checkoutSession.error && response.status === 400) {
-        toast.error(checkoutSession.error);
-      } else {
-        await stripe?.redirectToCheckout({ sessionId: checkoutSession.id });
+        toast.error("Wystąpił nieznany błąd podczas tworzenia sesji Stripe.");
       }
     });
   };

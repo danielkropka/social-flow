@@ -59,15 +59,15 @@ export function AccountSelectionStep() {
   }, {} as Record<string, typeof socialAccounts>);
 
   return (
-    <Card className="p-6">
-      <h2 className="text-xl font-semibold mb-4">
-        Wybierz konta do publikacji
-      </h2>
-
+    <>
       <div className="mb-6 p-4 bg-gray-50 rounded-lg">
         <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
         <MediaCarousel files={selectedFiles} urls={mediaUrls} />
       </div>
+
+      <h2 className="text-2xl font-semibold mb-4">
+        Wybierz konta na których chcesz opublikować post
+      </h2>
 
       <div className="relative mb-6">
         <Input
@@ -196,6 +196,6 @@ export function AccountSelectionStep() {
           Dalej
         </Button>
       </div>
-    </Card>
+    </>
   );
 }

@@ -13,7 +13,7 @@ interface StepsProgressProps {
 
 export function StepsProgress({ steps, currentStep }: StepsProgressProps) {
   return (
-    <div className="flex items-center justify-between mb-8 sm:mb-12 px-2 sm:px-4">
+    <div className="flex items-center justify-between mb-8 sm:mb-12 px-2 sm:px-4 max-w-2xl mx-auto">
       {steps.map((step, index) => (
         <div
           key={step.number}
