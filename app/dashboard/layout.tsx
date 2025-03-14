@@ -6,6 +6,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import PostsContent from "@/components/PostsContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AccountsContent from "@/components/AccountsContent";
 
 export default function DashboardLayout({
   children,
@@ -21,6 +22,8 @@ export default function DashboardLayout({
         return children;
       case "posts":
         return <PostsContent />;
+      case "accounts":
+        return <AccountsContent />;
       default:
         return children;
     }
@@ -35,12 +38,17 @@ export default function DashboardLayout({
             isOpen={isMobileMenuOpen}
             onClose={() => setIsMobileMenuOpen(false)}
             onTabChange={setActiveTab}
+            activeTab={activeTab}
           />
           <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
             <Card className="max-w-6xl mx-auto">
               <CardHeader>
                 <CardTitle className="text-xl font-semibold">
-                  {activeTab === "posts" ? "Posty" : "Utwórz post"}
+                  {activeTab === "posts"
+                    ? "Posty"
+                    : activeTab === "accounts"
+                    ? "Połączone konta"
+                    : "Utwórz post"}
                 </CardTitle>
               </CardHeader>
               <CardContent>{renderContent()}</CardContent>

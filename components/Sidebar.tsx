@@ -17,7 +17,7 @@ import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const contentCreationItems = [
-  { href: "dashboard", icon: PlusCircle, label: "Nowy post", primary: true },
+  { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
   { href: "scheduled", icon: Clock, label: "Zaplanowane" },
   { href: "posts", icon: List, label: "Lista postów" },
 ];
@@ -30,9 +30,15 @@ interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
   onTabChange: (tab: string) => void;
+  activeTab: string;
 }
 
-export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
+export function Sidebar({
+  isOpen,
+  onClose,
+  onTabChange,
+  activeTab,
+}: SidebarProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
@@ -92,7 +98,7 @@ export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
               Tworzenie treści
             </h3>
             {contentCreationItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = activeTab === item.href;
               return (
                 <button
                   key={item.href}
@@ -101,25 +107,16 @@ export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
                     group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
                     rounded-xl transition-all relative
                     ${
-                      item.primary
-                        ? "bg-blue-50 text-blue-600 hover:text-white shadow-sm"
-                        : isActive
-                        ? "bg-gray-50 text-gray-900"
+                      isActive
+                        ? "bg-blue-50 text-blue-600 shadow-sm"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }
                   `}
                 >
-                  {item.primary && (
-                    <div className="absolute inset-0 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
-                  )}
                   <item.icon
                     className={`
                     h-5 w-5 flex-shrink-0 relative z-10
-                    ${
-                      item.primary
-                        ? "group-hover:scale-110"
-                        : "group-hover:scale-110"
-                    }
+                    ${isActive ? "text-blue-600" : "text-gray-600"}
                     transition-transform duration-200
                   `}
                   />
@@ -136,7 +133,7 @@ export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
               Konfiguracja
             </h3>
             {configurationItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = activeTab === item.href;
               return (
                 <button
                   key={item.href}
@@ -146,7 +143,7 @@ export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
                     rounded-xl transition-all relative
                     ${
                       isActive
-                        ? "bg-gray-50 text-gray-900"
+                        ? "bg-blue-50 text-blue-600 shadow-sm"
                         : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                     }
                   `}
@@ -154,7 +151,7 @@ export function Sidebar({ isOpen, onClose, onTabChange }: SidebarProps) {
                   <item.icon
                     className={`
                     h-5 w-5 flex-shrink-0 relative z-10
-                    group-hover:scale-110
+                      ${isActive ? "text-blue-600" : "text-gray-600"}
                     transition-transform duration-200
                   `}
                   />
