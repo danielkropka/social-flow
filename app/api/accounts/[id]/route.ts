@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  context: { params: { id: string } }
 ) {
   try {
     const session = await getAuthSession();
@@ -21,7 +21,7 @@ export async function DELETE(
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await prisma.connectedAccount.findFirst({
       where: {
-        id: params.id,
+        id: context.params.id,
         userId: session.user.id,
       },
     });
@@ -36,7 +36,7 @@ export async function DELETE(
     // Usuń konto
     await prisma.connectedAccount.delete({
       where: {
-        id: params.id,
+        id: context.params.id,
       },
     });
 
