@@ -1,17 +1,13 @@
-import { NextResponse, NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-// Definiujemy interfejs dla parametrów routingu
-interface RouteParams {
-  params: {
-    id: string;
-  };
-}
-
-export async function DELETE(req: NextRequest, { params }: RouteParams) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const session = await getAuthSession();
 
