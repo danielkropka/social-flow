@@ -4,10 +4,14 @@ import { getAuthSession } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: { id: string } }
-) {
+// Definiujemy interfejs dla parametrów routingu
+interface RouteParams {
+  params: {
+    id: string;
+  };
+}
+
+export async function DELETE(req: NextRequest, { params }: RouteParams) {
   try {
     const session = await getAuthSession();
 
@@ -40,7 +44,10 @@ export async function DELETE(
       },
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json(
+      { message: "Konto zostało pomyślnie usunięte" },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Błąd podczas usuwania konta:", error);
     return NextResponse.json(
