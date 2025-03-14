@@ -8,12 +8,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import {
-  FaFacebook,
-  FaInstagram,
-  FaTwitter,
-  FaPinterest,
-} from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import Image from "next/image";
 import { X } from "lucide-react";
 import {

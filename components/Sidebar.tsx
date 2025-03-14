@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import {
   PlusCircle,
   List,
@@ -39,7 +38,6 @@ export function Sidebar({
   onTabChange,
   activeTab,
 }: SidebarProps) {
-  const pathname = usePathname();
   const { data: session } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
