@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { PrismaClient } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 
 const prisma = new PrismaClient();
 
 export async function DELETE(
-  request: Request,
-  context: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getAuthSession();
@@ -21,7 +21,7 @@ export async function DELETE(
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await prisma.connectedAccount.findFirst({
       where: {
-        id: context.params.id,
+        id: params.id,
         userId: session.user.id,
       },
     });
@@ -36,7 +36,7 @@ export async function DELETE(
     // Usuń konto
     await prisma.connectedAccount.delete({
       where: {
-        id: context.params.id,
+        id: params.id,
       },
     });
 
