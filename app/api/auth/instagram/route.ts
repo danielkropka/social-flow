@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     // Pobierz informacje o koncie Instagram
     const userInfoResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username&access_token=${data.access_token}`
+      `https://graph.instagram.com/me?fields=id,username,profile_picture_url&access_token=${data.access_token}`
     );
 
     if (!userInfoResponse.ok) {
@@ -85,6 +85,7 @@ export async function POST(request: Request) {
         accessToken: longLivedTokenData.access_token,
         expiresAt: new Date(Date.now() + longLivedTokenData.expires_in * 1000),
         username: userInfo.username,
+        profileImage: userInfo.profile_picture_url,
       },
       create: {
         provider: "INSTAGRAM",
@@ -93,6 +94,7 @@ export async function POST(request: Request) {
         expiresAt: new Date(Date.now() + longLivedTokenData.expires_in * 1000),
         name: userInfo.username,
         username: userInfo.username,
+        profileImage: userInfo.profile_picture_url,
         userId: session.user.id,
       },
     });

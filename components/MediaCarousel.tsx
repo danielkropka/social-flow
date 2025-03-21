@@ -6,6 +6,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { MediaPreview } from "./MediaPreview";
+import { useMemo } from "react";
 
 interface MediaCarouselProps {
   files: File[];
@@ -13,14 +14,25 @@ interface MediaCarouselProps {
 }
 
 export function MediaCarousel({ files, urls }: MediaCarouselProps) {
-  const images = urls.filter((_, i) => !files[i].type.startsWith("video/"));
-  const videos = urls.filter((_, i) => files[i].type.startsWith("video/"));
+  const { images, videos } = useMemo(() => {
+    const images = urls.filter((_, i) => !files[i].type.startsWith("video/"));
+    const videos = urls.filter((_, i) => files[i].type.startsWith("video/"));
+    return { images, videos };
+  }, [files, urls]);
+
+  if (!files.length) {
+    return (
+      <div className="w-full h-48 bg-gray-50 flex items-center justify-center rounded-lg">
+        <p className="text-gray-500 text-sm">Brak mediów do wyświetlenia</p>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 gap-4">
       {videos.map((url, i) => (
         <MediaPreview
-          key={url}
+          key={`video-${i}`}
           file={files[i]}
           previewUrl={url}
           className="max-h-[50vh] mx-auto"
@@ -31,7 +43,7 @@ export function MediaCarousel({ files, urls }: MediaCarouselProps) {
         <Carousel className="w-full relative mx-auto">
           <CarouselContent>
             {images.map((imgUrl, i) => (
-              <CarouselItem key={imgUrl}>
+              <CarouselItem key={`image-${i}`}>
                 <MediaPreview
                   file={files[i]}
                   previewUrl={imgUrl}

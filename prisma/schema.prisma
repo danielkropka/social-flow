@@ -42,22 +42,23 @@ enum Provider {
 }
 
 model Account {
-    id                String  @id @default(auto()) @map("_id") @db.ObjectId
-    userId            String  @db.ObjectId
+    id                String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId            String   @db.ObjectId
     type              String
-    provider          String
+    provider          Provider
     providerAccountId String
-    refresh_token     String? @db.String
-    access_token      String? @db.String
+    refresh_token     String?  @db.String
+    access_token      String?  @db.String
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? @db.String
+    id_token          String?  @db.String
     session_state     String?
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
+    @@index([userId])
 }
 
 model User {
@@ -70,7 +71,7 @@ model User {
     connectedAccounts ConnectedAccount[]
     accounts          Account[]
     sessions          Session[]
-    gotFreeTrial      Boolean?           @default(false)
+    gotFreeTrial      Boolean            @default(false)
 
     stripeCustomerId     String?       @unique
     stripeSubscriptionId String?       @unique
@@ -80,7 +81,7 @@ model User {
     subscriptionStart    DateTime?
     subscriptionEnd      DateTime?
 
-    Post Post[]
+    posts Post[]
 }
 
 model Session {
@@ -89,17 +90,22 @@ model Session {
     userId       String   @db.ObjectId
     expires      DateTime
     user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
 }
 
 model Media {
-    id        String    @id @default(auto()) @map("_id") @db.ObjectId
-    url       String
-    type      MediaType
-    postId    String    @db.ObjectId
-    post      Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-    createdAt DateTime  @default(now())
+    id           String    @id @default(auto()) @map("_id") @db.ObjectId
+    url          String
+    type         MediaType
+    thumbnailUrl String?
+    postId       String    @db.ObjectId
+    post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+    createdAt    DateTime  @default(now())
+    updatedAt    DateTime  @updatedAt
 
     @@index([postId])
+    @@index([type])
 }
 
 model Post {
@@ -117,6 +123,8 @@ model Post {
     postConnectedAccounts PostConnectedAccount[]
 
     @@index([userId])
+    @@index([published])
+    @@index([publishedAt])
 }
 
 model ConnectedAccount {
@@ -126,9 +134,9 @@ model ConnectedAccount {
     accessToken       String
     refreshToken      String?
     expiresAt         DateTime?
-    name              String // nazwa konta np. "Moja Firma Facebook"
-    username          String // nazwa użytkownika w danym serwisie
-    profileImage      String? // zdjęcie profilowe konta
+    name              String
+    username          String
+    profileImage      String?
 
     // Relacje
     userId                String                 @db.ObjectId
@@ -149,6 +157,7 @@ model PostConnectedAccount {
     post               Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
     connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
 
+    @@unique([postId, connectedAccountId])
     @@index([postId])
     @@index([connectedAccountId])
 }

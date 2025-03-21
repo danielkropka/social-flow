@@ -16,6 +16,8 @@ import {
   Facebook,
   Instagram,
   Twitter,
+  Loader2,
+  AlertCircle,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { pl } from "date-fns/locale";
@@ -25,7 +27,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState } from "react";
-import { toast } from "sonner";
+import { useApi } from "@/hooks/useApi";
+import { createPost } from "@/lib/api/client";
+import { API_SUCCESS_MESSAGES } from "@/constants";
 
 const getMinScheduleTime = () => {
   const now = new Date();
@@ -80,9 +84,22 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
     setScheduledDate,
     setCurrentStep,
     setContent,
+    isTextOnly,
+    content,
+    thumbnailUrl,
   } = usePostCreation();
 
   const [isCustomText, setIsCustomText] = useState(false);
+
+  const { execute: publishPost, isLoading: isPublishing } = useApi(createPost, {
+    showSuccessToast: true,
+    successMessage: scheduledDate
+      ? API_SUCCESS_MESSAGES.POST_SCHEDULED
+      : API_SUCCESS_MESSAGES.POST_PUBLISHED,
+    onSuccess: () => {
+      onPublish();
+    },
+  });
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -97,135 +114,144 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
     },
   });
 
-  const handlePublish = async () => {
-    try {
-      const currentText = form.getValues("text.default");
-      const response = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: currentText,
-          mediaUrls,
-          accountIds: selectedAccounts,
-          scheduledDate: scheduledDate,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to publish post");
-      }
-
-      onPublish();
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error("Wystąpił błąd podczas publikowania posta");
-      }
-    }
-  };
-
   const onSubmit = async (data: PostFormValues) => {
     setPostText(data.text);
     setContent(data.text.default);
     setScheduledDate(data.scheduledDate);
-    await handlePublish();
+
+    await publishPost({
+      content: data.text.default,
+      mediaUrls: mediaUrls.map((url, index) => ({
+        url,
+        thumbnailUrl: selectedFiles[index]?.type.startsWith("video/")
+          ? thumbnailUrl
+          : null,
+      })),
+      accountIds: selectedAccounts,
+      scheduledDate: data.scheduledDate,
+    });
   };
 
   return (
-    <>
-      <div className="mb-6 p-2 sm:p-4 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
-        <MediaCarousel files={selectedFiles} urls={mediaUrls} />
+    <div className="space-y-6 animate-fade-in">
+      {!isTextOnly && (
+        <div className="bg-gray-50 rounded-lg p-4 shadow-sm">
+          <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
+          <MediaCarousel files={selectedFiles} urls={mediaUrls} />
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Szczegóły posta
+        </h2>
+        <p className="text-gray-500">
+          {scheduledDate
+            ? "Zaplanuj post na wybraną datę i godzinę"
+            : "Opublikuj post natychmiast lub zaplanuj na później"}
+        </p>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4">Szczegóły posta</h2>
-
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <div className="space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-            <Label htmlFor="text">Tekst posta</Label>
-            {selectedAccounts.length > 1 && (
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={() => setIsCustomText(!isCustomText)}
-              >
-                {isCustomText
-                  ? "Użyj wspólnego tekstu"
-                  : "Dostosuj tekst per platforma"}
-              </Button>
-            )}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        {isTextOnly ? (
+          <div className="space-y-4">
+            <div className="bg-gray-50 rounded-lg p-4">
+              <Label className="text-base mb-2 block">Tekst posta</Label>
+              <p className="text-gray-700 whitespace-pre-wrap">{content}</p>
+            </div>
           </div>
-
-          {!isCustomText ? (
-            <div>
-              <Textarea
-                {...form.register("text.default")}
-                placeholder="Wpisz tekst posta..."
-                className={cn(
-                  "mt-1",
-                  form.formState.errors.text?.default &&
-                    "border-red-500 focus-visible:ring-red-500"
-                )}
-              />
-              {form.formState.errors.text?.default && (
-                <p className="text-sm text-red-500 mt-1">
-                  {form.formState.errors.text.default.message}
-                </p>
+        ) : (
+          <div className="space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+              <Label htmlFor="text" className="text-base">
+                Tekst posta
+              </Label>
+              {selectedAccounts.length > 1 && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCustomText(!isCustomText)}
+                  className="text-sm"
+                >
+                  {isCustomText
+                    ? "Użyj wspólnego tekstu"
+                    : "Dostosuj tekst per platforma"}
+                </Button>
               )}
             </div>
-          ) : (
-            <div className="space-y-4">
-              {selectedAccounts.map((accountId) => {
-                const account = socialAccounts.find((a) => a.id === accountId);
-                if (!account) return null;
 
-                return (
-                  <div key={account.id}>
-                    <div className="flex items-center space-x-2 mb-2">
-                      {getPlatformIcon(account.platform)}
-                      <Label>{account.name}</Label>
-                    </div>
-                    <Textarea
-                      {...form.register(
-                        `text.${
-                          account.platform as
-                            | "facebook"
-                            | "instagram"
-                            | "twitter"
-                        }`
-                      )}
-                      placeholder={`Wpisz tekst dla ${account.name}...`}
-                      defaultValue={form.watch("text.default")}
-                      className={cn(
-                        "mt-1",
-                        form.formState.errors.text?.[
-                          account.platform as
-                            | "facebook"
-                            | "instagram"
-                            | "twitter"
-                        ] && "border-red-500 focus-visible:ring-red-500"
-                      )}
-                    />
+            {!isCustomText ? (
+              <div className="space-y-2">
+                <Textarea
+                  {...form.register("text.default")}
+                  placeholder="Wpisz tekst posta..."
+                  className={cn(
+                    "min-h-[120px] text-base",
+                    form.formState.errors.text?.default &&
+                      "border-red-500 focus-visible:ring-red-500"
+                  )}
+                />
+                {form.formState.errors.text?.default && (
+                  <div className="flex items-center gap-2 text-sm text-red-500">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>{form.formState.errors.text.default.message}</p>
                   </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {selectedAccounts.map((accountId) => {
+                  const account = socialAccounts.find(
+                    (a) => a.id === accountId
+                  );
+                  if (!account) return null;
 
-        <div>
-          <Label>Data publikacji (opcjonalnie)</Label>
-          <div className="flex flex-col sm:flex-row gap-2 mt-1">
+                  return (
+                    <div key={account.id} className="space-y-2">
+                      <div className="flex items-center space-x-2">
+                        {getPlatformIcon(account.platform)}
+                        <Label className="text-base">{account.name}</Label>
+                      </div>
+                      <Textarea
+                        {...form.register(
+                          `text.${
+                            account.platform as
+                              | "facebook"
+                              | "instagram"
+                              | "twitter"
+                          }`
+                        )}
+                        placeholder={`Wpisz tekst dla ${account.name}...`}
+                        defaultValue={form.watch("text.default")}
+                        className={cn(
+                          "min-h-[100px] text-base",
+                          form.formState.errors.text?.[
+                            account.platform as
+                              | "facebook"
+                              | "instagram"
+                              | "twitter"
+                          ] && "border-red-500 focus-visible:ring-red-500"
+                        )}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <Label className="text-base">Data publikacji (opcjonalnie)</Label>
+          <div className="flex flex-col sm:flex-row gap-2">
             <Popover>
               <PopoverTrigger asChild>
                 <Button
                   type="button"
                   variant={"outline"}
                   className={cn(
-                    "w-full sm:w-[240px] justify-start text-left font-normal",
+                    "w-full sm:w-[240px] justify-start text-left font-normal text-base",
                     !form.watch("scheduledDate") && "text-muted-foreground",
                     form.formState.errors.scheduledDate &&
                       "border-red-500 focus-visible:ring-red-500"
@@ -291,6 +317,7 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
               <Input
                 type="time"
                 className={cn(
+                  "text-base",
                   form.formState.errors.scheduledDate &&
                     "border-red-500 focus-visible:ring-red-500"
                 )}
@@ -312,23 +339,40 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
             </div>
           </div>
           {form.formState.errors.scheduledDate && (
-            <p className="text-sm text-red-500 mt-1">
-              {form.formState.errors.scheduledDate.message}
-            </p>
+            <div className="flex items-center gap-2 text-sm text-red-500">
+              <AlertCircle className="h-4 w-4" />
+              <p>{form.formState.errors.scheduledDate.message}</p>
+            </div>
           )}
         </div>
 
-        <div className="flex flex-col sm:flex-row justify-between gap-2 mt-6">
+        <div className="flex flex-col sm:flex-row justify-between gap-2 pt-4">
           <Button
             type="button"
             variant="outline"
             onClick={() => setCurrentStep(2)}
+            className="w-full sm:w-auto"
           >
             Wstecz
           </Button>
-          <Button>{scheduledDate ? "Zaplanuj post" : "Opublikuj post"}</Button>
+          <Button
+            type="submit"
+            disabled={isPublishing}
+            className="w-full sm:w-auto"
+          >
+            {isPublishing ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                {scheduledDate ? "Planowanie..." : "Publikowanie..."}
+              </>
+            ) : scheduledDate ? (
+              "Zaplanuj post"
+            ) : (
+              "Opublikuj post"
+            )}
+          </Button>
         </div>
       </form>
-    </>
+    </div>
   );
 }

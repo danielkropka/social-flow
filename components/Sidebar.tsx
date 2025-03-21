@@ -17,7 +17,6 @@ import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const contentCreationItems = [
   { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
-  { href: "scheduled", icon: Clock, label: "Zaplanowane" },
   { href: "posts", icon: List, label: "Lista postów" },
 ];
 

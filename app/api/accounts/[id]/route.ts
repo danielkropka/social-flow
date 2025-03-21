@@ -10,6 +10,40 @@ type Props = {
   };
 };
 
+// Funkcja do odświeżania tokenu Instagram
+async function refreshInstagramToken(accessToken: string) {
+  try {
+    const response = await fetch(
+      `https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token&access_token=${accessToken}`
+    );
+    const data = await response.json();
+
+    if (data.access_token) {
+      return data.access_token;
+    }
+    return null;
+  } catch (error) {
+    console.error("Błąd podczas odświeżania tokenu Instagram:", error);
+    return null;
+  }
+}
+
+// Funkcja do automatycznego odświeżania tokenu
+async function handleTokenRefresh(account: any) {
+  if (account.provider === "instagram") {
+    const newToken = await refreshInstagramToken(account.accessToken);
+    if (newToken) {
+      await prisma.connectedAccount.update({
+        where: { id: account.id },
+        data: {
+          accessToken: newToken,
+          expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // +60 dni
+        },
+      });
+    }
+  }
+}
+
 export async function DELETE(request: Request, props: Props) {
   try {
     const session = await getAuthSession();
@@ -35,6 +69,9 @@ export async function DELETE(request: Request, props: Props) {
         { status: 404 }
       );
     }
+
+    // Próba odświeżenia tokenu przed usunięciem
+    await handleTokenRefresh(account);
 
     // Usuń konto
     await prisma.connectedAccount.delete({

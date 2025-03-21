@@ -1,13 +1,17 @@
 import { Button } from "@/components/ui/button";
 import { MediaCarousel } from "@/components/MediaCarousel";
 import { usePostCreation } from "@/context/PostCreationContext";
-import { socialAccounts } from "@/data/accounts";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
-import { Search } from "lucide-react";
+import { Search, Loader2, Users } from "lucide-react";
+import { ConnectedAccount } from "@prisma/client";
+import { cn } from "@/lib/utils";
+
+interface ConnectedAccountWithDetails extends ConnectedAccount {
+  accountType?: string;
+}
 
 export function AccountSelectionStep() {
   const {
@@ -16,12 +20,37 @@ export function AccountSelectionStep() {
     selectedAccounts,
     setSelectedAccounts,
     setCurrentStep,
+    isTextOnly,
   } = usePostCreation();
 
   const [searchQuery, setSearchQuery] = useState("");
+  const [accounts, setAccounts] = useState<ConnectedAccountWithDetails[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch("/api/accounts");
+        if (!response.ok) {
+          throw new Error("Nie udało się pobrać połączonych kont");
+        }
+        const data = await response.json();
+        setAccounts(Array.isArray(data) ? data : data.accounts || []);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Wystąpił błąd");
+        setAccounts([]);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchAccounts();
+  }, []);
 
   const getPlatformIcon = (platform: string) => {
-    switch (platform) {
+    switch (platform.toLowerCase()) {
       case "facebook":
         return <FaFacebook className="h-5 w-5 text-blue-600" />;
       case "instagram":
@@ -34,7 +63,7 @@ export function AccountSelectionStep() {
   };
 
   const getPlatformName = (platform: string) => {
-    switch (platform) {
+    switch (platform.toLowerCase()) {
       case "facebook":
         return "Facebook";
       case "instagram":
@@ -46,29 +75,61 @@ export function AccountSelectionStep() {
     }
   };
 
-  const filteredAccounts = socialAccounts.filter(
+  const filteredAccounts = (accounts || []).filter(
     (account) =>
-      account.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      account.accountType.toLowerCase().includes(searchQuery.toLowerCase())
+      account.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      account.provider.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const groupedAccounts = filteredAccounts.reduce((acc, account) => {
-    (acc[account.platform] = acc[account.platform] || []).push(account);
+    const platform = account.provider.toLowerCase();
+    (acc[platform] = acc[platform] || []).push(account);
     return acc;
-  }, {} as Record<string, typeof socialAccounts>);
+  }, {} as Record<string, ConnectedAccountWithDetails[]>);
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="text-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500 mx-auto" />
+          <p className="text-gray-500">Ładowanie połączonych kont...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-[400px]">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mx-auto">
+            <span className="text-red-500 text-xl">!</span>
+          </div>
+          <p className="text-red-500">{error}</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <>
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-        <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
-        <MediaCarousel files={selectedFiles} urls={mediaUrls} />
+    <div className="space-y-6">
+      {!isTextOnly && (
+        <div className="bg-gray-50 rounded-lg p-4">
+          <p className="text-sm text-gray-500 mb-2">Wybrane pliki:</p>
+          <MediaCarousel files={selectedFiles} urls={mediaUrls} />
+        </div>
+      )}
+
+      <div className="space-y-4">
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Wybierz konta na których chcesz opublikować post
+        </h2>
+        <p className="text-gray-500">
+          Możesz wybrać jedno lub więcej kont do publikacji
+        </p>
       </div>
 
-      <h2 className="text-2xl font-semibold mb-4">
-        Wybierz konta na których chcesz opublikować post
-      </h2>
-
-      <div className="relative mb-6">
+      <div className="relative">
         <Input
           placeholder="Szukaj kont..."
           value={searchQuery}
@@ -79,122 +140,91 @@ export function AccountSelectionStep() {
       </div>
 
       <div className="h-[400px] overflow-y-auto pr-2 -mr-2 space-y-6 scroll-smooth">
-        <AnimatePresence>
-          {Object.entries(groupedAccounts).map(
-            ([platform, accounts]) =>
-              accounts.length > 0 && (
-                <motion.div
-                  key={platform}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  style={{ marginBottom: "1.5rem" }}
-                >
-                  <div className="flex items-center space-x-2">
-                    {getPlatformIcon(platform)}
-                    <h3 className="font-medium">{getPlatformName(platform)}</h3>
-                  </div>
+        {Object.entries(groupedAccounts).map(
+          ([platform, platformAccounts]) =>
+            platformAccounts.length > 0 && (
+              <div key={platform} className="space-y-4 animate-fade-in">
+                <div className="flex items-center space-x-2">
+                  {getPlatformIcon(platform)}
+                  <h3 className="font-medium text-gray-900">
+                    {getPlatformName(platform)}
+                  </h3>
+                </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mt-3">
-                    <AnimatePresence>
-                      {accounts.map((account) => (
-                        <div
-                          key={account.id}
-                          onClick={() => {
-                            setSelectedAccounts(
-                              selectedAccounts.includes(account.id)
-                                ? selectedAccounts.filter(
-                                    (id) => id !== account.id
-                                  )
-                                : [...selectedAccounts, account.id]
-                            );
-                          }}
-                        >
-                          <motion.div
-                            key={account.id}
-                            layout
-                            initial={{ opacity: 0, scale: 0.9 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
-                            transition={{ duration: 0.2 }}
-                            whileHover={{
-                              borderColor: "#2563eb",
-                            }}
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              padding: "0.75rem",
-                              borderRadius: "0.5rem",
-                              border: `1px solid ${
-                                selectedAccounts.includes(account.id)
-                                  ? "#2563eb"
-                                  : "#e5e7eb"
-                              }`,
-                              backgroundColor: selectedAccounts.includes(
-                                account.id
-                              )
-                                ? "#eff6ff"
-                                : "#ffffff",
-                              cursor: "pointer",
-                              transition: "border-color 0.2s ease",
-                            }}
-                          >
-                            <div className="flex items-center w-full">
-                              <div className="relative">
-                                <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
-                                  <Image
-                                    src={account.avatar}
-                                    alt={account.name}
-                                    fill
-                                    className="object-cover"
-                                  />
-                                </div>
-                                <div className="absolute -bottom-1 -right-1 bg-white rounded-full p-0.5 border border-gray-100">
-                                  {getPlatformIcon(account.platform)}
-                                </div>
-                              </div>
-                              <div className="min-w-0 ml-3">
-                                <p className="font-medium truncate">
-                                  {account.name}
-                                </p>
-                                <p className="text-sm text-gray-500 truncate">
-                                  {account.accountType}
-                                </p>
-                              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                  {platformAccounts.map((account) => (
+                    <div
+                      key={account.id}
+                      onClick={() => {
+                        setSelectedAccounts(
+                          selectedAccounts.includes(account.id)
+                            ? selectedAccounts.filter((id) => id !== account.id)
+                            : [...selectedAccounts, account.id]
+                        );
+                      }}
+                    >
+                      <div
+                        className={cn(
+                          "flex items-center p-4 rounded-lg border transition-all duration-200 cursor-pointer animate-fade-in-scale",
+                          selectedAccounts.includes(account.id)
+                            ? "border-blue-500 bg-blue-50"
+                            : "border-gray-200 hover:border-blue-200 hover:bg-gray-50"
+                        )}
+                      >
+                        <div className="flex items-center w-full">
+                          <div className="relative">
+                            <div className="w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-white shadow-sm">
+                              <Image
+                                src={
+                                  account.profileImage || "/default-avatar.png"
+                                }
+                                alt={account.username || ""}
+                                width={40}
+                                height={40}
+                                className="object-cover"
+                              />
                             </div>
-                          </motion.div>
+                          </div>
+                          <div className="min-w-0 ml-3">
+                            <p className="font-medium text-gray-900 truncate">
+                              {account.username || "Brak nazwy"}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate">
+                              {getPlatformName(account.provider)}
+                            </p>
+                          </div>
                         </div>
-                      ))}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              )
-          )}
-        </AnimatePresence>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )
+        )}
 
         {Object.values(groupedAccounts).flat().length === 0 && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            style={{
-              textAlign: "center",
-              padding: "2rem 0",
-              color: "#6b7280",
-            }}
-          >
-            Nie znaleziono kont dla zapytania &quot;{searchQuery}&quot;;
-          </motion.div>
+          <div className="text-center py-12 animate-fade-in">
+            <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-gray-400" />
+            </div>
+            <p className="text-gray-500">
+              {accounts.length === 0
+                ? "Nie masz jeszcze połączonych kont społecznościowych"
+                : `Nie znaleziono kont dla zapytania "${searchQuery}"`}
+            </p>
+          </div>
         )}
       </div>
 
-      <div className="flex justify-end mt-6">
+      <div className="flex justify-end">
         <Button
           onClick={() => setCurrentStep(3)}
           disabled={selectedAccounts.length === 0}
+          className="px-8 py-2"
         >
           Dalej
         </Button>
       </div>
-    </>
+    </div>
   );
 }

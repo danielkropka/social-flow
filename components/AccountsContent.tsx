@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
 import Image from "next/image";
-import { X } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -129,7 +129,7 @@ export default function ConnectAccounts() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900" />
+        <Loader2 className="animate-spin h-8 w-8" />
       </div>
     );
   }

@@ -5,6 +5,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import Image from "next/image";
+import { useState } from "react";
 
 interface ImagePreviewModalProps {
   url: string;
@@ -12,8 +13,16 @@ interface ImagePreviewModalProps {
 }
 
 export function ImagePreviewModal({ url, children }: ImagePreviewModalProps) {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
+    console.error("Błąd ładowania obrazu:", url);
+    const imgElement = e.target as HTMLImageElement;
+    imgElement.src = "/placeholder-image.jpg";
+  };
+
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <div className="cursor-pointer">{children}</div>
       </DialogTrigger>
@@ -25,6 +34,10 @@ export function ImagePreviewModal({ url, children }: ImagePreviewModalProps) {
             alt="Podgląd obrazu"
             className="max-w-full max-h-full object-contain"
             fill
+            onError={handleError}
+            priority={isOpen}
+            sizes="(max-width: 768px) 100vw, 90vw"
+            quality={90}
           />
         </div>
       </DialogContent>
