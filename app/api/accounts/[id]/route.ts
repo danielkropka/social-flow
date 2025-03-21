@@ -43,7 +43,7 @@ async function handleTokenRefresh(account: ConnectedAccount) {
   }
 }
 
-export async function DELETE(request: Request, props: Props) {
+export async function DELETE(request: Request) {
   try {
     const session = await getAuthSession();
 
@@ -54,10 +54,12 @@ export async function DELETE(request: Request, props: Props) {
       );
     }
 
+    const { id } = await request.json();
+
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await db.connectedAccount.findFirst({
       where: {
-        id: props.params.id,
+        id,
         userId: session.user.id,
       },
     });
@@ -75,7 +77,7 @@ export async function DELETE(request: Request, props: Props) {
     // Usuń konto
     await db.connectedAccount.delete({
       where: {
-        id: props.params.id,
+        id,
       },
     });
 

@@ -73,7 +73,8 @@ export default function ConnectAccounts() {
           )
         );
 
-        const response = await fetch(`/api/accounts/${accountToRemove.id}`, {
+        const response = await fetch(`/api/accounts`, {
+          body: JSON.stringify({ id: accountToRemove.id }),
           method: "DELETE",
         });
 
