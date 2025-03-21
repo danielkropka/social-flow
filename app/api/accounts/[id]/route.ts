@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { PrismaClient, ConnectedAccount } from "@prisma/client";
+import { ConnectedAccount } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 

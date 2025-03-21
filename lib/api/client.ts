@@ -135,7 +135,7 @@ export async function disconnectAccount(id: string) {
 }
 
 // Funkcja pomocnicza do ponowienia próby
-async function retryOperation<T>(
+/* async function retryOperation<T>(
   operation: () => Promise<T>,
   attempts: number = API_RETRY_ATTEMPTS,
   delay: number = API_RETRY_DELAY
@@ -155,7 +155,7 @@ async function retryOperation<T>(
     }
     throw error;
   }
-}
+} */
 
 // Funkcja do tworzenia kontrolera przerwania
 export function createAbortController(timeout = API_TIMEOUT) {
