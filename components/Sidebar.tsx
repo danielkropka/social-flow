@@ -7,7 +7,6 @@ import {
   Share2,
   LogOut,
   ChevronDown,
-  Clock,
   Menu,
   Layout,
 } from "lucide-react";

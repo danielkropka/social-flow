@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, ConnectedAccount } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
-
-const prisma = new PrismaClient();
+import { db } from "@/lib/prisma";
 
 type Props = {
   params: {
@@ -29,11 +28,11 @@ async function refreshInstagramToken(accessToken: string) {
 }
 
 // Funkcja do automatycznego odświeżania tokenu
-async function handleTokenRefresh(account: any) {
-  if (account.provider === "instagram") {
+async function handleTokenRefresh(account: ConnectedAccount) {
+  if (account.provider === "INSTAGRAM") {
     const newToken = await refreshInstagramToken(account.accessToken);
     if (newToken) {
-      await prisma.connectedAccount.update({
+      await db.connectedAccount.update({
         where: { id: account.id },
         data: {
           accessToken: newToken,
@@ -56,7 +55,7 @@ export async function DELETE(request: Request, props: Props) {
     }
 
     // Sprawdź, czy konto należy do zalogowanego użytkownika
-    const account = await prisma.connectedAccount.findFirst({
+    const account = await db.connectedAccount.findFirst({
       where: {
         id: props.params.id,
         userId: session.user.id,
@@ -74,7 +73,7 @@ export async function DELETE(request: Request, props: Props) {
     await handleTokenRefresh(account);
 
     // Usuń konto
-    await prisma.connectedAccount.delete({
+    await db.connectedAccount.delete({
       where: {
         id: props.params.id,
       },

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -42,7 +42,7 @@ export default function PostsContent() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
 
-  const { data, isLoading, error, execute } = useApi<Post[]>(getPosts, {
+  const { data, isLoading } = useApi<Post[]>(getPosts, {
     showErrorToast: true,
   });
 
