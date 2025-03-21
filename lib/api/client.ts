@@ -1,12 +1,5 @@
-import {
-  API_ENDPOINTS,
-  API_ERROR_CODES,
-  API_METHODS,
-  API_RETRY_ATTEMPTS,
-  API_RETRY_DELAY,
-  API_TIMEOUT,
-} from "@/constants";
-import { ApiErrorHandler, fetchApi } from "@/lib/api";
+import { API_ENDPOINTS, API_METHODS, API_TIMEOUT } from "@/constants";
+import { fetchApi } from "@/lib/api";
 import { MediaType } from "@prisma/client";
 
 export interface Post {
