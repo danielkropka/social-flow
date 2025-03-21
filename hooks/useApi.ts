@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { ApiErrorHandler } from "@/lib/api";
 import { toast } from "sonner";
-import { API_ERROR_CODES } from "@/constants";
 
 interface UseApiOptions<T> {
   onSuccess?: (data: T) => void;

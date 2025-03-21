@@ -3,10 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 
-export async function PUT(
-  request: Request,
-  context: { params: { postId: string } }
-) {
+export async function PUT(request: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session?.user?.email) {
@@ -19,7 +16,9 @@ export async function PUT(
       return new NextResponse("Brak miniaturki", { status: 400 });
     }
 
-    const postId = context.params.postId;
+    const { id } = await request.json();
+
+    const postId = id;
     if (!postId) {
       return new NextResponse("Brak ID posta", { status: 400 });
     }
