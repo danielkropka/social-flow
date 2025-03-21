@@ -1,3 +1,5 @@
+import { Suspense } from "react";
+
 export default function InstagramCallbackLayout({
   children,
 }: {
@@ -10,7 +12,7 @@ export default function InstagramCallbackLayout({
           <h1 className="text-xl font-semibold text-gray-900">Social Flow</h1>
         </div>
       </div>
-      {children}
+      <Suspense>{children}</Suspense>
     </div>
   );
 }
