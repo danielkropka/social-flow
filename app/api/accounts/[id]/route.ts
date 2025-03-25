@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { ConnectedAccount } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/prisma";
@@ -38,7 +38,7 @@ async function handleTokenRefresh(account: ConnectedAccount) {
   }
 }
 
-export async function DELETE(request: NextApiRequest) {
+export async function DELETE(request: NextRequest) {
   try {
     const session = await getAuthSession();
 
@@ -49,7 +49,7 @@ export async function DELETE(request: NextApiRequest) {
       );
     }
 
-    const { slug } = request.query;
+    const slug = request.nextUrl.pathname;
     if (!slug)
       return NextResponse.json(
         {
