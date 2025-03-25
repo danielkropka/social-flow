@@ -39,7 +39,7 @@ async function handleTokenRefresh(account: ConnectedAccount) {
 
 export async function DELETE(
   _request: Request,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
     const session = await getAuthSession();
@@ -51,7 +51,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = await context.params;
+    const { id } = params;
 
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await db.connectedAccount.findFirst({
