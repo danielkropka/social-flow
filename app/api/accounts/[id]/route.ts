@@ -51,7 +51,7 @@ export async function DELETE(
       );
     }
 
-    const { id } = context.params;
+    const { id } = await context.params;
 
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await db.connectedAccount.findFirst({
