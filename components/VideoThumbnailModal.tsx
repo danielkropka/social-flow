@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogTitle, DialogContent, DialogHeader } from "./ui/dialog";
 import { Slider } from "./ui/slider";
 import Image from "next/image";
@@ -9,19 +9,20 @@ import { useVideoProcessing } from "@/hooks/useVideoProcessing";
 
 interface VideoThumbnailModalProps {
   isOpen: boolean;
-  videoUrl: string;
+  videoFile: File;
   currentThumbnail: string;
   onClose: () => void;
 }
 
 export function VideoThumbnailModal({
   isOpen,
-  videoUrl,
+  videoFile,
   currentThumbnail,
   onClose,
 }: VideoThumbnailModalProps) {
   const { setThumbnailUrl } = usePostCreation();
   const [currentTime, setCurrentTime] = useState(0);
+  const [videoUrl, setVideoUrl] = useState<string>("");
 
   const {
     videoRef,
@@ -29,9 +30,35 @@ export function VideoThumbnailModal({
     error: videoError,
     duration,
     createThumbnail,
+    loadVideo,
+    reset,
   } = useVideoProcessing({
     onError: (error) => toast.error(error.message),
   });
+
+  useEffect(() => {
+    let objectUrl = "";
+
+    if (isOpen && videoFile) {
+      loadVideo(videoFile)
+        .then((url) => {
+          objectUrl = url;
+          setVideoUrl(url);
+        })
+        .catch((error) => {
+          toast.error("Nie udało się załadować wideo");
+          console.error(error);
+        });
+    }
+
+    return () => {
+      if (objectUrl) {
+        URL.revokeObjectURL(objectUrl);
+        setVideoUrl("");
+        reset();
+      }
+    };
+  }, [isOpen, videoFile]);
 
   const handleTimeUpdate = (value: number[]) => {
     if (!videoRef.current) return;
@@ -55,8 +82,14 @@ export function VideoThumbnailModal({
     }
   };
 
+  const handleClose = () => {
+    setVideoUrl("");
+    reset();
+    onClose();
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="max-w-3xl">
         <DialogHeader>
           <DialogTitle>Wybierz miniaturkę</DialogTitle>
@@ -74,11 +107,13 @@ export function VideoThumbnailModal({
                   </p>
                 </div>
               ) : (
-                <video
-                  ref={videoRef}
-                  src={videoUrl}
-                  className="w-full h-full object-cover rounded-md shadow-md mx-auto"
-                />
+                videoUrl && (
+                  <video
+                    ref={videoRef}
+                    src={videoUrl}
+                    className="w-full h-full object-cover rounded-md shadow-md mx-auto"
+                  />
+                )
               )}
             </div>
           </div>
@@ -91,7 +126,7 @@ export function VideoThumbnailModal({
               <Image
                 src={currentThumbnail}
                 alt="Aktualna miniaturka"
-                className="rounded-md shadow-md"
+                className="rounded-md shadow-md object-cover"
                 fill
               />
             </div>
@@ -116,7 +151,7 @@ export function VideoThumbnailModal({
             </div>
           </div>
           <div className="col-span-2 flex justify-end">
-            <Button variant="secondary" onClick={onClose} className="mr-2">
+            <Button variant="secondary" onClick={handleClose} className="mr-2">
               Anuluj
             </Button>
             <Button

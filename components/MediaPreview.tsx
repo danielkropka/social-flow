@@ -1,11 +1,10 @@
 import { ImagePreviewModal } from "./ImagePreviewModal";
 import { Button } from "./ui/button";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import Image from "next/image";
 import { Image as ImageIcon } from "lucide-react";
 import { VideoThumbnailModal } from "./VideoThumbnailModal";
 import { usePostCreation } from "@/context/PostCreationContext";
-import { useVideoProcessing } from "@/hooks/useVideoProcessing";
 
 interface MediaPreviewProps {
   file: File;
@@ -21,8 +20,8 @@ export function MediaPreview({
   const { thumbnailUrl } = usePostCreation();
   const isVideo = file.type.startsWith("video/");
   const [isModalOpen, setIsModalOpen] = useState(false);
-
-  const { videoRef, error: videoError } = useVideoProcessing();
+  const [videoError, setVideoError] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   if (!previewUrl) {
     return (
@@ -48,6 +47,7 @@ export function MediaPreview({
               muted
               loop
               playsInline
+              onError={() => setVideoError(true)}
               className={`max-h-[50vh] mx-auto rounded-lg ${className}`}
             />
             <Button
@@ -63,7 +63,7 @@ export function MediaPreview({
             <VideoThumbnailModal
               isOpen={isModalOpen}
               onClose={() => setIsModalOpen(false)}
-              videoUrl={previewUrl}
+              videoFile={file}
               currentThumbnail={thumbnailUrl!}
             />
           </>

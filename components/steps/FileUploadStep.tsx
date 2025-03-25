@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+import React, { useRef, useEffect } from "react";
 import { MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "@/constants";
 import { MediaPreview } from "@/components/MediaPreview";
 import { usePostCreation } from "@/context/PostCreationContext";
@@ -56,33 +56,39 @@ export function FileUploadStep() {
 
       setSelectedFiles(files);
 
-      // Konwertuj pliki na base64
-      const base64Urls = await Promise.all(
+      // Konwertuj pliki na URLs
+      const urls = await Promise.all(
         files.map(async (file) => {
-          return new Promise<string>((resolve, reject) => {
-            const reader = new FileReader();
-            reader.onload = () => {
-              const base64 = reader.result as string;
-              if (!base64) {
-                reject(
-                  new Error(`Nie udało się przeczytać pliku ${file.name}`)
-                );
-                return;
-              }
-              resolve(base64);
-            };
-            reader.onerror = () =>
-              reject(new Error(`Błąd podczas czytania pliku ${file.name}`));
-            reader.readAsDataURL(file);
-          });
+          if (file.type.startsWith("video/")) {
+            // Dla wideo używamy URL.createObjectURL
+            return URL.createObjectURL(file);
+          } else {
+            // Dla obrazów używamy base64
+            return new Promise<string>((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => {
+                const base64 = reader.result as string;
+                if (!base64) {
+                  reject(
+                    new Error(`Nie udało się przeczytać pliku ${file.name}`)
+                  );
+                  return;
+                }
+                resolve(base64);
+              };
+              reader.onerror = () =>
+                reject(new Error(`Błąd podczas czytania pliku ${file.name}`));
+              reader.readAsDataURL(file);
+            });
+          }
         })
       );
 
-      if (base64Urls.some((url) => !url)) {
+      if (urls.some((url) => !url)) {
         throw new Error("Nie udało się przetworzyć wszystkich plików");
       }
 
-      setMediaUrls(base64Urls);
+      setMediaUrls(urls);
 
       // Obsługa wideo
       if (hasVideos) {
@@ -104,6 +110,17 @@ export function FileUploadStep() {
       }
     }
   };
+
+  // Czyszczenie URL.createObjectURL przy odmontowaniu komponentu
+  useEffect(() => {
+    return () => {
+      mediaUrls.forEach((url) => {
+        if (url.startsWith("blob:")) {
+          URL.revokeObjectURL(url);
+        }
+      });
+    };
+  }, [mediaUrls]);
 
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();

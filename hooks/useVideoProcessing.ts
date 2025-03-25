@@ -84,9 +84,11 @@ export function useVideoProcessing({
         const videoBlob = new Blob([file], { type: file.type });
         const videoUrl = URL.createObjectURL(videoBlob);
 
-        if (!videoRef.current) {
-          throw new Error("Nie znaleziono elementu wideo");
-        }
+        // Tworzymy nowy element video
+        const video = document.createElement("video");
+        video.style.display = "none";
+        document.body.appendChild(video);
+        videoRef.current = video;
 
         videoRef.current.src = videoUrl;
 
@@ -135,14 +137,15 @@ export function useVideoProcessing({
     [timeout, handleError]
   );
 
-  useEffect(() => {
-    return () => {
-      if (videoRef.current) {
-        videoRef.current.pause();
-        videoRef.current.src = "";
-        URL.revokeObjectURL(videoRef.current.src);
-      }
-    };
+  const reset = useCallback(() => {
+    setIsReady(false);
+    setError(null);
+    setDuration(0);
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.src = "";
+      videoRef.current = null;
+    }
   }, []);
 
   return {
@@ -152,5 +155,6 @@ export function useVideoProcessing({
     duration,
     loadVideo,
     createThumbnail,
+    reset,
   };
 }
