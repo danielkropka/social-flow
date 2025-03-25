@@ -43,22 +43,19 @@ export async function DELETE(request: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json(
-        { error: "Nie jesteś zalogowany" },
+        { success: false, error: "Nie jesteś zalogowany" },
         { status: 401 }
       );
     }
 
-    const slug = request.nextUrl.pathname;
-    if (!slug)
+    const id = request.nextUrl.pathname.split("/").pop();
+
+    if (!id) {
       return NextResponse.json(
-        {
-          error: "Nie podano pola id",
-        },
+        { success: false, error: "Nie podano identyfikatora konta" },
         { status: 400 }
       );
-    console.log(slug);
-
-    const id = slug[0];
+    }
 
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await db.connectedAccount.findFirst({
@@ -70,7 +67,7 @@ export async function DELETE(request: NextRequest) {
 
     if (!account) {
       return NextResponse.json(
-        { error: "Nie znaleziono konta lub brak uprawnień" },
+        { success: false, error: "Nie znaleziono konta lub brak uprawnień" },
         { status: 404 }
       );
     }
@@ -86,13 +83,13 @@ export async function DELETE(request: NextRequest) {
     });
 
     return NextResponse.json(
-      { message: "Konto zostało pomyślnie usunięte" },
+      { success: true, message: "Konto zostało pomyślnie usunięte" },
       { status: 200 }
     );
   } catch (error) {
     console.error("Błąd podczas usuwania konta:", error);
     return NextResponse.json(
-      { error: "Wystąpił błąd podczas usuwania konta" },
+      { success: false, error: "Wystąpił błąd podczas usuwania konta" },
       { status: 500 }
     );
   }

@@ -9,7 +9,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: "https",
-        hostname: "scontent-waw2-2.cdninstagram.com",
+        hostname: "**.cdninstagram.com",
       },
       {
         protocol: "http",
