@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { ConnectedAccount } from "@prisma/client";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/prisma";
+import { NextApiRequest } from "next";
 
 // Funkcja do odświeżania tokenu Instagram
 async function refreshInstagramToken(accessToken: string) {
@@ -37,10 +38,7 @@ async function handleTokenRefresh(account: ConnectedAccount) {
   }
 }
 
-export async function DELETE(
-  _request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function DELETE(request: NextApiRequest) {
   try {
     const session = await getAuthSession();
 
@@ -51,7 +49,17 @@ export async function DELETE(
       );
     }
 
-    const { id } = params;
+    const { slug } = request.query;
+    if (!slug)
+      return NextResponse.json(
+        {
+          error: "Nie podano pola id",
+        },
+        { status: 400 }
+      );
+    console.log(slug);
+
+    const id = slug[0];
 
     // Sprawdź, czy konto należy do zalogowanego użytkownika
     const account = await db.connectedAccount.findFirst({
