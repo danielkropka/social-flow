@@ -55,10 +55,6 @@ export function useApi<T>(
     [apiFunction, options]
   );
 
-  useEffect(() => {
-    execute();
-  }, []);
-
   return {
     data,
     error,

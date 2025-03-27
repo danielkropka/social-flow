@@ -16,10 +16,12 @@ export function useVideoProcessing({
 
   const handleError = useCallback(
     (error: Error) => {
-      setError(error);
-      onError?.(error);
+      if (error.message !== error?.message) {
+        setError(error);
+        onError?.(error);
+      }
     },
-    [onError]
+    [onError, error?.message]
   );
 
   const createThumbnail = useCallback(
@@ -79,74 +81,68 @@ export function useVideoProcessing({
   );
 
   const loadVideo = useCallback(
-    async (file: File): Promise<string> => {
+    async (file: File) => {
       try {
-        const videoBlob = new Blob([file], { type: file.type });
-        const videoUrl = URL.createObjectURL(videoBlob);
+        setError(null);
+        setIsReady(false);
 
-        // Tworzymy nowy element video
+        // Tworzymy nowy element wideo
         const video = document.createElement("video");
         video.style.display = "none";
         document.body.appendChild(video);
         videoRef.current = video;
 
-        videoRef.current.src = videoUrl;
+        const videoUrl = URL.createObjectURL(file);
+        video.src = videoUrl;
 
         await new Promise<void>((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            reject(new Error("Przekroczono czas oczekiwania na wideo"));
-          }, timeout);
-
-          if (!videoRef.current) {
-            clearTimeout(timeoutId);
-            reject(new Error("Nie znaleziono elementu wideo"));
-            return;
-          }
-
-          videoRef.current.onloadedmetadata = () => {
-            clearTimeout(timeoutId);
-            setDuration(videoRef.current?.duration || 0);
+          const handleLoadedData = () => {
             setIsReady(true);
+            setDuration(video.duration || 0);
             resolve();
           };
 
-          videoRef.current.onerror = () => {
-            clearTimeout(timeoutId);
-            const error = new Error(
-              `Błąd wideo: ${
-                videoRef.current?.error?.message || "Nieznany błąd"
-              }`
-            );
-            reject(error);
+          const handleError = () => {
+            reject(new Error("Błąd ładowania wideo"));
+          };
+
+          video.addEventListener("loadeddata", handleLoadedData);
+          video.addEventListener("error", handleError);
+
+          // Cleanup
+          return () => {
+            video.removeEventListener("loadeddata", handleLoadedData);
+            video.removeEventListener("error", handleError);
+            URL.revokeObjectURL(videoUrl);
+            document.body.removeChild(video);
+            videoRef.current = null;
           };
         });
-
-        return videoUrl;
       } catch (error) {
-        if (error instanceof Error) {
-          handleError(error);
-          throw error;
-        }
-        const unknownError = new Error(
-          "Wystąpił nieznany błąd podczas ładowania wideo"
+        handleError(
+          error instanceof Error ? error : new Error("Nieznany błąd")
         );
-        handleError(unknownError);
-        throw unknownError;
+        throw error;
       }
     },
-    [timeout, handleError]
+    [handleError]
   );
 
   const reset = useCallback(() => {
+    if (videoRef.current) {
+      videoRef.current.src = "";
+      videoRef.current.load();
+    }
     setIsReady(false);
     setError(null);
     setDuration(0);
-    if (videoRef.current) {
-      videoRef.current.pause();
-      videoRef.current.src = "";
-      videoRef.current = null;
-    }
   }, []);
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, [reset]);
 
   return {
     videoRef,

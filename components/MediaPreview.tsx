@@ -1,10 +1,10 @@
+import { useState } from "react";
 import { ImagePreviewModal } from "./ImagePreviewModal";
-import { Button } from "./ui/button";
-import { useState, useRef } from "react";
-import Image from "next/image";
-import { Image as ImageIcon } from "lucide-react";
 import { VideoThumbnailModal } from "./VideoThumbnailModal";
 import { usePostCreation } from "@/context/PostCreationContext";
+import { Button } from "./ui/button";
+import { ImageIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface MediaPreviewProps {
   file: File;
@@ -17,55 +17,59 @@ export function MediaPreview({
   previewUrl,
   className,
 }: MediaPreviewProps) {
-  const { thumbnailUrl } = usePostCreation();
-  const isVideo = file.type.startsWith("video/");
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const { thumbnailUrl } = usePostCreation();
 
   if (!previewUrl) {
     return (
-      <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+      <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
         <p className="text-gray-500 text-sm">Nieprawidłowy URL mediów</p>
       </div>
     );
   }
 
-  if (isVideo) {
+  if (file.type.startsWith("video/")) {
     return (
-      <div className="relative">
+      <div className="relative w-full h-full">
         {videoError ? (
-          <div className="w-full h-full bg-gray-100 flex items-center justify-center">
+          <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
             <p className="text-gray-500 text-sm">Błąd odtwarzania wideo</p>
           </div>
         ) : (
           <>
-            <video
-              ref={videoRef}
-              src={previewUrl}
-              controls
-              muted
-              loop
-              playsInline
-              onError={() => setVideoError(true)}
-              className={`max-h-[50vh] mx-auto rounded-lg ${className}`}
-            />
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              className="absolute bottom-2 right-2 bg-white/80 hover:bg-white"
-              onClick={() => setIsModalOpen(true)}
-            >
-              <ImageIcon className="h-4 w-4 mr-1" />
-              Zmień miniaturę
-            </Button>
-            <VideoThumbnailModal
-              isOpen={isModalOpen}
-              onClose={() => setIsModalOpen(false)}
-              videoFile={file}
-              currentThumbnail={thumbnailUrl!}
-            />
+            <div className="relative w-full h-full flex items-center justify-center">
+              <video
+                src={previewUrl}
+                className={cn("max-h-[70vh] h-auto rounded-lg", className)}
+                onError={() => setVideoError(true)}
+                controls
+                loop
+                muted
+                playsInline
+                style={{ width: "fit-content" }}
+              />
+              {thumbnailUrl && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="absolute bottom-2 right-2 bg-white/90 hover:bg-white"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <ImageIcon className="h-4 w-4 mr-2" />
+                  Zmień miniaturkę
+                </Button>
+              )}
+            </div>
+            {isModalOpen && (
+              <VideoThumbnailModal
+                isOpen={isModalOpen}
+                videoFile={file}
+                currentThumbnail={thumbnailUrl || ""}
+                onClose={() => setIsModalOpen(false)}
+              />
+            )}
           </>
         )}
       </div>
@@ -74,14 +78,11 @@ export function MediaPreview({
 
   return (
     <ImagePreviewModal url={previewUrl}>
-      <div className="flex justify-center items-center h-[50vh]">
-        <Image
+      <div className="relative w-full h-full">
+        <img
           src={previewUrl}
-          alt={file.name}
-          className={`object-contain ${className}`}
-          width={670}
-          height={670}
-          sizes="(max-width: 768px) 100vw, 50vw"
+          alt="Podgląd"
+          className={cn("w-full h-full object-cover rounded-lg", className)}
         />
       </div>
     </ImagePreviewModal>

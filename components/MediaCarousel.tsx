@@ -15,8 +15,20 @@ interface MediaCarouselProps {
 
 export function MediaCarousel({ files, urls }: MediaCarouselProps) {
   const { images, videos } = useMemo(() => {
-    const images = urls.filter((_, i) => !files[i].type.startsWith("video/"));
-    const videos = urls.filter((_, i) => files[i].type.startsWith("video/"));
+    const images: { file: File; url: string }[] = [];
+    const videos: { file: File; url: string }[] = [];
+
+    files.forEach((file, index) => {
+      if (index < urls.length) {
+        const media = { file, url: urls[index] };
+        if (file.type.startsWith("video/")) {
+          videos.push(media);
+        } else {
+          images.push(media);
+        }
+      }
+    });
+
     return { images, videos };
   }, [files, urls]);
 
@@ -30,10 +42,10 @@ export function MediaCarousel({ files, urls }: MediaCarouselProps) {
 
   return (
     <div className="grid grid-cols-1 gap-4">
-      {videos.map((url, i) => (
+      {videos.map(({ file, url }, i) => (
         <MediaPreview
           key={`video-${i}`}
-          file={files[i]}
+          file={file}
           previewUrl={url}
           className="max-h-[50vh] mx-auto"
         />
@@ -42,11 +54,11 @@ export function MediaCarousel({ files, urls }: MediaCarouselProps) {
       {images.length > 0 && (
         <Carousel className="w-full relative mx-auto">
           <CarouselContent>
-            {images.map((imgUrl, i) => (
+            {images.map(({ file, url }, i) => (
               <CarouselItem key={`image-${i}`}>
                 <MediaPreview
-                  file={files[i]}
-                  previewUrl={imgUrl}
+                  file={file}
+                  previewUrl={url}
                   className="max-h-[50vh] mx-auto object-contain"
                 />
               </CarouselItem>
