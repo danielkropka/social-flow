@@ -73,9 +73,6 @@ export function VideoThumbnailModal({
 
     try {
       const canvas = document.createElement("canvas");
-      // Zwiększamy rozmiar do Full HD
-      const targetWidth = 1920;
-      const targetHeight = 1080;
 
       // Używamy oryginalnych wymiarów wideo
       canvas.width = video.videoWidth;
@@ -93,7 +90,7 @@ export function VideoThumbnailModal({
       setThumbnailUrl(thumbnail);
       toast.success("Nowa miniaturka została zapisana!");
       onClose();
-    } catch (error) {
+    } catch (_err) {
       toast.error("Nie udało się utworzyć miniaturki");
     }
   };
