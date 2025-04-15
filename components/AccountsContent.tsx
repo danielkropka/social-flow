@@ -31,6 +31,7 @@ export default function ConnectAccounts() {
   const [accounts, setAccounts] = useState<ConnectedAccountWithDetails[]>([]);
   const [showDeletionModal, setShowDeletionModal] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
+  const [showTwitterModal, setShowTwitterModal] = useState(false);
   const [accountToRemove, setAccountToRemove] =
     useState<ConnectedAccountWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -54,9 +55,11 @@ export default function ConnectAccounts() {
     }
   };
 
-  const handleAddAccount = (platform: string) => {
+  const handleAddAccount = async (platform: string) => {
     if (platform === "instagram") {
       setShowInstagramModal(true);
+    } else if (platform === "twitter") {
+      setShowTwitterModal(true);
     }
   };
 
@@ -319,6 +322,85 @@ export default function ConnectAccounts() {
                 );
               }}
               className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Połącz konto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTwitterModal} onOpenChange={setShowTwitterModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Połączenie z Twitter</DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground">
+              Połącz swoje konto Twitter, aby móc publikować i planować tweety.
+            </DialogDescription>
+
+            <div className="mt-6">
+              <h4 className="font-semibold mb-4">Wymagania:</h4>
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                <AccordionItem
+                  value="item-1"
+                  className="border rounded-lg bg-gray-50 px-4"
+                >
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                      <span className="font-medium">
+                        Wymagane konto Twitter
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-4">
+                    <div className="space-y-3">
+                      <div className="text-gray-600">
+                        Aby połączyć konto Twitter, musisz posiadać aktywne
+                        konto na platformie Twitter.
+                      </div>
+                      <div className="pt-2">
+                        <Link
+                          href="https://help.twitter.com/pl/using-twitter/create-twitter-account"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span>→</span> Jak utworzyć konto na Twitterze
+                        </Link>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => setShowTwitterModal(false)}
+              variant="outline"
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={async () => {
+                setShowTwitterModal(false);
+                try {
+                  const response = await fetch(
+                    "/api/auth/twitter/request-token"
+                  );
+                  if (!response.ok) {
+                    throw new Error("Nie udało się pobrać tokena");
+                  }
+                  const data = await response.json();
+                  router.push(
+                    `https://api.x.com/oauth/authorize?oauth_token=${data.oauth_token}`
+                  );
+                } catch (error) {
+                  console.error("Błąd podczas łączenia z Twitterem:", error);
+                  toast.error("Nie udało się połączyć z Twitterem");
+                }
+              }}
+              className="bg-blue-400 hover:bg-blue-500 text-white"
             >
               Połącz konto
             </Button>

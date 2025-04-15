@@ -12,6 +12,10 @@ const nextConfig: NextConfig = {
         hostname: "**.cdninstagram.com",
       },
       {
+        protocol: "https",
+        hostname: "abs.twimg.com",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
         port: "3000",
