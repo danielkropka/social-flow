@@ -400,7 +400,7 @@ export default function ConnectAccounts() {
                   toast.error("Nie udało się połączyć z Twitterem");
                 }
               }}
-              className="bg-blue-400 hover:bg-blue-500 text-white"
+              className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               Połącz konto
             </Button>
