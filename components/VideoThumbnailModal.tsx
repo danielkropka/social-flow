@@ -90,7 +90,8 @@ export function VideoThumbnailModal({
       setThumbnailUrl(thumbnail);
       toast.success("Nowa miniaturka została zapisana!");
       onClose();
-    } catch (_err) {
+    } catch (err) {
+      console.error("Error creating thumbnail:", err);
       toast.error("Nie udało się utworzyć miniaturki");
     }
   };
