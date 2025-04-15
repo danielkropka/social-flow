@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FaTwitter } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-export default function TwitterCallback() {
+function TwitterCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -25,11 +25,6 @@ export default function TwitterCallback() {
     oauth_verifier: string
   ) => {
     try {
-      console.log("Starting Twitter callback with:", {
-        oauth_token,
-        oauth_verifier,
-      });
-
       const response = await fetch("/api/auth/twitter/access-token", {
         method: "POST",
         headers: {
@@ -39,7 +34,6 @@ export default function TwitterCallback() {
       });
 
       const data = await response.json();
-      console.log("Access token response:", data);
 
       if (!response.ok) {
         throw new Error(data.error || "Błąd podczas autoryzacji");
@@ -119,5 +113,19 @@ export default function TwitterCallback() {
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function TwitterCallback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        </div>
+      }
+    >
+      <TwitterCallbackContent />
+    </Suspense>
   );
 }
