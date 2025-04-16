@@ -1,11 +1,14 @@
 import HeroSection from "@/components/HeroSection";
-import Navigation from "../components/Navigation";
+import PlatformsSection from "@/components/PlatformsSection";
+import Footer from "@/components/Footer";
+import Navigation from "@/components/Navigation";
 
 export default function Home() {
   return (
-    <main className="flex-1">
+    <main className="flex min-h-screen flex-col">
       <Navigation />
       <HeroSection />
+      <Footer />
     </main>
   );
 }

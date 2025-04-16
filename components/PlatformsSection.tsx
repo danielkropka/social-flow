@@ -1,5 +1,5 @@
 import React from "react";
-import { Facebook, Instagram, Twitter, Linkedin } from "lucide-react";
+import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 
 export default function PlatformsSection() {
   return (
@@ -43,26 +43,26 @@ export default function PlatformsSection() {
 const platforms = [
   {
     name: "Facebook",
-    icon: Facebook,
+    icon: FaFacebook,
     color: "text-[#1877F2]",
-    description: "Posty, stories i zarządzanie grupami",
+    description: "Posty i relacje",
   },
   {
     name: "Instagram",
-    icon: Instagram,
+    icon: FaInstagram,
     color: "text-[#E4405F]",
-    description: "Zdjęcia, reels i stories",
+    description: "Posty, relacje i historie",
   },
   {
     name: "Twitter",
-    icon: Twitter,
+    icon: FaTwitter,
     color: "text-[#1DA1F2]",
-    description: "Tweety i wątki",
+    description: "Tweetowanie i wątki",
   },
   {
-    name: "LinkedIn",
-    icon: Linkedin,
-    color: "text-[#0A66C2]",
-    description: "Posty biznesowe i artykuły",
+    name: "TikTok",
+    icon: FaTiktok,
+    color: "text-[#000000]",
+    description: "Krótkie filmy i treści wideo",
   },
 ];

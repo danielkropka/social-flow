@@ -20,7 +20,7 @@ export default function FaqSection() {
     {
       question: "Jakie platformy społecznościowe są wspierane?",
       answer:
-        "Obecnie wspieramy Facebook, Instagram, Twitter, LinkedIn oraz TikTok. Stale pracujemy nad dodawaniem nowych platform.",
+        "Obecnie wspieramy Facebook, Instagram, Twitter oraz TikTok. Stale pracujemy nad dodawaniem nowych platform.",
     },
     {
       question: "Czy mogę zaplanować posty z wyprzedzeniem?",

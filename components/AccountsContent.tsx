@@ -32,6 +32,7 @@ export default function ConnectAccounts() {
   const [showDeletionModal, setShowDeletionModal] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [showTwitterModal, setShowTwitterModal] = useState(false);
+  const [showFacebookModal, setShowFacebookModal] = useState(false);
   const [accountToRemove, setAccountToRemove] =
     useState<ConnectedAccountWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,6 +61,8 @@ export default function ConnectAccounts() {
       setShowInstagramModal(true);
     } else if (platform === "twitter") {
       setShowTwitterModal(true);
+    } else if (platform === "facebook") {
+      setShowFacebookModal(true);
     }
   };
 
@@ -403,6 +406,87 @@ export default function ConnectAccounts() {
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               Połącz konto
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showFacebookModal} onOpenChange={setShowFacebookModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Połączenie ze stroną Facebook</DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground">
+              Połącz swoją stronę na Facebooku, aby móc publikować i planować
+              posty.
+            </DialogDescription>
+
+            <div className="mt-6">
+              <h4 className="font-semibold mb-4">Wymagania:</h4>
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                <AccordionItem
+                  value="item-1"
+                  className="border rounded-lg bg-gray-50 px-4"
+                >
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                      <span className="font-medium">
+                        Wymagana strona na Facebooku
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-4">
+                    <div className="space-y-3">
+                      <div className="text-gray-600">
+                        Aby połączyć stronę Facebook, musisz być jej
+                        administratorem lub mieć uprawnienia do zarządzania
+                        treścią.
+                      </div>
+                      <div className="pt-2">
+                        <Link
+                          href="https://www.facebook.com/help/104002523024878"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span>→</span> Jak utworzyć stronę na Facebooku
+                        </Link>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              onClick={() => setShowFacebookModal(false)}
+              variant="outline"
+            >
+              Anuluj
+            </Button>
+            <Button
+              onClick={async () => {
+                setShowFacebookModal(false);
+                try {
+                  const response = await fetch(
+                    "/api/auth/facebook/request-token"
+                  );
+                  if (!response.ok) {
+                    throw new Error("Nie udało się pobrać tokena");
+                  }
+                  const data = await response.json();
+                  router.push(
+                    `https://www.facebook.com/v20.0/dialog/oauth?client_id=${data.client_id}&redirect_uri=${data.redirect_uri}&state=${data.state}&scope=pages_show_list,pages_read_engagement,pages_manage_posts`
+                  );
+                } catch (error) {
+                  console.error("Błąd podczas łączenia z Facebookiem:", error);
+                  toast.error("Nie udało się połączyć ze stroną Facebook");
+                }
+              }}
+              className="bg-blue-500 hover:bg-blue-600 text-white"
+            >
+              Połącz stronę
             </Button>
           </DialogFooter>
         </DialogContent>
