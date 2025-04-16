@@ -86,9 +86,26 @@ export async function POST(request: Request) {
 
     const accountInfo = await accountInfoResponse.json();
 
+    // Wymień token Instagram na token Facebooka
+    const facebookTokenResponse = await fetch(
+      `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${INSTAGRAM_CLIENT_ID}&client_secret=${INSTAGRAM_CLIENT_SECRET}&fb_exchange_token=${data.access_token}`
+    );
+
+    if (!facebookTokenResponse.ok) {
+      const errorData = await facebookTokenResponse.json();
+      console.error("Facebook token exchange error:", errorData);
+      return NextResponse.json(
+        { error: "Nie udało się wymienić tokenu Instagram na token Facebooka" },
+        { status: 400 }
+      );
+    }
+
+    const facebookTokenData = await facebookTokenResponse.json();
+    const facebookAccessToken = facebookTokenData.access_token;
+
     // Sprawdź czy konto jest połączone z Facebookiem
     const facebookPagesResponse = await fetch(
-      `https://graph.facebook.com/v20.0/me/accounts?access_token=${data.access_token}`
+      `https://graph.facebook.com/v20.0/me/accounts?access_token=${facebookAccessToken}`
     );
 
     const facebookPagesData = await facebookPagesResponse.json();
