@@ -47,6 +47,28 @@ export async function POST(request: Request) {
 
     const userInfo = await userResponse.json();
 
+    // Sprawdź czy użytkownik ma strony na Facebooku
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v20.0/me/accounts?access_token=${access_token}`
+    );
+
+    if (!pagesResponse.ok) {
+      const error = await pagesResponse.text();
+      throw new Error(`Failed to get pages info: ${error}`);
+    }
+
+    const pagesData = await pagesResponse.json();
+
+    if (!pagesData.data || pagesData.data.length === 0) {
+      return NextResponse.json(
+        {
+          error:
+            "Nie masz żadnych stron na Facebooku. Aby połączyć konto, musisz być administratorem przynajmniej jednej strony.",
+        },
+        { status: 400 }
+      );
+    }
+
     // Zapisz konto do bazy danych
     await db.connectedAccount.create({
       data: {
@@ -67,6 +89,7 @@ export async function POST(request: Request) {
         name: userInfo.name,
         profileImage: userInfo.picture?.data?.url,
         access_token,
+        pages: pagesData.data,
       },
     });
   } catch (error) {
