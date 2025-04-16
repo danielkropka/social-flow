@@ -73,57 +73,63 @@ export async function POST(request: Request) {
 
     const userInfo = await userInfoResponse.json();
 
-    // Sprawdź czy konto jest połączone z Facebookiem i czy jest to konto firmowe/twórcy
+    // Sprawdź czy konto jest firmowe lub twórcy
     const accountInfoResponse = await fetch(
       `https://graph.instagram.com/me?fields=id,username,profile_picture_url,account_type&access_token=${data.access_token}`
     );
 
     if (!accountInfoResponse.ok) {
-      throw new Error(
-        "Nie udało się pobrać szczegółowych informacji o koncie Instagram"
-      );
+      const errorData = await accountInfoResponse.json();
+      console.error("Instagram API error:", errorData);
+      throw new Error("Nie udało się pobrać informacji o koncie Instagram");
     }
 
     const accountInfo = await accountInfoResponse.json();
-
-    // Sprawdź czy konto jest połączone z Facebookiem poprzez API Instagrama
-    const instagramBusinessResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username,profile_picture_url,account_type,connected_facebook_page&access_token=${data.access_token}`
-    );
-
-    if (!instagramBusinessResponse.ok) {
-      const errorData = await instagramBusinessResponse.json();
-      console.error("Instagram Business API error:", errorData);
-      return NextResponse.json(
-        { error: "Nie udało się pobrać informacji o koncie Instagram" },
-        { status: 400 }
-      );
-    }
-
-    const instagramBusinessData = await instagramBusinessResponse.json();
-
-    // Sprawdź czy konto jest połączone z Facebookiem
-    if (!instagramBusinessData.connected_facebook_page) {
-      return NextResponse.json(
-        {
-          error:
-            "Konto Instagram musi być połączone z Facebookiem. Upewnij się, że połączyłeś swoje konto Instagram z Facebookiem w ustawieniach konta.",
-        },
-        { status: 400 }
-      );
-    }
 
     // Sprawdź czy konto jest firmowe lub twórcy
     if (
       accountInfo.account_type !== "BUSINESS" &&
       accountInfo.account_type !== "CREATOR"
     ) {
-      console.error("Instagram account type:", accountInfo.account_type);
       return NextResponse.json(
         {
           error:
             "Konto Instagram musi być kontem firmowym lub twórcy. Aktualny typ konta: " +
             accountInfo.account_type,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Sprawdź czy konto jest połączone z Facebookiem
+    const facebookResponse = await fetch(
+      `https://graph.facebook.com/v20.0/me?fields=id,name,accounts{instagram_business_account}&access_token=${data.access_token}`
+    );
+
+    if (!facebookResponse.ok) {
+      const errorData = await facebookResponse.json();
+      console.error("Facebook API error:", errorData);
+      return NextResponse.json(
+        {
+          error:
+            "Nie udało się sprawdzić połączenia z Facebookiem. Upewnij się, że masz odpowiednie uprawnienia.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const facebookData = await facebookResponse.json();
+
+    // Sprawdź czy konto jest połączone z Facebookiem
+    if (
+      !facebookData.accounts ||
+      !facebookData.accounts.data ||
+      facebookData.accounts.data.length === 0
+    ) {
+      return NextResponse.json(
+        {
+          error:
+            "Konto Instagram musi być połączone z Facebookiem. Upewnij się, że połączyłeś swoje konto Instagram z Facebookiem w ustawieniach konta.",
         },
         { status: 400 }
       );
