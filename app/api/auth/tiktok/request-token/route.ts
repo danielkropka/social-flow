@@ -14,7 +14,7 @@ export async function GET() {
 
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
     const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/tiktok/access-token`;
+    const redirectUri = `https://social-flow-flame.vercel.app/tiktok-callback`;
 
     if (!clientKey || !clientSecret) {
       return NextResponse.json(
@@ -23,7 +23,7 @@ export async function GET() {
       );
     }
 
-    const authUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${clientKey}&response_type=code&scope=user.info.basic%2Cvideo.list%2Cvideo.upload%2Cvideo.publish&redirect_uri=${redirectUri}`;
+    const authUrl = `https://www.tiktok.com/v2/auth/authorize/client_key=${clientKey}&response_type=code&scope=user.info.basic%2Cvideo.list%2Cuser.info.stats&redirect_uri=${redirectUri}`;
 
     return NextResponse.json({ authUrl });
   } catch (error) {
