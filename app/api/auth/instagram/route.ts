@@ -86,36 +86,28 @@ export async function POST(request: Request) {
 
     const accountInfo = await accountInfoResponse.json();
 
-    // Wymień token Instagram na token Facebooka
-    const facebookTokenResponse = await fetch(
-      `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${INSTAGRAM_CLIENT_ID}&client_secret=${INSTAGRAM_CLIENT_SECRET}&fb_exchange_token=${data.access_token}`
+    // Sprawdź czy konto jest połączone z Facebookiem poprzez API Instagrama
+    const instagramBusinessResponse = await fetch(
+      `https://graph.instagram.com/me?fields=id,username,profile_picture_url,account_type,connected_facebook_page&access_token=${data.access_token}`
     );
 
-    if (!facebookTokenResponse.ok) {
-      const errorData = await facebookTokenResponse.json();
-      console.error("Facebook token exchange error:", errorData);
+    if (!instagramBusinessResponse.ok) {
+      const errorData = await instagramBusinessResponse.json();
+      console.error("Instagram Business API error:", errorData);
       return NextResponse.json(
-        { error: "Nie udało się wymienić tokenu Instagram na token Facebooka" },
+        { error: "Nie udało się pobrać informacji o koncie Instagram" },
         { status: 400 }
       );
     }
 
-    const facebookTokenData = await facebookTokenResponse.json();
-    const facebookAccessToken = facebookTokenData.access_token;
+    const instagramBusinessData = await instagramBusinessResponse.json();
 
     // Sprawdź czy konto jest połączone z Facebookiem
-    const facebookPagesResponse = await fetch(
-      `https://graph.facebook.com/v20.0/me/accounts?access_token=${facebookAccessToken}`
-    );
-
-    const facebookPagesData = await facebookPagesResponse.json();
-
-    if (!facebookPagesResponse.ok) {
-      console.error("Facebook API error:", facebookPagesData);
+    if (!instagramBusinessData.connected_facebook_page) {
       return NextResponse.json(
         {
           error:
-            "Konto Instagram musi być połączone z Facebookiem. Upewnij się, że masz odpowiednie uprawnienia.",
+            "Konto Instagram musi być połączone z Facebookiem. Upewnij się, że połączyłeś swoje konto Instagram z Facebookiem w ustawieniach konta.",
         },
         { status: 400 }
       );
