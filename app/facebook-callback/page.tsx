@@ -13,14 +13,13 @@ function FacebookCallbackContent() {
 
   useEffect(() => {
     const code = searchParams.get("code");
-    const state = searchParams.get("state");
 
-    if (code && state) {
-      handleFacebookCallback(code, state);
+    if (code) {
+      handleFacebookCallback(code);
     }
   }, [searchParams]);
 
-  const handleFacebookCallback = async (code: string, state: string) => {
+  const handleFacebookCallback = async (code: string) => {
     try {
       const response = await fetch("/api/auth/facebook/access-token", {
         method: "POST",

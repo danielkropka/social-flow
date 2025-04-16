@@ -48,7 +48,7 @@ export async function POST(request: Request) {
     const userInfo = await userResponse.json();
 
     // Zapisz konto do bazy danych
-    const account = await db.connectedAccount.create({
+    await db.connectedAccount.create({
       data: {
         provider: "FACEBOOK",
         providerAccountId: userInfo.id,

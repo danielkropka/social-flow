@@ -1,5 +1,4 @@
 import HeroSection from "@/components/HeroSection";
-import PlatformsSection from "@/components/PlatformsSection";
 import Footer from "@/components/Footer";
 import Navigation from "@/components/Navigation";
 

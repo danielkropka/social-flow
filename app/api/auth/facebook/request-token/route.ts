@@ -4,7 +4,6 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID!;
-const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET!;
 const FACEBOOK_REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI!;
 
 export async function GET() {
