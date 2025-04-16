@@ -38,7 +38,7 @@ enum Provider {
     FACEBOOK
     INSTAGRAM
     TWITTER
-    LINKEDIN
+    TIKTOK
 }
 
 model Account {

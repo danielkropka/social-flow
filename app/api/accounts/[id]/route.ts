@@ -21,6 +21,48 @@ async function refreshInstagramToken(accessToken: string) {
   }
 }
 
+// Funkcja do odświeżania tokenu TikTok
+async function refreshTikTokToken(refreshToken: string) {
+  try {
+    const clientKey = process.env.TIKTOK_CLIENT_KEY;
+    const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
+
+    if (!clientKey || !clientSecret) {
+      throw new Error("Brak konfiguracji TikTok");
+    }
+
+    const response = await fetch(
+      "https://open.tiktokapis.com/v2/oauth/token/",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_key: clientKey,
+          client_secret: clientSecret,
+          grant_type: "refresh_token",
+          refresh_token: refreshToken,
+        }),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Błąd podczas odświeżania tokenu TikTok");
+    }
+
+    const data = await response.json();
+    return {
+      accessToken: data.access_token,
+      refreshToken: data.refresh_token,
+      expiresIn: data.expires_in,
+    };
+  } catch (error) {
+    console.error("Błąd podczas odświeżania tokenu TikTok:", error);
+    return null;
+  }
+}
+
 // Funkcja do automatycznego odświeżania tokenu
 async function handleTokenRefresh(account: ConnectedAccount) {
   if (account.provider === "INSTAGRAM") {
@@ -31,6 +73,21 @@ async function handleTokenRefresh(account: ConnectedAccount) {
         data: {
           accessToken: newToken,
           expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000), // +60 dni
+        },
+      });
+    }
+  } else if (account.provider === "TIKTOK") {
+    if (!account.refreshToken) {
+      return;
+    }
+    const newTokens = await refreshTikTokToken(account.refreshToken);
+    if (newTokens) {
+      await db.connectedAccount.update({
+        where: { id: account.id },
+        data: {
+          accessToken: newTokens.accessToken,
+          refreshToken: newTokens.refreshToken,
+          expiresAt: new Date(Date.now() + newTokens.expiresIn * 1000),
         },
       });
     }

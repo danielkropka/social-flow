@@ -8,7 +8,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { FaFacebook, FaInstagram, FaTwitter } from "react-icons/fa";
+import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import Image from "next/image";
 import { Loader2, X } from "lucide-react";
 import {
@@ -33,6 +33,7 @@ export default function ConnectAccounts() {
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [showTwitterModal, setShowTwitterModal] = useState(false);
   const [showFacebookModal, setShowFacebookModal] = useState(false);
+  const [showTikTokModal, setShowTikTokModal] = useState(false);
   const [accountToRemove, setAccountToRemove] =
     useState<ConnectedAccountWithDetails | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +64,8 @@ export default function ConnectAccounts() {
       setShowTwitterModal(true);
     } else if (platform === "facebook") {
       setShowFacebookModal(true);
+    } else if (platform === "tiktok") {
+      setShowTikTokModal(true);
     }
   };
 
@@ -121,6 +124,8 @@ export default function ConnectAccounts() {
         return <FaInstagram className="h-5 w-5 text-pink-600" />;
       case "TWITTER":
         return <FaTwitter className="h-5 w-5 text-blue-400" />;
+      case "TIKTOK":
+        return <FaTiktok className="h-5 w-5 text-black" />;
       default:
         return null;
     }
@@ -142,7 +147,7 @@ export default function ConnectAccounts() {
 
   return (
     <div className="space-y-4">
-      {["facebook", "instagram", "twitter"].map((platform) => (
+      {["facebook", "instagram", "twitter", "tiktok"].map((platform) => (
         <div
           key={platform}
           className="flex flex-col md:flex-row items-center justify-between p-4 border border-gray-200 rounded-lg shadow-sm"
@@ -496,6 +501,80 @@ export default function ConnectAccounts() {
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
               Połącz stronę
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTikTokModal} onOpenChange={setShowTikTokModal}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Połączenie z TikTok</DialogTitle>
+            <DialogDescription className="text-base text-muted-foreground">
+              Połącz swoje konto TikTok, aby móc publikować i planować posty.
+            </DialogDescription>
+
+            <div className="mt-6">
+              <h4 className="font-semibold mb-4">Wymagania:</h4>
+              <Accordion type="single" collapsible className="w-full space-y-4">
+                <AccordionItem
+                  value="item-1"
+                  className="border rounded-lg bg-gray-50 px-4"
+                >
+                  <AccordionTrigger className="hover:no-underline">
+                    <div className="flex items-center gap-2">
+                      <div className="h-2 w-2 rounded-full bg-blue-500"></div>
+                      <span className="font-medium">
+                        Wymagane konto TikTok Business
+                      </span>
+                    </div>
+                  </AccordionTrigger>
+                  <AccordionContent className="pt-2 pb-4">
+                    <div className="space-y-3">
+                      <div className="text-gray-600">
+                        Aby połączyć konto TikTok, musisz posiadać konto typu
+                        Business lub Creator.
+                      </div>
+                      <div className="pt-2">
+                        <Link
+                          href="https://www.tiktok.com/business/en"
+                          className="text-sm text-blue-600 hover:underline flex items-center gap-1"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <span>→</span> Jak utworzyć konto TikTok Business
+                        </Link>
+                      </div>
+                    </div>
+                  </AccordionContent>
+                </AccordionItem>
+              </Accordion>
+            </div>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setShowTikTokModal(false)} variant="outline">
+              Anuluj
+            </Button>
+            <Button
+              onClick={async () => {
+                setShowTikTokModal(false);
+                try {
+                  const response = await fetch(
+                    "/api/auth/tiktok/request-token"
+                  );
+                  if (!response.ok) {
+                    throw new Error("Nie udało się pobrać tokena");
+                  }
+                  const data = await response.json();
+                  router.push(data.authUrl);
+                } catch (error) {
+                  console.error("Błąd podczas łączenia z TikTok:", error);
+                  toast.error("Nie udało się połączyć z TikTok");
+                }
+              }}
+              className="bg-black hover:bg-gray-800 text-white"
+            >
+              Połącz konto
             </Button>
           </DialogFooter>
         </DialogContent>
