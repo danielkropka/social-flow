@@ -73,6 +73,42 @@ export async function POST(request: Request) {
 
     const userInfo = await userInfoResponse.json();
 
+    // Sprawdź czy konto jest połączone z Facebookiem i czy jest to konto firmowe/twórcy
+    const accountInfoResponse = await fetch(
+      `https://graph.instagram.com/me?fields=id,username,profile_picture_url,account_type&access_token=${data.access_token}`
+    );
+
+    if (!accountInfoResponse.ok) {
+      throw new Error(
+        "Nie udało się pobrać szczegółowych informacji o koncie Instagram"
+      );
+    }
+
+    const accountInfo = await accountInfoResponse.json();
+
+    // Sprawdź czy konto jest połączone z Facebookiem
+    const facebookPagesResponse = await fetch(
+      `https://graph.facebook.com/v20.0/me/accounts?access_token=${data.access_token}`
+    );
+
+    if (!facebookPagesResponse.ok) {
+      return NextResponse.json(
+        { error: "Konto Instagram musi być połączone z Facebookiem" },
+        { status: 400 }
+      );
+    }
+
+    // Sprawdź czy konto jest firmowe lub twórcy
+    if (
+      accountInfo.account_type !== "BUSINESS" &&
+      accountInfo.account_type !== "CREATOR"
+    ) {
+      return NextResponse.json(
+        { error: "Konto Instagram musi być kontem firmowym lub twórcy" },
+        { status: 400 }
+      );
+    }
+
     // Zapisz token w bazie danych
     const connectedAccount = await prisma.connectedAccount.upsert({
       where: {
