@@ -7,6 +7,37 @@ import { db } from "@/lib/prisma";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY!;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET!;
+const MAX_RETRIES = 3;
+const INITIAL_RETRY_DELAY = 1000; // 1 sekunda
+
+async function fetchWithRetry(
+  url: string,
+  options: RequestInit,
+  retryCount = 0
+): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+
+    if (response.status === 429 && retryCount < MAX_RETRIES) {
+      const retryAfter = response.headers.get("Retry-After");
+      const delay = retryAfter
+        ? parseInt(retryAfter) * 1000
+        : INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retryCount + 1);
+    }
+
+    return response;
+  } catch (error) {
+    if (retryCount < MAX_RETRIES) {
+      const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
+      await new Promise((resolve) => setTimeout(resolve, delay));
+      return fetchWithRetry(url, options, retryCount + 1);
+    }
+    throw error;
+  }
+}
 
 export async function POST(request: Request) {
   try {
@@ -91,7 +122,7 @@ export async function POST(request: Request) {
       })
     );
 
-    const userResponse = await fetch(
+    const userResponse = await fetchWithRetry(
       `${user_data.url}?${new URLSearchParams(user_data.data).toString()}`,
       {
         method: user_data.method,
@@ -105,6 +136,15 @@ export async function POST(request: Request) {
 
     if (!userResponse.ok) {
       const errorText = await userResponse.text();
+      if (userResponse.status === 429) {
+        return NextResponse.json(
+          {
+            error: "Przekroczono limit zapytań do Twittera",
+            details: "Spróbuj ponownie za kilka minut",
+          },
+          { status: 429 }
+        );
+      }
       throw new Error(`Failed to get user info: ${errorText}`);
     }
 
