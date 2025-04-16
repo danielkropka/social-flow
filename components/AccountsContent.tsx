@@ -318,11 +318,20 @@ export default function ConnectAccounts() {
               Anuluj
             </Button>
             <Button
-              onClick={() => {
-                setShowInstagramModal(false);
-                router.push(
-                  "https://www.instagram.com/oauth/authorize?enable_fb_login=0&force_authentication=1&client_id=1350650186062159&redirect_uri=https://social-flow-flame.vercel.app/instagram-callback&response_type=code&scope=instagram_business_basic%2Cinstagram_business_manage_messages%2Cinstagram_business_manage_comments%2Cinstagram_business_content_publish%2Cinstagram_business_manage_insights"
-                );
+              onClick={async () => {
+                try {
+                  const response = await fetch(
+                    "/api/auth/instagram/request-token"
+                  );
+                  if (!response.ok) {
+                    throw new Error("Nie udało się pobrać URL autoryzacji");
+                  }
+                  const data = await response.json();
+                  router.push(data.authUrl);
+                } catch (error) {
+                  console.error("Błąd podczas łączenia z Instagramem:", error);
+                  toast.error("Nie udało się połączyć z Instagramem");
+                }
               }}
               className="bg-blue-500 hover:bg-blue-600 text-white"
             >
