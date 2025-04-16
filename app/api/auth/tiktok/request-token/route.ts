@@ -23,7 +23,7 @@ export async function GET() {
       );
     }
 
-    const authUrl = `https://www.tiktok.com/v2/auth/authorize/client_key=${clientKey}&response_type=code&scope=user.info.basic%2Cvideo.list%2Cuser.info.stats&redirect_uri=${redirectUri}`;
+    const authUrl = `https://www.tiktok.com/v2/auth/authorize/?client_key=${clientKey}&response_type=code&scope=user.info.basic%2Cvideo.list%2Cuser.info.stats&redirect_uri=${redirectUri}`;
 
     return NextResponse.json({ authUrl });
   } catch (error) {
