@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
     const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
-    const redirectUri = `${process.env.NEXT_PUBLIC_APP_URL}/api/auth/tiktok/access-token`;
+    const redirectUri = `https://social-flow-flame.vercel.app/api/auth/tiktok/access-token`;
 
     if (!clientKey || !clientSecret) {
       return NextResponse.json(
