@@ -91,9 +91,15 @@ export async function POST(request: Request) {
       `https://graph.facebook.com/v20.0/me/accounts?access_token=${data.access_token}`
     );
 
+    const facebookPagesData = await facebookPagesResponse.json();
+
     if (!facebookPagesResponse.ok) {
+      console.error("Facebook API error:", facebookPagesData);
       return NextResponse.json(
-        { error: "Konto Instagram musi być połączone z Facebookiem" },
+        {
+          error:
+            "Konto Instagram musi być połączone z Facebookiem. Upewnij się, że masz odpowiednie uprawnienia.",
+        },
         { status: 400 }
       );
     }
@@ -103,8 +109,13 @@ export async function POST(request: Request) {
       accountInfo.account_type !== "BUSINESS" &&
       accountInfo.account_type !== "CREATOR"
     ) {
+      console.error("Instagram account type:", accountInfo.account_type);
       return NextResponse.json(
-        { error: "Konto Instagram musi być kontem firmowym lub twórcy" },
+        {
+          error:
+            "Konto Instagram musi być kontem firmowym lub twórcy. Aktualny typ konta: " +
+            accountInfo.account_type,
+        },
         { status: 400 }
       );
     }
