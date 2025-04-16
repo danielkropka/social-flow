@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
     const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
-    const redirectUri = `https://social-flow-flame.vercel.app/api/auth/tiktok/access-token`;
+    const redirectUri = `https://social-flow-flame.vercel.app/tiktok-callback`;
 
     if (!clientKey || !clientSecret) {
       return NextResponse.json(
@@ -53,6 +53,7 @@ export async function POST(request: Request) {
 
     if (!tokenResponse.ok) {
       const error = await tokenResponse.json();
+      console.error("Błąd TikTok API:", error);
       throw new Error(
         error.error_description || "Błąd podczas pobierania tokena"
       );
