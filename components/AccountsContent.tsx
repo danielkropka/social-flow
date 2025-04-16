@@ -477,7 +477,7 @@ export default function ConnectAccounts() {
                   }
                   const data = await response.json();
                   router.push(
-                    `https://www.facebook.com/v20.0/dialog/oauth?client_id=${data.client_id}&redirect_uri=${data.redirect_uri}&state=${data.state}&scope=pages_show_list,pages_read_engagement,pages_manage_posts`
+                    `https://www.facebook.com/v20.0/dialog/oauth?client_id=${data.client_id}&redirect_uri=${data.redirect_uri}&scope=pages_show_list%2Cpages_read_engagement%2Cpages_manage_posts%2Cpublic_profile&response_type=code`
                   );
                 } catch (error) {
                   console.error("Błąd podczas łączenia z Facebookiem:", error);
