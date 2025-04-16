@@ -101,40 +101,6 @@ export async function POST(request: Request) {
       );
     }
 
-    // Sprawdź czy konto jest połączone z Facebookiem
-    const facebookResponse = await fetch(
-      `https://graph.facebook.com/v20.0/me?fields=id,name,accounts{instagram_business_account}&access_token=${data.access_token}`
-    );
-
-    if (!facebookResponse.ok) {
-      const errorData = await facebookResponse.json();
-      console.error("Facebook API error:", errorData);
-      return NextResponse.json(
-        {
-          error:
-            "Nie udało się sprawdzić połączenia z Facebookiem. Upewnij się, że masz odpowiednie uprawnienia.",
-        },
-        { status: 400 }
-      );
-    }
-
-    const facebookData = await facebookResponse.json();
-
-    // Sprawdź czy konto jest połączone z Facebookiem
-    if (
-      !facebookData.accounts ||
-      !facebookData.accounts.data ||
-      facebookData.accounts.data.length === 0
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "Konto Instagram musi być połączone z Facebookiem. Upewnij się, że połączyłeś swoje konto Instagram z Facebookiem w ustawieniach konta.",
-        },
-        { status: 400 }
-      );
-    }
-
     // Zapisz token w bazie danych
     const connectedAccount = await prisma.connectedAccount.upsert({
       where: {
