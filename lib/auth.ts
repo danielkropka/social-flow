@@ -62,13 +62,6 @@ export const authOptions: NextAuthOptions = {
           name: user.name,
           email: user.email,
           image: user.image,
-          stripeCustomerId: "",
-          stripeSubscriptionId: "",
-          subscriptionType: "FREE",
-          subscriptionStatus: "INCOMPLETE",
-          subscriptionStart: new Date(),
-          subscriptionEnd: new Date(),
-          subscriptionInterval: "MONTH",
         };
       },
     }),
@@ -99,8 +92,6 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NODE_ENV === "production" ? ".social-flow.pl" : undefined,
       },
     },
     callbackUrl: {
@@ -109,8 +100,6 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NODE_ENV === "production" ? ".social-flow.pl" : undefined,
       },
     },
     csrfToken: {
@@ -120,15 +109,13 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NODE_ENV === "production" ? ".social-flow.pl" : undefined,
       },
     },
   },
   pages: {
     signIn: "/sign-in",
   },
-  debug: process.env.NODE_ENV === "development",
+  debug: true,
 };
 
 export const getAuthSession = () => getServerSession(authOptions);
