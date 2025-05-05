@@ -20,6 +20,7 @@ export const authOptions: NextAuthOptions = {
           name: profile.name,
           email: profile.email,
           image: profile.picture,
+          provider: "GOOGLE",
           stripeCustomerId: "",
           stripeSubscriptionId: "",
           subscriptionType: "FREE",
