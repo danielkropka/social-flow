@@ -14,7 +14,7 @@ export async function GET() {
 
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
     const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
-    const redirectUri = `https://social-flow-flame.vercel.app/tiktok-callback`;
+    const redirectUri = `https://social-flow-flame.vercel.app/verify/tiktok-callback`;
 
     if (!clientKey || !clientSecret) {
       return NextResponse.json(

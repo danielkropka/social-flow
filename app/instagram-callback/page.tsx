@@ -21,7 +21,7 @@ export default function InstagramCallback() {
 
   const handleInstagramCode = async (code: string) => {
     try {
-      const response = await fetch("/api/auth/instagram", {
+      const response = await fetch("/api/auth/instagram/access-token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
