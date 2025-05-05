@@ -14,6 +14,21 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      profile(profile) {
+        return {
+          id: profile.sub,
+          name: profile.name,
+          email: profile.email,
+          image: profile.picture,
+          stripeCustomerId: "",
+          stripeSubscriptionId: "",
+          subscriptionType: "FREE",
+          subscriptionStatus: "INCOMPLETE",
+          subscriptionStart: new Date(),
+          subscriptionEnd: new Date(),
+          subscriptionInterval: "MONTH",
+        };
+      },
     }),
     CredentialsProvider({
       name: "credentials",
@@ -91,6 +106,12 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
+    async signIn({ account }) {
+      if (account?.provider === "google") {
+        account.provider = "GOOGLE";
+      }
+      return true;
+    },
     async jwt({ token, trigger, user }) {
       if (user) {
         token.id = user.id;
