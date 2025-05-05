@@ -28,19 +28,6 @@ const nextConfig: NextConfig = {
     ],
     dangerouslyAllowSVG: true, // delete this after testing
   },
-  async headers() {
-    return [
-      {
-        source: "/:path*",
-        headers: [
-          {
-            key: "Set-Cookie",
-            value: "SameSite=Lax; Path=/; Secure",
-          },
-        ],
-      },
-    ];
-  },
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },

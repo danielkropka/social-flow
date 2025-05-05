@@ -1,12 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { motion } from "framer-motion";
 import { GoogleLogo } from "@/components/icons/GoogleLogo";
-import { signIn } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
@@ -24,6 +24,17 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    console.log("Session status:", status);
+    console.log("Session data:", session);
+
+    if (status === "authenticated") {
+      console.log("User is authenticated, redirecting to dashboard");
+      router.push("/dashboard");
+    }
+  }, [status, session, router]);
 
   const {
     register,
@@ -36,12 +47,16 @@ export default function SignIn() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
+      console.log("Attempting to sign in with:", data.email);
+
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
         remember: data.remember,
         redirect: false,
       });
+
+      console.log("Sign in result:", result);
 
       if (result?.error === "GoogleAccount") {
         toast.error(
@@ -55,7 +70,7 @@ export default function SignIn() {
         router.refresh();
       }
     } catch (error) {
-      console.error(error);
+      console.error("Sign in error:", error);
       toast.error("Wystąpił nieoczekiwany błąd");
     } finally {
       setIsLoading(false);
@@ -64,12 +79,21 @@ export default function SignIn() {
 
   const handleGoogleLogin = async () => {
     try {
+      console.log("Attempting Google sign in");
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
-      console.error(error);
+      console.error("Google sign in error:", error);
       toast.error("Wystąpił błąd podczas logowania przez Google");
     }
   };
+
+  if (status === "loading") {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -156,7 +180,7 @@ export default function SignIn() {
               )}
             </div>
 
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-center justify-between">
               <div className="flex items-center">
                 <input
                   id="remember"
