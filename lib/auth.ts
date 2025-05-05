@@ -107,13 +107,7 @@ export const authOptions: NextAuthOptions = {
     },
   },
   callbacks: {
-    async signIn({ account }) {
-      if (account?.provider === "google") {
-        account.provider = "GOOGLE";
-      }
-      return true;
-    },
-    async jwt({ token, trigger, user }) {
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.name = user.name;
@@ -128,7 +122,7 @@ export const authOptions: NextAuthOptions = {
         token.subscriptionInterval = user.subscriptionInterval;
       }
 
-      if (trigger === "update") {
+      /* if (trigger === "update") {
         try {
           const updatedUser = await db.user.findUnique({
             where: { email: token.email! },
@@ -148,7 +142,7 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           console.error("Error refreshing session data:", error);
         }
-      }
+      } */
 
       return token;
     },

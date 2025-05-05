@@ -50,19 +50,12 @@ export default function SignUp() {
   const onSubmit = async (data: SignUpFormValues) => {
     setIsLoading(true);
     try {
-      console.log("Starting registration process");
-
       const requestBody = {
         firstName: data.firstName,
         lastName: data.lastName,
         email: data.email,
         password: data.password,
       };
-
-      console.log("Sending request with data:", {
-        ...requestBody,
-        password: "[HIDDEN]",
-      });
 
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -72,10 +65,7 @@ export default function SignUp() {
         body: JSON.stringify(requestBody),
       });
 
-      console.log("Response status:", response.status);
-
       const responseText = await response.text();
-      console.log("Raw response:", responseText);
 
       let result;
       try {
@@ -92,15 +82,11 @@ export default function SignUp() {
         );
       }
 
-      console.log("Registration successful, attempting login");
-
       const signInResult = await signIn("credentials", {
         email: data.email,
         password: data.password,
         redirect: false,
       });
-
-      console.log("Sign in result:", signInResult);
 
       if (signInResult?.error) {
         throw new Error("Failed to login after registration");
