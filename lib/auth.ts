@@ -20,7 +20,6 @@ export const authOptions: NextAuthOptions = {
           name: profile.name,
           email: profile.email,
           image: profile.picture,
-          provider: "GOOGLE",
           stripeCustomerId: "",
           stripeSubscriptionId: "",
           subscriptionType: "FREE",
@@ -77,7 +76,9 @@ export const authOptions: NextAuthOptions = {
   ],
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 dni
   },
+  secret: process.env.NEXTAUTH_SECRET,
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -86,8 +87,6 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NODE_ENV === "production" ? ".social-flow.pl" : undefined,
       },
     },
     callbackUrl: {
@@ -96,8 +95,6 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NODE_ENV === "production" ? ".social-flow.pl" : undefined,
       },
     },
     csrfToken: {
@@ -107,8 +104,6 @@ export const authOptions: NextAuthOptions = {
         sameSite: "lax",
         path: "/",
         secure: process.env.NODE_ENV === "production",
-        domain:
-          process.env.NODE_ENV === "production" ? ".social-flow.pl" : undefined,
       },
     },
   },
@@ -175,6 +170,7 @@ export const authOptions: NextAuthOptions = {
   pages: {
     signIn: "/sign-in",
   },
+  debug: process.env.NODE_ENV === "development",
 };
 
 export const getAuthSession = () => getServerSession(authOptions);

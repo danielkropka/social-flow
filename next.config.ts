@@ -37,20 +37,12 @@ const nextConfig: NextConfig = {
             key: "Set-Cookie",
             value: "SameSite=Lax; Path=/; Secure",
           },
-          {
-            key: "Access-Control-Allow-Credentials",
-            value: "true",
-          },
-          {
-            key: "Access-Control-Allow-Origin",
-            value:
-              process.env.NODE_ENV === "production"
-                ? "https://social-flow.pl"
-                : "http://localhost:3000",
-          },
         ],
       },
     ];
+  },
+  env: {
+    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
 };
 
