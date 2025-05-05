@@ -39,6 +39,7 @@ enum Provider {
     INSTAGRAM
     TWITTER
     TIKTOK
+    GOOGLE
 }
 
 model Account {
