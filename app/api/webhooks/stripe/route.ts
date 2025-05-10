@@ -38,16 +38,19 @@ export async function POST(req: Request) {
       const customer = session.customer as string;
       const customerEmail = session.customer_email as string;
       try {
+        const user = await db.user.findUnique({
+          where: { email: customerEmail },
+        });
+
+        if (!user) {
+          console.error(`User with email ${customerEmail} not found`);
+          return;
+        }
+
         await db.user.update({
-          where: {
-            ...(customerEmail
-              ? { email: customerEmail }
-              : { stripeCustomerId: customer }),
-          },
+          where: { id: user.id },
           data: {
-            ...(customerEmail && {
-              stripeCustomerId: customer,
-            }),
+            stripeCustomerId: customer,
             ...(session.metadata?.gotFreeTrial === "true" && {
               gotFreeTrial: true,
             }),
@@ -75,9 +78,17 @@ export async function POST(req: Request) {
         );
         const planItem = stripeSubscription.items.data[0];
 
-        // Zaktualizuj dane użytkownika w bazie danych
-        await db.user.update({
+        const user = await db.user.findFirst({
           where: { stripeCustomerId: customerId },
+        });
+
+        if (!user) {
+          console.error(`User with stripeCustomerId ${customerId} not found`);
+          return;
+        }
+
+        await db.user.update({
+          where: { id: user.id },
           data: {
             stripeSubscriptionId: stripeSubscription.id,
             subscriptionStatus:
