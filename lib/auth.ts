@@ -5,6 +5,7 @@ import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/prisma";
 import { User } from "next-auth";
+import { PlanType, PlanStatus, PlanInterval } from "@prisma/client";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -95,6 +96,31 @@ export const authOptions: NextAuthOptions = {
         token.email = user.email;
         token.name = user.name;
       }
+
+      // Pobierz aktualne dane użytkownika z bazy danych
+      const dbUser = await db.user.findUnique({
+        where: { id: token.id as string },
+        select: {
+          stripeCustomerId: true,
+          stripeSubscriptionId: true,
+          subscriptionType: true,
+          subscriptionStatus: true,
+          subscriptionStart: true,
+          subscriptionEnd: true,
+          subscriptionInterval: true,
+        },
+      });
+
+      if (dbUser) {
+        token.stripeCustomerId = dbUser.stripeCustomerId;
+        token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
+        token.subscriptionType = dbUser.subscriptionType;
+        token.subscriptionStatus = dbUser.subscriptionStatus;
+        token.subscriptionStart = dbUser.subscriptionStart;
+        token.subscriptionEnd = dbUser.subscriptionEnd;
+        token.subscriptionInterval = dbUser.subscriptionInterval;
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -102,6 +128,16 @@ export const authOptions: NextAuthOptions = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
+        session.user.stripeCustomerId = token.stripeCustomerId as string;
+        session.user.stripeSubscriptionId =
+          token.stripeSubscriptionId as string;
+        session.user.subscriptionType = token.subscriptionType as PlanType;
+        session.user.subscriptionStatus =
+          token.subscriptionStatus as PlanStatus;
+        session.user.subscriptionStart = token.subscriptionStart as Date;
+        session.user.subscriptionEnd = token.subscriptionEnd as Date;
+        session.user.subscriptionInterval =
+          token.subscriptionInterval as PlanInterval;
       }
       return session;
     },
