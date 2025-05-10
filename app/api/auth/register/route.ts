@@ -8,8 +8,11 @@ export async function POST(req: Request) {
     let body;
     try {
       body = await req.json();
-    } catch (error) {
-      console.error("Błąd parsowania żądania:", error);
+    } catch (error: unknown) {
+      console.error(
+        "Błąd parsowania żądania:",
+        error instanceof Error ? error.message : error
+      );
       return NextResponse.json(
         {
           success: false,
@@ -90,8 +93,11 @@ export async function POST(req: Request) {
         },
         { status: 201 }
       );
-    } catch (dbError: any) {
-      console.error("Błąd bazy danych:", dbError.message);
+    } catch (dbError: unknown) {
+      console.error(
+        "Błąd bazy danych:",
+        dbError instanceof Error ? dbError.message : dbError
+      );
       return NextResponse.json(
         {
           success: false,
@@ -101,8 +107,11 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-  } catch (error: any) {
-    console.error("Błąd serwera:", error.message);
+  } catch (error: unknown) {
+    console.error(
+      "Błąd serwera:",
+      error instanceof Error ? error.message : error
+    );
     return NextResponse.json(
       {
         success: false,

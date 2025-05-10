@@ -47,6 +47,7 @@ export default function SignUp() {
         }
         result = JSON.parse(responseText);
       } catch (error) {
+        console.error("Error parsing response:", error);
         throw new Error("Nieprawidłowa odpowiedź z serwera");
       }
 
