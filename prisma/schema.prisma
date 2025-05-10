@@ -74,8 +74,8 @@ model User {
     sessions          Session[]
     gotFreeTrial      Boolean            @default(false)
 
-    stripeCustomerId     String?       @unique
-    stripeSubscriptionId String?       @unique
+    stripeCustomerId     String?
+    stripeSubscriptionId String?
     subscriptionStatus   PlanStatus?
     subscriptionType     PlanType?
     subscriptionInterval PlanInterval?

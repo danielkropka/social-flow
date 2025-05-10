@@ -11,29 +11,10 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-
-const signUpSchema = z
-  .object({
-    firstName: z.string().min(2, "Imię musi mieć minimum 2 znaki"),
-    lastName: z.string().min(2, "Nazwisko musi mieć minimum 2 znaki"),
-    email: z.string().email("Nieprawidłowy adres email"),
-    password: z
-      .string()
-      .min(8, "Hasło musi mieć minimum 8 znaków")
-      .regex(/[A-Z]/, "Hasło musi zawierać przynajmniej jedną wielką literę")
-      .regex(/[0-9]/, "Hasło musi zawierać przynajmniej jedną cyfrę"),
-    confirmPassword: z.string(),
-    terms: z
-      .boolean()
-      .refine((val) => val === true, "Musisz zaakceptować regulamin"),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Hasła nie są identyczne",
-    path: ["confirmPassword"],
-  });
-
-type SignUpFormValues = z.infer<typeof signUpSchema>;
+import {
+  registerSchema,
+  type RegisterFormValues,
+} from "@/lib/validations/auth";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
@@ -43,74 +24,96 @@ export default function SignUp() {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
+    setError,
+  } = useForm<RegisterFormValues>({
+    resolver: zodResolver(registerSchema),
   });
 
-  const onSubmit = async (data: SignUpFormValues) => {
-    setIsLoading(true);
+  const onSubmit = async (data: RegisterFormValues) => {
     try {
-      const requestBody = {
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-        password: data.password,
-      };
-
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify(data),
       });
-
-      const responseText = await response.text();
 
       let result;
       try {
+        const responseText = await response.text();
+        if (!responseText) {
+          throw new Error("Pusta odpowiedź z serwera");
+        }
         result = JSON.parse(responseText);
-        console.log("Parsed response:", result);
-      } catch (e) {
-        console.error("Failed to parse response:", e);
-        throw new Error("Invalid server response");
+      } catch (error) {
+        throw new Error("Nieprawidłowa odpowiedź z serwera");
       }
 
-      if (!result.success) {
-        throw new Error(
-          result.error || result.details || "Registration failed"
-        );
+      if (!response.ok) {
+        if (
+          result.error === "ValidationError" &&
+          Array.isArray(result.details)
+        ) {
+          // Mapowanie błędów walidacji na odpowiednie pola formularza
+          const fieldErrors: Record<string, string> = {
+            firstName: "Imię jest wymagane",
+            lastName: "Nazwisko jest wymagane",
+            email: "Email jest wymagany",
+            password: "Hasło jest wymagane",
+            confirmPassword: "Potwierdzenie hasła jest wymagane",
+          };
+
+          // Ustawiamy błędy dla każdego pola
+          Object.entries(fieldErrors).forEach(([field, message]) => {
+            setError(field as keyof RegisterFormValues, {
+              type: "manual",
+              message,
+            });
+          });
+          return;
+        }
+
+        if (result.error === "EmailExists") {
+          setError("email", {
+            type: "manual",
+            message: "Ten adres email jest już zarejestrowany",
+          });
+          return;
+        }
+
+        if (result.error === "WeakPassword") {
+          setError("password", {
+            type: "manual",
+            message: result.message || "Hasło jest zbyt słabe",
+          });
+          return;
+        }
+
+        throw new Error(result.message || "Wystąpił błąd podczas rejestracji");
       }
 
-      const signInResult = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
-
-      if (signInResult?.error) {
-        throw new Error("Failed to login after registration");
-      }
-
-      toast.success("Account created successfully");
-      router.push("/dashboard");
-      router.refresh();
-    } catch (error: Error | unknown) {
-      console.error("Registration error:", error);
+      // Rejestracja udana
+      toast.success("Konto zostało utworzone! Sprawdź swoją skrzynkę email.");
+      router.push("/sign-in");
+    } catch (error) {
       toast.error(
-        error instanceof Error ? error.message : "An unexpected error occurred"
+        error instanceof Error
+          ? error.message
+          : "Wystąpił błąd podczas rejestracji"
       );
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const handleGoogleSignUp = async () => {
+    setIsLoading(true);
     try {
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
-      console.error(error);
+      console.error("Google sign up error:", error);
       toast.error("Wystąpił błąd podczas rejestracji przez Google");
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -170,7 +173,8 @@ export default function SignUp() {
                   type="text"
                   {...register("firstName")}
                   placeholder="Jan"
-                  className="mt-1"
+                  className={`mt-1 ${errors.firstName ? "border-red-500" : ""}`}
+                  disabled={isLoading}
                 />
                 {errors.firstName && (
                   <p className="mt-1 text-sm text-red-600">
@@ -190,7 +194,8 @@ export default function SignUp() {
                   type="text"
                   {...register("lastName")}
                   placeholder="Kowalski"
-                  className="mt-1"
+                  className={`mt-1 ${errors.lastName ? "border-red-500" : ""}`}
+                  disabled={isLoading}
                 />
                 {errors.lastName && (
                   <p className="mt-1 text-sm text-red-600">
@@ -212,7 +217,8 @@ export default function SignUp() {
                 type="email"
                 {...register("email")}
                 placeholder="nazwa@example.com"
-                className="mt-1"
+                className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+                disabled={isLoading}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">
@@ -233,7 +239,8 @@ export default function SignUp() {
                 type="password"
                 {...register("password")}
                 placeholder="Min. 8 znaków"
-                className="mt-1"
+                className={`mt-1 ${errors.password ? "border-red-500" : ""}`}
+                disabled={isLoading}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">
@@ -254,7 +261,10 @@ export default function SignUp() {
                 type="password"
                 {...register("confirmPassword")}
                 placeholder="••••••••"
-                className="mt-1"
+                className={`mt-1 ${
+                  errors.confirmPassword ? "border-red-500" : ""
+                }`}
+                disabled={isLoading}
               />
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">
@@ -269,6 +279,7 @@ export default function SignUp() {
                 id="terms"
                 {...register("terms")}
                 className="mt-1 rounded border-gray-300 text-blue-600"
+                disabled={isLoading}
               />
               <label
                 htmlFor="terms"
@@ -277,14 +288,14 @@ export default function SignUp() {
                 Akceptuję{" "}
                 <Link
                   href="/terms"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   regulamin
                 </Link>{" "}
                 oraz{" "}
                 <Link
                   href="/privacy"
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-blue-600 hover:text-blue-700 transition-colors"
                 >
                   politykę prywatności
                 </Link>
@@ -301,7 +312,14 @@ export default function SignUp() {
             disabled={isLoading}
           >
             <span className="relative z-10">
-              {isLoading ? "Tworzenie konta..." : "Zarejestruj się"}
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Tworzenie konta...
+                </div>
+              ) : (
+                "Zarejestruj się"
+              )}
             </span>
             <div className="absolute inset-0 bg-gradient-to-r from-[#5DADE2] to-[#1ABC9C] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Button>
@@ -320,28 +338,26 @@ export default function SignUp() {
           <Button
             type="button"
             onClick={handleGoogleSignUp}
-            className="w-full h-10 sm:h-12 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-700"
+            className="w-full h-10 sm:h-12 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-700 transition-colors"
             disabled={isLoading}
           >
             <GoogleLogo />
-            <span className="text-sm sm:text-base">Google</span>
+            <span className="text-sm sm:text-base ml-2">
+              {isLoading ? "Rejestracja..." : "Google"}
+            </span>
           </Button>
 
-          <motion.div
-            style={{
-              textAlign: "center",
-            }}
-          >
+          <div className="text-center">
             <p className="text-sm sm:text-base text-gray-600">
               Masz już konto?{" "}
               <Link
                 href="/sign-in"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Zaloguj się
               </Link>
             </p>
-          </motion.div>
+          </div>
         </form>
       </motion.div>
     </div>

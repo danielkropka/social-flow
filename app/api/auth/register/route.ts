@@ -1,37 +1,160 @@
-import { hash } from "bcryptjs";
 import { NextResponse } from "next/server";
+import { hash } from "bcryptjs";
 import { db } from "@/lib/prisma";
+import { registerSchema } from "@/lib/validations/auth";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { email, password, firstName, lastName } = body;
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      console.error("Błąd parsowania żądania:", error);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "InvalidRequest",
+          message: "Nieprawidłowy format danych",
+        },
+        { status: 400 }
+      );
+    }
 
-    const hashedPassword = await hash(password, 10);
+    const result = registerSchema.safeParse(body);
+    if (!result.success) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "ValidationError",
+          details: result.error.errors.map((err) => err.message),
+        },
+        { status: 400 }
+      );
+    }
 
-    await db.user.create({
-      data: {
-        email,
-        name: `${firstName} ${lastName}`,
-        password: hashedPassword,
-        subscriptionType: "FREE",
-        subscriptionStatus: "INCOMPLETE",
-      },
+    const { firstName, lastName, email, password } = result.data;
+
+    // Sprawdź czy użytkownik już istnieje
+    const existingUser = await db.user.findUnique({
+      where: { email },
     });
 
-    return NextResponse.json({
-      success: true,
-      message: "Registration successful",
-    });
-  } catch (error: Error | unknown) {
-    console.error("Registration error:", error);
+    if (existingUser) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "EmailExists",
+          message: "Ten adres email jest już zarejestrowany",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Sprawdź siłę hasła
+    const passwordStrength = checkPasswordStrength(password);
+    if (passwordStrength.score < 3) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "WeakPassword",
+          message: "Hasło jest zbyt słabe",
+          details: passwordStrength.feedback,
+        },
+        { status: 400 }
+      );
+    }
+
+    try {
+      // Hashuj hasło
+      const hashedPassword = await hash(password, 12);
+
+      // Utwórz użytkownika
+      const user = await db.user.create({
+        data: {
+          name: `${firstName} ${lastName}`,
+          email,
+          password: hashedPassword,
+          gotFreeTrial: false,
+        },
+      });
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Konto zostało utworzone pomyślnie",
+          user: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          },
+        },
+        { status: 201 }
+      );
+    } catch (dbError: any) {
+      console.error("Błąd bazy danych:", dbError.message);
+      return NextResponse.json(
+        {
+          success: false,
+          error: "DatabaseError",
+          message: "Wystąpił błąd podczas tworzenia konta",
+        },
+        { status: 500 }
+      );
+    }
+  } catch (error: any) {
+    console.error("Błąd serwera:", error.message);
     return NextResponse.json(
       {
         success: false,
-        error: "Registration failed",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: "ServerError",
+        message: "Wystąpił błąd podczas rejestracji",
       },
       { status: 500 }
     );
   }
+}
+
+function checkPasswordStrength(password: string) {
+  const feedback: string[] = [];
+  let score = 0;
+
+  // Długość hasła
+  if (password.length >= 8) {
+    score += 1;
+  } else {
+    feedback.push("Hasło musi mieć minimum 8 znaków");
+  }
+
+  // Wielkie litery
+  if (/[A-Z]/.test(password)) {
+    score += 1;
+  } else {
+    feedback.push("Hasło musi zawierać przynajmniej jedną wielką literę");
+  }
+
+  // Małe litery
+  if (/[a-z]/.test(password)) {
+    score += 1;
+  } else {
+    feedback.push("Hasło musi zawierać przynajmniej jedną małą literę");
+  }
+
+  // Cyfry
+  if (/[0-9]/.test(password)) {
+    score += 1;
+  } else {
+    feedback.push("Hasło musi zawierać przynajmniej jedną cyfrę");
+  }
+
+  // Znaki specjalne
+  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+    score += 1;
+  } else {
+    feedback.push("Hasło musi zawierać przynajmniej jeden znak specjalny");
+  }
+
+  return {
+    score,
+    feedback,
+  };
 }

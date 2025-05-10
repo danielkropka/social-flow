@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
+import { motion, HTMLMotionProps } from "framer-motion";
 import { GoogleLogo } from "@/components/icons/GoogleLogo";
 import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -24,17 +24,6 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
-  const { data: session, status } = useSession();
-
-  useEffect(() => {
-    console.log("Session status:", status);
-    console.log("Session data:", session);
-
-    if (status === "authenticated") {
-      console.log("User is authenticated, redirecting to dashboard");
-      router.push("/dashboard");
-    }
-  }, [status, session, router]);
 
   const {
     register,
@@ -47,8 +36,6 @@ export default function SignIn() {
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
     try {
-      console.log("Attempting to sign in with:", data.email);
-
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -56,44 +43,67 @@ export default function SignIn() {
         redirect: false,
       });
 
-      console.log("Sign in result:", result);
+      if (!result) {
+        toast.error("Wystąpił nieoczekiwany błąd podczas logowania");
+        return;
+      }
 
-      if (result?.error === "GoogleAccount") {
-        toast.error(
-          "To konto zostało utworzone przez Google. Użyj przycisku 'Kontynuuj z Google' aby się zalogować."
-        );
-      } else if (result?.error) {
-        toast.error("Nieprawidłowy email lub hasło");
-      } else {
-        toast.success("Zalogowano pomyślnie");
-        router.push("/dashboard");
-        router.refresh();
+      switch (result.error) {
+        case "GoogleAccount":
+          toast.error(
+            "To konto zostało utworzone przez Google. Użyj przycisku 'Kontynuuj z Google' aby się zalogować."
+          );
+          break;
+        case "EmailNotVerified":
+          toast.error(
+            "Twój email nie został jeszcze zweryfikowany. Sprawdź swoją skrzynkę pocztową i kliknij w link weryfikacyjny."
+          );
+          break;
+        case "InvalidCredentials":
+          toast.error("Nieprawidłowy email lub hasło");
+          break;
+        case "Email i hasło są wymagane":
+          toast.error("Proszę wypełnić wszystkie pola");
+          break;
+        case "Nie znaleziono konta z podanym adresem email":
+          toast.error("Nie znaleziono konta z podanym adresem email");
+          break;
+        default:
+          if (result.error) {
+            toast.error(`Wystąpił błąd: ${result.error}`);
+          } else {
+            toast.success("Zalogowano pomyślnie");
+            router.push("/dashboard");
+            router.refresh();
+          }
       }
     } catch (error) {
       console.error("Sign in error:", error);
-      toast.error("Wystąpił nieoczekiwany błąd");
+      if (error instanceof Error) {
+        toast.error(`Wystąpił błąd: ${error.message}`);
+      } else {
+        toast.error("Wystąpił nieoczekiwany błąd podczas logowania");
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleGoogleLogin = async () => {
+    setIsLoading(true);
     try {
-      console.log("Attempting Google sign in");
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
       console.error("Google sign in error:", error);
-      toast.error("Wystąpił błąd podczas logowania przez Google");
+      if (error instanceof Error) {
+        toast.error(`Błąd logowania przez Google: ${error.message}`);
+      } else {
+        toast.error("Wystąpił błąd podczas logowania przez Google");
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
-
-  if (status === "loading") {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
@@ -150,7 +160,8 @@ export default function SignIn() {
                 type="email"
                 {...register("email")}
                 placeholder="nazwa@example.com"
-                className="mt-1"
+                className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+                disabled={isLoading}
               />
               {errors.email && (
                 <p className="mt-1 text-sm text-red-600">
@@ -171,7 +182,8 @@ export default function SignIn() {
                 type="password"
                 {...register("password")}
                 placeholder="••••••••"
-                className="mt-1"
+                className={`mt-1 ${errors.password ? "border-red-500" : ""}`}
+                disabled={isLoading}
               />
               {errors.password && (
                 <p className="mt-1 text-sm text-red-600">
@@ -187,6 +199,7 @@ export default function SignIn() {
                   type="checkbox"
                   {...register("remember")}
                   className="rounded border-gray-300 text-blue-600"
+                  disabled={isLoading}
                 />
                 <label
                   htmlFor="remember"
@@ -197,7 +210,7 @@ export default function SignIn() {
               </div>
               <Link
                 href="/forgot-password"
-                className="text-sm sm:text-base text-blue-600 hover:text-blue-500"
+                className="text-sm sm:text-base text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Zapomniałeś hasła?
               </Link>
@@ -210,7 +223,14 @@ export default function SignIn() {
             disabled={isLoading}
           >
             <span className="relative z-10">
-              {isLoading ? "Logowanie..." : "Zaloguj się"}
+              {isLoading ? (
+                <div className="flex items-center justify-center">
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                  Logowanie...
+                </div>
+              ) : (
+                "Zaloguj się"
+              )}
             </span>
             <div className="absolute inset-0 bg-gradient-to-r from-[#5DADE2] to-[#1ABC9C] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Button>
@@ -229,28 +249,26 @@ export default function SignIn() {
           <Button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full h-10 sm:h-12 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-700"
+            className="w-full h-10 sm:h-12 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-700 transition-colors"
             disabled={isLoading}
           >
             <GoogleLogo />
-            <span className="text-sm sm:text-base">Google</span>
+            <span className="text-sm sm:text-base ml-2">
+              {isLoading ? "Logowanie..." : "Google"}
+            </span>
           </Button>
 
-          <motion.div
-            style={{
-              textAlign: "center",
-            }}
-          >
+          <div className="text-center">
             <p className="text-sm sm:text-base text-gray-600">
               Nie masz jeszcze konta?{" "}
               <Link
                 href="/sign-up"
-                className="font-medium text-blue-600 hover:text-blue-500"
+                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
               >
                 Zarejestruj się
               </Link>
             </p>
-          </motion.div>
+          </div>
         </form>
       </motion.div>
     </div>

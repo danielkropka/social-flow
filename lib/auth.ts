@@ -29,7 +29,7 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error("Invalid credentials");
+          throw new Error("Email i hasło są wymagane");
         }
 
         const user = await db.user.findUnique({
@@ -42,11 +42,32 @@ export const authOptions: NextAuthOptions = {
             email: true,
             password: true,
             image: true,
+            emailVerified: true,
+            accounts: {
+              select: {
+                provider: true,
+              },
+            },
           },
         });
 
-        if (!user || !user?.password) {
-          throw new Error("Invalid credentials");
+        if (!user) {
+          throw new Error("Nie znaleziono konta z podanym adresem email");
+        }
+
+        const hasGoogleAccount = user.accounts.some(
+          (account) => account.provider === "google"
+        );
+        if (hasGoogleAccount) {
+          throw new Error("GoogleAccount");
+        }
+
+        if (!user.emailVerified) {
+          throw new Error("EmailNotVerified");
+        }
+
+        if (!user.password) {
+          throw new Error("InvalidCredentials");
         }
 
         const isCorrectPassword = await bcrypt.compare(
@@ -55,7 +76,7 @@ export const authOptions: NextAuthOptions = {
         );
 
         if (!isCorrectPassword) {
-          throw new Error("Invalid credentials");
+          throw new Error("InvalidCredentials");
         }
 
         return {
