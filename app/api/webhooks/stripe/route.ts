@@ -83,8 +83,13 @@ export async function POST(req: Request) {
         });
 
         if (!user) {
-          console.error(`User with stripeCustomerId ${customerId} not found`);
-          return;
+          console.error(
+            `User with stripeCustomerId ${customerId} not found. Customer ID: ${customerId}, Subscription: ${subscription}`
+          );
+          return NextResponse.json(
+            { error: "User not found" },
+            { status: 404 }
+          );
         }
 
         await db.user.update({
@@ -107,10 +112,14 @@ export async function POST(req: Request) {
         });
 
         console.log(
-          `Subscription for customer ID ${customerId} created successfully.`
+          `Subscription for user ${user.id} (${user.email}) created successfully.`
         );
       } catch (error) {
         console.error("Error creating subscription:", error);
+        return NextResponse.json(
+          { error: "Failed to process subscription" },
+          { status: 500 }
+        );
       }
       break;
     default:
