@@ -27,7 +27,7 @@ export const authOptions: NextAuthOptions = {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req): Promise<User | null> {
+      async authorize(credentials): Promise<User | null> {
         if (!credentials?.email || !credentials?.password) {
           throw new Error("Invalid credentials");
         }
@@ -90,23 +90,23 @@ export const authOptions: NextAuthOptions = {
       name: `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: "lax",
         path: "/",
+        secure: process.env.NODE_ENV === "production",
       },
     },
     callbackUrl: {
       name: `next-auth.callback-url`,
       options: {
-        sameSite: "lax",
         path: "/",
+        secure: process.env.NODE_ENV === "production",
       },
     },
     csrfToken: {
       name: "next-auth.csrf-token",
       options: {
         httpOnly: true,
-        sameSite: "lax",
         path: "/",
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },
