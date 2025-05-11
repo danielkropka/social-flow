@@ -13,32 +13,89 @@ function TikTokCallbackContent() {
 
   useEffect(() => {
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
 
-    if (code) {
-      handleTikTokCallback(code);
+    if (error) {
+      handleOAuthError(error, errorDescription);
+      return;
+    }
+
+    if (code && state) {
+      handleTikTokCallback(code, state);
+    } else {
+      handleMissingParams();
     }
   }, [searchParams]);
 
-  const handleTikTokCallback = async (code: string) => {
+  const handleOAuthError = (error: string, description?: string | null) => {
+    let errorMessage = "Nie udało się połączyć konta TikTok";
+    let errorDescription =
+      "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+
+    switch (error) {
+      case "access_denied":
+        errorMessage = "Odmowa dostępu";
+        errorDescription = "Nie wyraziłeś zgody na połączenie konta TikTok.";
+        break;
+      case "invalid_scope":
+        errorMessage = "Nieprawidłowe uprawnienia";
+        errorDescription =
+          "Wymagane uprawnienia nie zostały poprawnie skonfigurowane.";
+        break;
+      case "invalid_request":
+        errorMessage = "Nieprawidłowe żądanie";
+        errorDescription = description || "Wystąpił błąd podczas autoryzacji.";
+        break;
+    }
+
+    toast.error(errorMessage, {
+      description: errorDescription,
+      duration: 7000,
+      action: {
+        label: "Spróbuj ponownie",
+        onClick: () => router.push("/dashboard/"),
+      },
+    });
+
+    setTimeout(() => {
+      router.push("/dashboard/");
+    }, 3000);
+  };
+
+  const handleMissingParams = () => {
+    toast.error("Brak wymaganych parametrów", {
+      description:
+        "Nie otrzymano wszystkich wymaganych danych do połączenia konta.",
+      duration: 7000,
+      action: {
+        label: "Spróbuj ponownie",
+        onClick: () => router.push("/dashboard/"),
+      },
+    });
+
+    setTimeout(() => {
+      router.push("/dashboard/");
+    }, 3000);
+  };
+
+  const handleTikTokCallback = async (code: string, state: string) => {
     try {
       const response = await fetch("/api/auth/tiktok/access-token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, state }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        if (data.error) {
-          throw new Error(data.error);
-        }
-        if (data.details) {
-          console.error("Szczegóły błędu:", data.details);
-        }
-        throw new Error("Wystąpił błąd podczas łączenia z kontem TikTok");
+        throw new Error(
+          data.error || "Wystąpił błąd podczas łączenia z kontem TikTok"
+        );
       }
 
       if (data.success) {
@@ -60,7 +117,18 @@ function TikTokCallbackContent() {
       if (error instanceof Error) {
         const errorText = error.message.toLowerCase();
 
-        if (errorText.includes("uprawnień") || errorText.includes("scope")) {
+        if (errorText.includes("nie jesteś zalogowany")) {
+          errorMessage = "Brak zalogowania";
+          errorDescription =
+            "Musisz być zalogowany, aby połączyć konto TikTok.";
+        } else if (errorText.includes("nieprawidłowy state")) {
+          errorMessage = "Błąd weryfikacji";
+          errorDescription =
+            "Weryfikacja bezpieczeństwa nie powiodła się. Spróbuj ponownie.";
+        } else if (
+          errorText.includes("uprawnień") ||
+          errorText.includes("scope")
+        ) {
           errorMessage = "Brak wymaganych uprawnień";
           errorDescription =
             "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
@@ -74,6 +142,10 @@ function TikTokCallbackContent() {
           errorMessage = "Problem z danymi konta";
           errorDescription =
             "Nie udało się pobrać wszystkich wymaganych danych z Twojego konta TikTok.";
+        } else if (errorText.includes("konfiguracji")) {
+          errorMessage = "Błąd konfiguracji";
+          errorDescription =
+            "Wystąpił problem z konfiguracją systemu. Skontaktuj się z pomocą techniczną.";
         }
       }
 

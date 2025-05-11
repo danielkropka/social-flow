@@ -13,31 +13,95 @@ function FacebookCallbackContent() {
 
   useEffect(() => {
     const code = searchParams.get("code");
+    const state = searchParams.get("state");
+    const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
 
-    if (code) {
-      handleFacebookCallback(code);
+    if (error) {
+      handleOAuthError(error, errorDescription);
+      return;
+    }
+
+    if (code && state) {
+      handleFacebookCallback(code, state);
+    } else {
+      handleMissingParams();
     }
   }, [searchParams]);
 
-  const handleFacebookCallback = async (code: string) => {
+  const handleOAuthError = (error: string, description?: string | null) => {
+    let errorMessage = "Nie udało się połączyć konta Facebook";
+    let errorDescription =
+      "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+
+    switch (error) {
+      case "access_denied":
+        errorMessage = "Odmowa dostępu";
+        errorDescription = "Nie wyraziłeś zgody na połączenie konta Facebook.";
+        break;
+      case "invalid_scope":
+        errorMessage = "Nieprawidłowe uprawnienia";
+        errorDescription =
+          "Wymagane uprawnienia nie zostały poprawnie skonfigurowane.";
+        break;
+      case "invalid_request":
+        errorMessage = "Nieprawidłowe żądanie";
+        errorDescription = description || "Wystąpił błąd podczas autoryzacji.";
+        break;
+    }
+
+    toast.error(errorMessage, {
+      description: errorDescription,
+      duration: 7000,
+      action: {
+        label: "Spróbuj ponownie",
+        onClick: () => router.push("/dashboard/"),
+      },
+    });
+
+    setTimeout(() => {
+      router.push("/dashboard/");
+    }, 3000);
+  };
+
+  const handleMissingParams = () => {
+    toast.error("Brak wymaganych parametrów", {
+      description:
+        "Nie otrzymano wszystkich wymaganych danych do połączenia konta.",
+      duration: 7000,
+      action: {
+        label: "Spróbuj ponownie",
+        onClick: () => router.push("/dashboard/"),
+      },
+    });
+
+    setTimeout(() => {
+      router.push("/dashboard/");
+    }, 3000);
+  };
+
+  const handleFacebookCallback = async (code: string, state: string) => {
     try {
       const response = await fetch("/api/auth/facebook/access-token", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, state }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Błąd podczas autoryzacji");
+        throw new Error(
+          data.error || "Wystąpił błąd podczas łączenia z kontem Facebook"
+        );
       }
 
       if (data.success) {
         toast.success("Konto Facebook zostało pomyślnie połączone!", {
           description: `Połączono konto: ${data.account.name}`,
+          duration: 5000,
         });
         router.push("/dashboard/");
       } else {
@@ -45,13 +109,58 @@ function FacebookCallbackContent() {
       }
     } catch (error) {
       console.error("Błąd podczas łączenia z Facebookiem:", error);
-      toast.error("Nie udało się połączyć konta Facebook", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+
+      let errorMessage = "Nie udało się połączyć konta Facebook";
+      let errorDescription =
+        "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+
+      if (error instanceof Error) {
+        const errorText = error.message.toLowerCase();
+
+        if (errorText.includes("nie jesteś zalogowany")) {
+          errorMessage = "Brak zalogowania";
+          errorDescription =
+            "Musisz być zalogowany, aby połączyć konto Facebook.";
+        } else if (errorText.includes("nieprawidłowy state")) {
+          errorMessage = "Błąd weryfikacji";
+          errorDescription =
+            "Weryfikacja bezpieczeństwa nie powiodła się. Spróbuj ponownie.";
+        } else if (
+          errorText.includes("uprawnień") ||
+          errorText.includes("scope")
+        ) {
+          errorMessage = "Brak wymaganych uprawnień";
+          errorDescription =
+            "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
+        } else if (
+          errorText.includes("sesja") ||
+          errorText.includes("wygasła")
+        ) {
+          errorMessage = "Sesja wygasła";
+          errorDescription = "Spróbuj ponownie połączyć konto Facebook.";
+        } else if (errorText.includes("dane") || errorText.includes("pobrać")) {
+          errorMessage = "Problem z danymi konta";
+          errorDescription =
+            "Nie udało się pobrać wszystkich wymaganych danych z Twojego konta Facebook.";
+        } else if (errorText.includes("konfiguracji")) {
+          errorMessage = "Błąd konfiguracji";
+          errorDescription =
+            "Wystąpił problem z konfiguracją systemu. Skontaktuj się z pomocą techniczną.";
+        }
+      }
+
+      toast.error(errorMessage, {
+        description: errorDescription,
+        duration: 7000,
+        action: {
+          label: "Spróbuj ponownie",
+          onClick: () => router.push("/dashboard/"),
+        },
       });
-      router.push("/dashboard/");
+
+      setTimeout(() => {
+        router.push("/dashboard/");
+      }, 3000);
     }
   };
 
