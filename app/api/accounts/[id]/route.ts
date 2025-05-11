@@ -31,6 +31,12 @@ async function refreshTikTokToken(refreshToken: string) {
       throw new Error("Brak konfiguracji TikTok");
     }
 
+    const formData = new URLSearchParams();
+    formData.append("client_id", clientKey);
+    formData.append("client_secret", clientSecret);
+    formData.append("grant_type", "refresh_token");
+    formData.append("refresh_token", refreshToken);
+
     const response = await fetch(
       "https://open.tiktokapis.com/v2/oauth/token/",
       {
@@ -38,12 +44,7 @@ async function refreshTikTokToken(refreshToken: string) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          client_key: clientKey,
-          client_secret: clientSecret,
-          grant_type: "refresh_token",
-          refresh_token: refreshToken,
-        }),
+        body: formData,
       }
     );
 

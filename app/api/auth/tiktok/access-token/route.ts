@@ -33,6 +33,13 @@ export async function POST(request: Request) {
       );
     }
 
+    const formData = new URLSearchParams();
+    formData.append("client_key", clientKey);
+    formData.append("client_secret", clientSecret);
+    formData.append("grant_type", "authorization_code");
+    formData.append("code", code);
+    formData.append("redirect_uri", redirectUri);
+
     // Pobierz token dostępu
     const tokenResponse = await fetch(
       "https://open.tiktokapis.com/v2/oauth/token/",
@@ -41,13 +48,7 @@ export async function POST(request: Request) {
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          client_key: clientKey,
-          client_secret: clientSecret,
-          code,
-          grant_type: "authorization_code",
-          redirect_uri: redirectUri,
-        }),
+        body: formData,
       }
     );
 
