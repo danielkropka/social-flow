@@ -25,20 +25,18 @@ async function refreshInstagramToken(accessToken: string) {
 async function refreshTikTokToken(refreshToken: string) {
   try {
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
-    const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
 
-    if (!clientKey || !clientSecret) {
+    if (!clientKey) {
       throw new Error("Brak konfiguracji TikTok");
     }
 
     const formData = new URLSearchParams();
-    formData.append("client_id", clientKey);
-    formData.append("client_secret", clientSecret);
+    formData.append("client_key", clientKey);
     formData.append("grant_type", "refresh_token");
     formData.append("refresh_token", refreshToken);
 
     const response = await fetch(
-      "https://open.tiktokapis.com/v2/oauth/token/",
+      "https://open-api.tiktok.com/oauth/refresh_token/",
       {
         method: "POST",
         headers: {
