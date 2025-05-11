@@ -39,9 +39,6 @@ export async function GET() {
         "user.info.basic",
         "user.info.stats",
         "user.info.profile",
-        "video.list",
-        "video.publish",
-        "video.upload",
       ].join(",")}&redirect_uri=${redirectUri}&state=${state}`,
       state,
     });

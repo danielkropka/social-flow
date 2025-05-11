@@ -35,15 +35,13 @@ async function refreshInstagramToken(accessToken: string) {
 async function refreshTikTokToken(refreshToken: string) {
   try {
     const clientKey = process.env.TIKTOK_CLIENT_KEY;
-    const clientSecret = process.env.TIKTOK_CLIENT_SECRET;
 
-    if (!clientKey || !clientSecret) {
+    if (!clientKey) {
       throw new Error("Brak wymaganej konfiguracji TikTok");
     }
 
     const formData = new URLSearchParams();
     formData.append("client_key", clientKey);
-    formData.append("client_secret", clientSecret);
     formData.append("grant_type", "refresh_token");
     formData.append("refresh_token", refreshToken);
 
