@@ -16,14 +16,15 @@ function TwitterCallbackContent() {
     const oauth_verifier = searchParams.get("oauth_verifier");
     const tokenSecret = localStorage.getItem("twitter_token_secret");
 
-    if (oauth_token && oauth_verifier && tokenSecret) {
-      handleTwitterCallback(oauth_token, oauth_verifier, tokenSecret);
-    } else {
+    if (!oauth_token || !oauth_verifier || !tokenSecret) {
       toast.error("Brak wymaganych danych autoryzacji", {
         description: "Nie otrzymano wszystkich wymaganych danych z Twitter",
       });
       router.push("/dashboard/");
+      return;
     }
+
+    handleTwitterCallback(oauth_token, oauth_verifier, tokenSecret);
   }, [searchParams]);
 
   const handleTwitterCallback = async (
