@@ -46,7 +46,7 @@ export async function GET() {
     ].join(" ");
 
     const state = crypto.randomBytes(32).toString("hex");
-    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_API_KEY}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+    const authUrl = `https://api.x.com/oauth/request_token?oauth_consumer_key=${TWITTER_API_KEY}&oauth_callback=${REDIRECT_URI}`;
 
     return NextResponse.json({
       authUrl,
