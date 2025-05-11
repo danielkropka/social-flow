@@ -40,19 +40,13 @@ async function refreshTikTokToken(refreshToken: string) {
       throw new Error("Brak wymaganej konfiguracji TikTok");
     }
 
-    const formData = new URLSearchParams();
-    formData.append("client_key", clientKey);
-    formData.append("grant_type", "refresh_token");
-    formData.append("refresh_token", refreshToken);
-
     const response = await fetch(
-      "https://open-api.tiktok.com/oauth/refresh_token/",
+      `https://open-api.tiktok.com/oauth/refresh_token/?client_key=${clientKey}&grant_type=refresh_token&refresh_token=${refreshToken}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: formData,
       }
     );
 
