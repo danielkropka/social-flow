@@ -1,189 +1,154 @@
 import { NextResponse } from "next/server";
-import OAuth from "oauth-1.0a";
-import crypto from "crypto";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/auth";
 
-const TWITTER_API_KEY = process.env.TWITTER_API_KEY!;
-const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET!;
-const MAX_RETRIES = 3;
-const INITIAL_RETRY_DELAY = 1000; // 1 sekunda
-
-async function fetchWithRetry(
-  url: string,
-  options: RequestInit,
-  retryCount = 0
-): Promise<Response> {
-  try {
-    const response = await fetch(url, options);
-
-    if (response.status === 429 && retryCount < MAX_RETRIES) {
-      const retryAfter = response.headers.get("Retry-After");
-      const delay = retryAfter
-        ? parseInt(retryAfter) * 1000
-        : INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
-
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      return fetchWithRetry(url, options, retryCount + 1);
-    }
-
-    return response;
-  } catch (error) {
-    if (retryCount < MAX_RETRIES) {
-      const delay = INITIAL_RETRY_DELAY * Math.pow(2, retryCount);
-      await new Promise((resolve) => setTimeout(resolve, delay));
-      return fetchWithRetry(url, options, retryCount + 1);
-    }
-    throw error;
-  }
-}
+const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
+const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
+const REDIRECT_URI = "https://social-flow.pl/twitter-callback";
 
 export async function POST(request: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    // Pobierz zalogowanego użytkownika
+    const session = await getAuthSession();
+
     if (!session?.user?.id) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+      return NextResponse.json(
+        {
+          error: "Nie jesteś zalogowany",
+          details: "Musisz być zalogowany, aby połączyć konto Twitter",
+        },
+        { status: 401 }
+      );
     }
 
-    const { oauth_token, oauth_verifier } = await request.json();
-
-    if (!oauth_token || !oauth_verifier) {
+    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
+      console.error("Brak konfiguracji Twitter");
       return NextResponse.json(
-        { error: "Missing oauth_token or oauth_verifier" },
+        {
+          error: "Błąd konfiguracji",
+          details: "Brak wymaganej konfiguracji Twitter",
+        },
+        { status: 500 }
+      );
+    }
+
+    const { code, code_verifier } = await request.json();
+
+    if (!code || !code_verifier) {
+      return NextResponse.json(
+        {
+          error: "Brak wymaganych danych",
+          details: "Nie otrzymano kodu autoryzacji lub code_verifier z Twitter",
+        },
         { status: 400 }
       );
     }
 
-    const oauth = new OAuth({
-      consumer: {
-        key: TWITTER_API_KEY,
-        secret: TWITTER_API_SECRET,
-      },
-      signature_method: "HMAC-SHA1",
-      hash_function(base_string, key) {
-        return crypto
-          .createHmac("sha1", key)
-          .update(base_string)
-          .digest("base64");
-      },
-    });
-
-    const request_data = {
-      url: "https://api.x.com/oauth/access_token",
-      method: "POST",
-      data: {
-        oauth_token,
-        oauth_verifier,
-      },
-    };
-
-    const response = await fetch(request_data.url, {
-      method: request_data.method,
-      headers: {
-        ...oauth.toHeader(oauth.authorize(request_data)),
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: new URLSearchParams({
-        oauth_token,
-        oauth_verifier,
-      }).toString(),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Twitter API error: ${errorText}`);
-    }
-
-    const text = await response.text();
-    const params = new URLSearchParams(text);
-    const access_token = params.get("oauth_token");
-    const access_token_secret = params.get("oauth_token_secret");
-    const user_id = params.get("user_id");
-    const screen_name = params.get("screen_name");
-
-    if (!access_token || !access_token_secret || !user_id || !screen_name) {
-      throw new Error("Invalid response from Twitter");
-    }
-
-    // Pobierz informacje o użytkowniku używając API v2
-    const user_data = {
-      url: `https://api.x.com/2/users/${user_id}`,
-      method: "GET",
-      data: {
-        "user.fields": "profile_image_url,name,username",
-      },
-    };
-
-    const authHeader = oauth.toHeader(
-      oauth.authorize(user_data, {
-        key: access_token,
-        secret: access_token_secret,
-      })
+    // Wymiana kodu na token dostępu
+    const tokenResponse = await fetch(
+      "https://api.twitter.com/2/oauth2/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          code,
+          grant_type: "authorization_code",
+          client_id: TWITTER_API_KEY,
+          redirect_uri: REDIRECT_URI,
+          code_verifier,
+        }),
+      }
     );
 
-    const userResponse = await fetchWithRetry(
-      `${user_data.url}?${new URLSearchParams(user_data.data).toString()}`,
+    if (!tokenResponse.ok) {
+      const errorData = await tokenResponse.json();
+      console.error("Twitter API error:", errorData);
+      return NextResponse.json(
+        {
+          error: "Błąd podczas wymiany kodu na token",
+          details: errorData.error_description || "Nieznany błąd",
+        },
+        { status: 400 }
+      );
+    }
+
+    const tokenData = await tokenResponse.json();
+
+    // Pobierz informacje o użytkowniku
+    const userInfoResponse = await fetch(
+      "https://api.twitter.com/2/users/me?user.fields=profile_image_url,username,name",
       {
-        method: user_data.method,
         headers: {
-          ...authHeader,
-          "Content-Type": "application/json",
-          Accept: "application/json",
+          Authorization: `Bearer ${tokenData.access_token}`,
         },
       }
     );
 
-    if (!userResponse.ok) {
-      const errorText = await userResponse.text();
-      if (userResponse.status === 429) {
-        return NextResponse.json(
-          {
-            error: "Przekroczono limit zapytań do Twittera",
-            details: "Spróbuj ponownie za kilka minut",
-          },
-          { status: 429 }
-        );
-      }
-      throw new Error(`Failed to get user info: ${errorText}`);
+    if (!userInfoResponse.ok) {
+      const errorData = await userInfoResponse.json();
+      console.error("Twitter User Info error:", errorData);
+      return NextResponse.json(
+        {
+          error: "Nie udało się pobrać informacji o koncie Twitter",
+          details: errorData.detail || "Nieznany błąd",
+        },
+        { status: 400 }
+      );
     }
 
-    const userInfo = await userResponse.json();
-    const profileImage = userInfo.data?.profile_image_url?.replace(
-      "_normal",
-      ""
-    );
+    const userInfo = await userInfoResponse.json();
 
-    // Zapisz konto do bazy danych
-    await db.connectedAccount.create({
-      data: {
-        provider: "TWITTER",
-        providerAccountId: user_id,
-        accessToken: access_token,
-        refreshToken: access_token_secret,
-        name: userInfo.data?.name || screen_name,
-        username: userInfo.data?.username || screen_name,
-        profileImage,
-        userId: session.user.id,
-      },
-    });
+    try {
+      // Zapisz token w bazie danych
+      const connectedAccount = await db.connectedAccount.upsert({
+        where: {
+          provider_providerAccountId: {
+            provider: "TWITTER",
+            providerAccountId: userInfo.data.id,
+          },
+        },
+        update: {
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+          username: userInfo.data.username,
+          profileImage: userInfo.data.profile_image_url,
+        },
+        create: {
+          provider: "TWITTER",
+          providerAccountId: userInfo.data.id,
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
+          name: userInfo.data.name,
+          username: userInfo.data.username,
+          profileImage: userInfo.data.profile_image_url,
+          userId: session.user.id,
+        },
+      });
 
-    return NextResponse.json({
-      success: true,
-      account: {
-        username: userInfo.data?.username || screen_name,
-        name: userInfo.data?.name || screen_name,
-        profileImage,
-        access_token,
-        access_token_secret,
-      },
-    });
+      return NextResponse.json({
+        success: true,
+        account: connectedAccount,
+      });
+    } catch (dbError) {
+      console.error("Błąd bazy danych:", dbError);
+      return NextResponse.json(
+        {
+          error: "Nie udało się zapisać danych konta Twitter",
+          details: "Błąd podczas zapisywania w bazie danych",
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error("Error getting Twitter access token:", error);
+    console.error("Błąd autoryzacji Twitter:", error);
     return NextResponse.json(
       {
-        error: "Failed to get Twitter access token",
-        details: error instanceof Error ? error.message : "Unknown error",
+        error: "Wystąpił nieoczekiwany błąd podczas łączenia z Twitter",
+        details: error instanceof Error ? error.message : "Nieznany błąd",
       },
       { status: 500 }
     );

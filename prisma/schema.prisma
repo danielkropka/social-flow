@@ -71,7 +71,6 @@ model User {
     image             String?
     connectedAccounts ConnectedAccount[]
     accounts          Account[]
-    sessions          Session[]
     gotFreeTrial      Boolean            @default(false)
 
     stripeCustomerId     String?
@@ -83,16 +82,6 @@ model User {
     subscriptionEnd      DateTime?
 
     posts Post[]
-}
-
-model Session {
-    id           String   @id @default(auto()) @map("_id") @db.ObjectId
-    sessionToken String   @unique
-    userId       String   @db.ObjectId
-    expires      DateTime
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@index([userId])
 }
 
 model Media {

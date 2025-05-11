@@ -1,25 +1,72 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { FaInstagram } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
 
-export default function InstagramCallback() {
+function InstagramCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   useEffect(() => {
     const code = searchParams.get("code");
+    const error = searchParams.get("error");
+    const errorDescription = searchParams.get("error_description");
+
+    if (error) {
+      handleInstagramError(error, errorDescription);
+      return;
+    }
 
     if (code) {
-      handleInstagramCode(code);
+      handleInstagramCallback(code);
     }
   }, [searchParams]);
 
-  const handleInstagramCode = async (code: string) => {
+  const handleInstagramError = (
+    error: string,
+    errorDescription: string | null
+  ) => {
+    let errorMessage = "Nie udało się połączyć konta Instagram";
+    let errorDetails =
+      "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+
+    switch (error) {
+      case "access_denied":
+        errorMessage = "Odmowa dostępu";
+        errorDetails =
+          "Nie wyraziłeś zgody na wymagane uprawnienia. Spróbuj ponownie i upewnij się, że akceptujesz wszystkie wymagane uprawnienia.";
+        break;
+      case "invalid_scope":
+        errorMessage = "Nieprawidłowe uprawnienia";
+        errorDetails =
+          "Wystąpił problem z uprawnieniami. Spróbuj ponownie połączyć konto.";
+        break;
+      case "invalid_request":
+        errorMessage = "Nieprawidłowe żądanie";
+        errorDetails =
+          "Wystąpił problem z żądaniem autoryzacji. Spróbuj ponownie.";
+        break;
+    }
+
+    toast.error(errorMessage, {
+      description: errorDetails,
+      duration: 7000,
+      action: {
+        label: "Spróbuj ponownie",
+        onClick: () => router.push("/dashboard/"),
+      },
+    });
+
+    setTimeout(() => {
+      router.push("/dashboard/");
+    }, 3000);
+  };
+
+  const handleInstagramCallback = async (code: string) => {
     try {
       const response = await fetch("/api/auth/instagram/access-token", {
         method: "POST",
@@ -29,25 +76,75 @@ export default function InstagramCallback() {
         body: JSON.stringify({ code }),
       });
 
-      if (!response.ok) {
-        throw new Error("Błąd podczas autoryzacji");
-      }
-
       const data = await response.json();
+
+      if (!response.ok) {
+        // Jeśli mamy szczegółowy komunikat błędu z API
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        // Jeśli mamy szczegóły techniczne
+        if (data.details) {
+          console.error("Szczegóły błędu:", data.details);
+        }
+        throw new Error("Wystąpił błąd podczas łączenia z kontem Instagram");
+      }
 
       if (data.success) {
         toast.success("Konto Instagram zostało pomyślnie połączone!", {
-          description: `Połączono konto: ${data.account.username}`,
+          description: `Połączono konto: ${data.account.name}`,
+          duration: 5000,
         });
         router.push("/dashboard/");
+      } else {
+        throw new Error(data.error || "Nieznany błąd");
       }
     } catch (error) {
-      console.error("Błąd:", error);
-      toast.error("Nie udało się połączyć konta Instagram", {
-        description:
-          "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+      console.error("Błąd podczas łączenia z Instagram:", error);
+
+      let errorMessage = "Nie udało się połączyć konta Instagram";
+      let errorDescription =
+        "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+
+      if (error instanceof Error) {
+        const errorText = error.message.toLowerCase();
+
+        if (errorText.includes("konto instagram musi być kontem firmowym")) {
+          errorMessage = "Nieprawidłowy typ konta";
+          errorDescription =
+            "Twoje konto Instagram musi być kontem firmowym lub twórcy. Przekonwertuj swoje konto na konto firmowe w ustawieniach Instagram.";
+        } else if (
+          errorText.includes("uprawnień") ||
+          errorText.includes("scope")
+        ) {
+          errorMessage = "Brak wymaganych uprawnień";
+          errorDescription =
+            "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
+        } else if (
+          errorText.includes("sesja") ||
+          errorText.includes("wygasła")
+        ) {
+          errorMessage = "Sesja wygasła";
+          errorDescription = "Spróbuj ponownie połączyć konto Instagram.";
+        } else if (errorText.includes("dane") || errorText.includes("pobrać")) {
+          errorMessage = "Problem z danymi konta";
+          errorDescription =
+            "Nie udało się pobrać wszystkich wymaganych danych z Twojego konta Instagram.";
+        }
+      }
+
+      toast.error(errorMessage, {
+        description: errorDescription,
+        duration: 7000,
+        action: {
+          label: "Spróbuj ponownie",
+          onClick: () => router.push("/dashboard/"),
+        },
       });
-      router.push("/dashboard/");
+
+      setTimeout(() => {
+        router.push("/dashboard/");
+      }, 3000);
     }
   };
 
@@ -63,13 +160,13 @@ export default function InstagramCallback() {
             <div className="mb-8 relative">
               <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 opacity-75 blur animate-pulse" />
               <div className="relative bg-white rounded-full p-4 shadow-xl">
-                <FaInstagram className="h-12 w-12 text-pink-600" />
+                <FaInstagram className="h-12 w-12 text-pink-500" />
               </div>
             </div>
 
             <div className="text-center space-y-6">
               <div>
-                <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-pink-600 to-purple-600 text-transparent bg-clip-text">
+                <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-pink-500 to-purple-500 text-transparent bg-clip-text">
                   Łączenie konta Instagram
                 </h1>
                 <p className="text-gray-500">
@@ -77,34 +174,47 @@ export default function InstagramCallback() {
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-3 text-pink-600">
+              <div className="flex items-center justify-center gap-3 text-gray-800">
                 <Loader2 className="h-5 w-5 animate-spin" />
                 <span className="font-medium">Przetwarzanie...</span>
               </div>
 
               <div className="space-y-4 pt-6 border-t">
                 <div className="flex items-start gap-4 text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-pink-600 mt-1.5" />
+                  <div className="w-2 h-2 rounded-full bg-pink-500 mt-1.5" />
                   <p>Weryfikacja uprawnień i poświadczeń</p>
                 </div>
                 <div className="flex items-start gap-4 text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-pink-600 mt-1.5" />
+                  <div className="w-2 h-2 rounded-full bg-pink-500 mt-1.5" />
                   <p>Konfiguracja dostępu do publikowania treści</p>
                 </div>
                 <div className="flex items-start gap-4 text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-pink-600 mt-1.5" />
+                  <div className="w-2 h-2 rounded-full bg-pink-500 mt-1.5" />
                   <p>Przygotowanie integracji z Social Flow</p>
                 </div>
               </div>
 
               <div className="text-xs text-gray-400 mt-6">
-                Po zakończeniu procesu zostaniesz automatycznie przekierowany do
-                panelu zarządzania kontami
+                <p>Proces może potrwać kilka sekund...</p>
               </div>
             </div>
           </div>
         </div>
       </Card>
     </div>
+  );
+}
+
+export default function InstagramCallback() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen">
+          <Loader2 className="h-8 w-8 animate-spin text-pink-500" />
+        </div>
+      }
+    >
+      <InstagramCallbackContent />
+    </Suspense>
   );
 }

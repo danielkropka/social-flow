@@ -1,60 +1,65 @@
 import { NextResponse } from "next/server";
-import OAuth from "oauth-1.0a";
 import crypto from "crypto";
+import { getAuthSession } from "@/lib/auth";
 
-const TWITTER_API_KEY = process.env.TWITTER_API_KEY!;
-const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET!;
-const TWITTER_CALLBACK_URL = process.env.TWITTER_CALLBACK_URL!;
+const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
+const REDIRECT_URI = "https://social-flow.pl/twitter-callback";
 
 export async function GET() {
   try {
-    const oauth = new OAuth({
-      consumer: {
-        key: TWITTER_API_KEY,
-        secret: TWITTER_API_SECRET,
-      },
-      signature_method: "HMAC-SHA1",
-      hash_function(base_string, key) {
-        return crypto
-          .createHmac("sha1", key)
-          .update(base_string)
-          .digest("base64");
-      },
-    });
+    const session = await getAuthSession();
 
-    const request_data = {
-      url: "https://api.x.com/oauth/request_token",
-      method: "POST",
-      data: {
-        oauth_callback: TWITTER_CALLBACK_URL,
-      },
-    };
-
-    const response = await fetch(request_data.url, {
-      method: request_data.method,
-      headers: {
-        ...oauth.toHeader(oauth.authorize(request_data)),
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error("Failed to get request token");
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        {
+          error: "Nie jesteś zalogowany",
+          details: "Musisz być zalogowany, aby połączyć konto Twitter",
+        },
+        { status: 401 }
+      );
     }
 
-    const text = await response.text();
-    const params = new URLSearchParams(text);
-    const oauth_token = params.get("oauth_token");
-    const oauth_token_secret = params.get("oauth_token_secret");
-
-    if (!oauth_token || !oauth_token_secret) {
-      throw new Error("Invalid response from Twitter");
+    if (!TWITTER_API_KEY) {
+      console.error("Brak konfiguracji Twitter API_KEY");
+      return NextResponse.json(
+        {
+          error: "Błąd konfiguracji",
+          details: "Brak wymaganej konfiguracji Twitter",
+        },
+        { status: 500 }
+      );
     }
 
-    return NextResponse.json({ oauth_token, oauth_token_secret });
+    // Generuj code_verifier i code_challenge dla PKCE
+    const code_verifier = crypto.randomBytes(32).toString("base64url");
+    const code_challenge = crypto
+      .createHash("sha256")
+      .update(code_verifier)
+      .digest("base64url");
+
+    // Wymagane uprawnienia dla Twitter API v2
+    const scopes = [
+      "tweet.read", // Odczyt tweetów
+      "tweet.write", // Publikowanie tweetów
+      "users.read", // Odczyt informacji o użytkownikach
+      "offline.access", // Dostęp offline (refresh token)
+    ].join(" ");
+
+    const state = crypto.randomBytes(32).toString("hex");
+    const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_API_KEY}&redirect_uri=${REDIRECT_URI}&scope=${scopes}&state=${state}&code_challenge=${code_challenge}&code_challenge_method=S256`;
+
+    return NextResponse.json({
+      authUrl,
+      state,
+      code_verifier, // Zwracamy code_verifier, które będzie potrzebne przy wymianie kodu na token
+    });
   } catch (error) {
-    console.error("Error getting Twitter request token:", error);
+    console.error("Błąd podczas generowania URL autoryzacji Twitter:", error);
     return NextResponse.json(
-      { error: "Failed to get Twitter request token" },
+      {
+        error: "Nie udało się wygenerować linku autoryzacji",
+        details: error instanceof Error ? error.message : "Nieznany błąd",
+      },
       { status: 500 }
     );
   }
