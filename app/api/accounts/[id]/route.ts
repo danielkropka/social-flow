@@ -59,16 +59,21 @@ async function refreshTikTokToken(refreshToken: string) {
     }
 
     const data = await response.json();
-    console.log(data);
+    console.log("Odpowiedź z API TikTok:", data);
 
-    if (!data.access_token || !data.refresh_token || !data.expires_in) {
-      throw new Error("Nieprawidłowa odpowiedź z API TikTok");
+    if (
+      !data.data?.access_token ||
+      !data.data?.refresh_token ||
+      !data.data?.expires_in
+    ) {
+      console.error("Nieprawidłowa struktura odpowiedzi z API TikTok:", data);
+      throw new Error("Nieprawidłowa struktura odpowiedzi z API TikTok");
     }
 
     return {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token,
-      expiresIn: data.expires_in,
+      accessToken: data.data.access_token,
+      refreshToken: data.data.refresh_token,
+      expiresIn: data.data.expires_in,
     };
   } catch (error) {
     console.error("Błąd podczas odświeżania tokenu TikTok:", error);
