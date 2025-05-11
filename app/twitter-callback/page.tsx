@@ -14,15 +14,22 @@ function TwitterCallbackContent() {
   useEffect(() => {
     const oauth_token = searchParams.get("oauth_token");
     const oauth_verifier = searchParams.get("oauth_verifier");
+    const tokenSecret = localStorage.getItem("twitter_token_secret");
 
-    if (oauth_token && oauth_verifier) {
-      handleTwitterCallback(oauth_token, oauth_verifier);
+    if (oauth_token && oauth_verifier && tokenSecret) {
+      handleTwitterCallback(oauth_token, oauth_verifier, tokenSecret);
+    } else {
+      toast.error("Brak wymaganych danych autoryzacji", {
+        description: "Nie otrzymano wszystkich wymaganych danych z Twitter",
+      });
+      router.push("/dashboard/");
     }
   }, [searchParams]);
 
   const handleTwitterCallback = async (
     oauth_token: string,
-    oauth_verifier: string
+    oauth_verifier: string,
+    tokenSecret: string
   ) => {
     try {
       const response = await fetch("/api/auth/twitter/access-token", {
@@ -30,32 +37,57 @@ function TwitterCallbackContent() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ oauth_token, oauth_verifier }),
+        body: JSON.stringify({
+          token: oauth_token,
+          verifier: oauth_verifier,
+          tokenSecret: tokenSecret,
+        }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Błąd podczas autoryzacji");
+        throw new Error(
+          data.details || data.error || "Błąd podczas autoryzacji"
+        );
       }
 
       if (data.success) {
+        // Usuń token secret z localStorage
+        localStorage.removeItem("twitter_token_secret");
+
         toast.success("Konto Twitter zostało pomyślnie połączone!", {
           description: `Połączono konto: ${data.account.name} (@${data.account.username})`,
+          duration: 5000,
         });
-        router.push("/dashboard/");
+
+        setTimeout(() => {
+          router.push("/dashboard/");
+        }, 3000);
       } else {
-        throw new Error(data.error || "Nieznany błąd");
+        throw new Error(data.details || data.error || "Nieznany błąd");
       }
     } catch (error) {
       console.error("Błąd podczas łączenia z Twitterem:", error);
+
+      // Usuń token secret z localStorage w przypadku błędu
+      localStorage.removeItem("twitter_token_secret");
+
       toast.error("Nie udało się połączyć konta Twitter", {
         description:
           error instanceof Error
             ? error.message
             : "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+        duration: 7000,
+        action: {
+          label: "Spróbuj ponownie",
+          onClick: () => router.push("/dashboard/"),
+        },
       });
-      router.push("/dashboard/");
+
+      setTimeout(() => {
+        router.push("/dashboard/");
+      }, 3000);
     }
   };
 
