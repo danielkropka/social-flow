@@ -3,8 +3,6 @@ import { db } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
-const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
-const REDIRECT_URI = "https://social-flow.pl/twitter-callback";
 
 export async function POST(request: Request) {
   try {
@@ -21,7 +19,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
+    if (!TWITTER_API_KEY) {
       console.error("Brak konfiguracji Twitter");
       return NextResponse.json(
         {
