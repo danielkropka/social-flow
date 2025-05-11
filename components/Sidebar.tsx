@@ -11,7 +11,7 @@ import {
   Layout,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 
 const contentCreationItems = [
@@ -36,13 +36,8 @@ export function Sidebar({
   onTabChange,
   activeTab,
 }: SidebarProps) {
-  const { data: session, update: updateSession } = useSession();
+  const { data: session } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  useEffect(() => {
-    // Odśwież sesję przy każdym renderowaniu
-    updateSession();
-  }, [updateSession]);
 
   const handleNavigation = (tab: string) => {
     onTabChange(tab);
