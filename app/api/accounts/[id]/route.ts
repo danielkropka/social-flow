@@ -65,6 +65,7 @@ async function refreshTikTokToken(refreshToken: string) {
     }
 
     const data = await response.json();
+    console.log(data);
 
     if (!data.access_token || !data.refresh_token || !data.expires_in) {
       throw new Error("Nieprawidłowa odpowiedź z API TikTok");
