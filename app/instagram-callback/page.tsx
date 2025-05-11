@@ -14,10 +14,9 @@ function InstagramCallbackContent() {
   useEffect(() => {
     const code = searchParams.get("code");
     const error = searchParams.get("error");
-    const errorDescription = searchParams.get("error_description");
 
     if (error) {
-      handleInstagramError(error, errorDescription);
+      handleInstagramError(error);
       return;
     }
 
@@ -26,10 +25,7 @@ function InstagramCallbackContent() {
     }
   }, [searchParams]);
 
-  const handleInstagramError = (
-    error: string,
-    errorDescription: string | null
-  ) => {
+  const handleInstagramError = (error: string) => {
     let errorMessage = "Nie udało się połączyć konta Instagram";
     let errorDetails =
       "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
