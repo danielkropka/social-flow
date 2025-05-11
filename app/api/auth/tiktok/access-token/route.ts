@@ -61,8 +61,8 @@ export async function POST(request: Request) {
     }
 
     const tokenData = await tokenResponse.json();
-
     console.log("tokenData", tokenData);
+
     // Pobierz informacje o użytkowniku
     const userResponse = await fetch(
       "https://open.tiktokapis.com/v2/user/info/?fields=display_name,username,avatar_url",
@@ -74,10 +74,21 @@ export async function POST(request: Request) {
     );
 
     if (!userResponse.ok) {
-      throw new Error("Błąd podczas pobierania informacji o użytkowniku");
+      const errorData = await userResponse.json();
+      console.error("Błąd TikTok API - User Info:", {
+        status: userResponse.status,
+        statusText: userResponse.statusText,
+        error: errorData,
+      });
+      throw new Error(
+        `Błąd podczas pobierania informacji o użytkowniku: ${
+          errorData.error_description || errorData.message || "Nieznany błąd"
+        }`
+      );
     }
 
     const userInfo = await userResponse.json();
+    console.log("userInfo", userInfo);
 
     // Zapisz konto do bazy danych
     const connectedAccount = await db.connectedAccount.create({
