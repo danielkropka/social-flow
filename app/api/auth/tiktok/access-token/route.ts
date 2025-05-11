@@ -64,7 +64,7 @@ export async function POST(request: Request) {
 
     // Pobierz informacje o użytkowniku
     const userResponse = await fetch(
-      "https://open.tiktokapis.com/v2/user/info/",
+      "https://open.tiktokapis.com/v2/user/info/?fields=display_name,username,avatar_url",
       {
         headers: {
           Authorization: `Bearer ${tokenData.access_token}`,
