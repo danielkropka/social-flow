@@ -31,7 +31,13 @@ export async function GET() {
 
     try {
       const response = await fetch(
-        `https://api.x.com/oauth/request_token?oauth_consumer_key=${TWITTER_API_KEY}&oauth_callback=${REDIRECT_URI}`
+        `https://api.x.com/oauth/request_token?oauth_consumer_key=${TWITTER_API_KEY}&oauth_callback=${REDIRECT_URI}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+          },
+        }
       );
 
       if (!response.ok) {

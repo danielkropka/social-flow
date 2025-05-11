@@ -32,13 +32,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { code, code_verifier } = await request.json();
+    const { token, verifier } = await request.json();
 
-    if (!code || !code_verifier) {
+    if (!token || !verifier) {
       return NextResponse.json(
         {
           error: "Brak wymaganych danych",
-          details: "Nie otrzymano kodu autoryzacji lub code_verifier z Twitter",
+          details: "Nie otrzymano tokenu lub verifier z Twitter",
         },
         { status: 400 }
       );
@@ -46,19 +46,12 @@ export async function POST(request: Request) {
 
     // Wymiana kodu na token dostępu
     const tokenResponse = await fetch(
-      "https://api.twitter.com/2/oauth2/token",
+      `https://api.x.com/oauth/access_token?oauth_token=${token}&oauth_verifier=${verifier}&oauth_consumer_key=${TWITTER_API_KEY}`,
       {
         method: "POST",
         headers: {
           "Content-Type": "application/x-www-form-urlencoded",
         },
-        body: new URLSearchParams({
-          code,
-          grant_type: "authorization_code",
-          client_id: TWITTER_API_KEY,
-          redirect_uri: REDIRECT_URI,
-          code_verifier,
-        }),
       }
     );
 
