@@ -20,6 +20,10 @@ const nextConfig: NextConfig = {
         hostname: "abs.twimg.com",
       },
       {
+        protocol: "https",
+        hostname: "**.tiktokcdn.com",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
         port: "3000",
