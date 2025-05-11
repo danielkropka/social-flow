@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import crypto from "crypto";
 import { getAuthSession } from "@/lib/auth";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
@@ -30,29 +29,25 @@ export async function GET() {
       );
     }
 
-    // Generuj code_verifier i code_challenge dla PKCE
-    const code_verifier = crypto.randomBytes(32).toString("base64url");
-    const code_challenge = crypto
-      .createHash("sha256")
-      .update(code_verifier)
-      .digest("base64url");
+    try {
+      const response = await fetch(
+        `https://api.x.com/oauth/request_token?oauth_consumer_key=${TWITTER_API_KEY}&oauth_callback=${REDIRECT_URI}`
+      );
 
-    // Wymagane uprawnienia dla Twitter API v2
-    const scopes = [
-      "tweet.read", // Odczyt tweetów
-      "tweet.write", // Publikowanie tweetów
-      "users.read", // Odczyt informacji o użytkownikach
-      "offline.access", // Dostęp offline (refresh token)
-    ].join(" ");
+      if (!response.ok) {
+        throw new Error("Nie udało się pobrać tokena");
+      }
 
-    const state = crypto.randomBytes(32).toString("hex");
-    const authUrl = `https://api.x.com/oauth/request_token?oauth_consumer_key=${TWITTER_API_KEY}&oauth_callback=${REDIRECT_URI}`;
+      const data = await response.json();
 
-    return NextResponse.json({
-      authUrl,
-      state,
-      code_verifier, // Zwracamy code_verifier, które będzie potrzebne przy wymianie kodu na token
-    });
+      return NextResponse.json({
+        token: data.oauth_token,
+        tokenSecret: data.oauth_token_secret,
+        callbackConfirmed: data.oauth_callback_confirmed,
+      });
+    } catch (error) {
+      console.error("Błąd podczas generowania URL autoryzacji Twitter:", error);
+    }
   } catch (error) {
     console.error("Błąd podczas generowania URL autoryzacji Twitter:", error);
     return NextResponse.json(

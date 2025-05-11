@@ -409,8 +409,13 @@ export default function ConnectAccounts() {
                     throw new Error("Nie udało się pobrać tokena");
                   }
                   const data = await response.json();
+
+                  if (data.callbackConfirmed !== "true") {
+                    throw new Error("Nie udało się pobrać tokena");
+                  }
+
                   router.push(
-                    `https://api.x.com/oauth/authorize?oauth_token=${data.oauth_token}`
+                    `https://api.x.com/oauth/authorize?oauth_token=${data.token}`
                   );
                 } catch (error) {
                   console.error("Błąd podczas łączenia z Twitterem:", error);
