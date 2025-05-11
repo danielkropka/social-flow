@@ -62,6 +62,7 @@ export async function POST(request: Request) {
 
     const tokenData = await tokenResponse.json();
 
+    console.log("tokenData", tokenData);
     // Pobierz informacje o użytkowniku
     const userResponse = await fetch(
       "https://open.tiktokapis.com/v2/user/info/?fields=display_name,username,avatar_url",
