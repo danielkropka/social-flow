@@ -55,17 +55,21 @@ export async function POST(request: Request) {
     if (!tokenResponse.ok) {
       const error = await tokenResponse.json();
       console.error("Błąd TikTok API:", error);
-      throw new Error(
-        error.error_description || "Błąd podczas pobierania tokena"
+      return NextResponse.json(
+        {
+          error:
+            "Nie udało się połączyć z kontem TikTok. Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+          details: error.error_description || "Błąd podczas pobierania tokena",
+        },
+        { status: 400 }
       );
     }
 
     const tokenData = await tokenResponse.json();
-    console.log("tokenData", tokenData);
 
     // Pobierz informacje o użytkowniku
     const userResponse = await fetch(
-      "https://open.tiktokapis.com/v2/user/info/?fields=display_name,username,avatar_url",
+      "https://open.tiktokapis.com/v2/user/info/?fields=open_id,display_name,username,avatar_url",
       {
         headers: {
           Authorization: `Bearer ${tokenData.access_token}`,
@@ -80,42 +84,75 @@ export async function POST(request: Request) {
         statusText: userResponse.statusText,
         error: errorData,
       });
-      throw new Error(
-        `Błąd podczas pobierania informacji o użytkowniku: ${
-          errorData.error_description || errorData.message || "Nieznany błąd"
-        }`
+
+      let errorMessage = "Nie udało się pobrać danych Twojego konta TikTok.";
+
+      if (errorData.error?.code === "scope_not_authorized") {
+        errorMessage =
+          "Brak wymaganych uprawnień do konta TikTok. Spróbuj ponownie połączyć konto i upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia.";
+      } else if (userResponse.status === 401) {
+        errorMessage = "Sesja TikTok wygasła. Spróbuj ponownie połączyć konto.";
+      }
+
+      return NextResponse.json(
+        {
+          error: errorMessage,
+          details: errorData.error?.message || "Nieznany błąd",
+        },
+        { status: 400 }
       );
     }
 
     const userInfo = await userResponse.json();
-    console.log("userInfo", userInfo);
 
-    // Zapisz konto do bazy danych
-    const connectedAccount = await db.connectedAccount.create({
-      data: {
-        provider: "TIKTOK",
-        providerAccountId: userInfo.data.user.open_id,
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
-        name: userInfo.data.user.display_name,
-        username: userInfo.data.user.username,
-        profileImage: userInfo.data.user.avatar_url,
-        userId: session.user.id,
-      },
-    });
+    if (!userInfo.data?.user?.open_id) {
+      return NextResponse.json(
+        {
+          error:
+            "Nie udało się pobrać wszystkich wymaganych danych z konta TikTok. Spróbuj ponownie później.",
+          details: "Brak identyfikatora użytkownika w odpowiedzi",
+        },
+        { status: 400 }
+      );
+    }
 
-    return NextResponse.json({
-      success: true,
-      account: connectedAccount,
-    });
+    try {
+      // Zapisz konto do bazy danych
+      const connectedAccount = await db.connectedAccount.create({
+        data: {
+          provider: "TIKTOK",
+          providerAccountId: userInfo.data.user.open_id,
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          name: userInfo.data.user.display_name,
+          username: userInfo.data.user.username,
+          profileImage: userInfo.data.user.avatar_url,
+          userId: session.user.id,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        account: connectedAccount,
+      });
+    } catch (dbError) {
+      console.error("Błąd bazy danych:", dbError);
+      return NextResponse.json(
+        {
+          error:
+            "Nie udało się zapisać połączenia z kontem TikTok. Spróbuj ponownie później.",
+          details: "Błąd podczas zapisywania danych w bazie",
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
     console.error("Błąd autoryzacji TikTok:", error);
     return NextResponse.json(
       {
         error:
-          error instanceof Error
-            ? error.message
-            : "Wystąpił błąd podczas autoryzacji",
+          "Wystąpił nieoczekiwany błąd podczas łączenia z kontem TikTok. Spróbuj ponownie później.",
+        details: error instanceof Error ? error.message : "Nieznany błąd",
       },
       { status: 500 }
     );

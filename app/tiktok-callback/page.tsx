@@ -32,12 +32,19 @@ function TikTokCallbackContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || "Błąd podczas autoryzacji");
+        if (data.error) {
+          throw new Error(data.error);
+        }
+        if (data.details) {
+          console.error("Szczegóły błędu:", data.details);
+        }
+        throw new Error("Wystąpił błąd podczas łączenia z kontem TikTok");
       }
 
       if (data.success) {
         toast.success("Konto TikTok zostało pomyślnie połączone!", {
           description: `Połączono konto: ${data.account.name}`,
+          duration: 5000,
         });
         router.push("/dashboard/");
       } else {
@@ -45,13 +52,43 @@ function TikTokCallbackContent() {
       }
     } catch (error) {
       console.error("Błąd podczas łączenia z TikTok:", error);
-      toast.error("Nie udało się połączyć konta TikTok", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+
+      let errorMessage = "Nie udało się połączyć konta TikTok";
+      let errorDescription =
+        "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+
+      if (error instanceof Error) {
+        const errorText = error.message.toLowerCase();
+
+        if (errorText.includes("uprawnień") || errorText.includes("scope")) {
+          errorMessage = "Brak wymaganych uprawnień";
+          errorDescription =
+            "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
+        } else if (
+          errorText.includes("sesja") ||
+          errorText.includes("wygasła")
+        ) {
+          errorMessage = "Sesja wygasła";
+          errorDescription = "Spróbuj ponownie połączyć konto TikTok.";
+        } else if (errorText.includes("dane") || errorText.includes("pobrać")) {
+          errorMessage = "Problem z danymi konta";
+          errorDescription =
+            "Nie udało się pobrać wszystkich wymaganych danych z Twojego konta TikTok.";
+        }
+      }
+
+      toast.error(errorMessage, {
+        description: errorDescription,
+        duration: 7000,
+        action: {
+          label: "Spróbuj ponownie",
+          onClick: () => router.push("/dashboard/"),
+        },
       });
-      router.push("/dashboard/");
+
+      setTimeout(() => {
+        router.push("/dashboard/");
+      }, 3000);
     }
   };
 
