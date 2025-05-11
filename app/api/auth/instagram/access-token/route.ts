@@ -5,7 +5,7 @@ import { getAuthSession } from "@/lib/auth";
 const prisma = new PrismaClient();
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
-const REDIRECT_URI = "https://social-flow-flame.vercel.app/instagram-callback";
+const REDIRECT_URI = "https://social-flow.pl/instagram-callback";
 
 export async function POST(request: Request) {
   try {
