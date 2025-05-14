@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
@@ -19,7 +20,7 @@ interface TweetData {
 export async function POST(req: Request) {
   try {
     // Sprawdzenie autoryzacji
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
     console.log("[TWITTER_POST] Session check:", {
       hasSession: !!session,
       userId: session?.user?.id,
