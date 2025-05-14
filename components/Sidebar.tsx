@@ -54,19 +54,6 @@ export function Sidebar({
         />
       )}
 
-      {/* Mobile header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 px-4 flex items-center justify-between bg-white border-b border-gray-100 z-30">
-        <span className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
-          Social Flow
-        </span>
-        <button
-          onClick={() => onClose()}
-          className="p-2 hover:bg-gray-50 rounded-lg transition-colors"
-        >
-          <Menu className="h-5 w-5 text-gray-600" />
-        </button>
-      </div>
-
       {/* Sidebar */}
       <aside
         className={`
@@ -80,8 +67,8 @@ export function Sidebar({
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
-        {/* Logo - visible only on desktop */}
-        <div className="hidden lg:flex h-16 px-6 items-center border-b border-gray-100">
+        {/* Logo */}
+        <div className="h-16 px-6 flex items-center border-b border-gray-100">
           <span className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
             Social Flow
           </span>

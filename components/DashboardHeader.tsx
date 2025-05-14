@@ -2,13 +2,16 @@ import { Menu } from "lucide-react";
 
 export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
   return (
-    <header className="h-14 border-b border-gray-100 bg-white flex items-center px-4 sticky top-0 z-40 lg:hidden">
+    <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-4 sticky top-0 z-40 lg:hidden">
+      <span className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
+        Social Flow
+      </span>
       <button
         onClick={onMenuClick}
         className="p-2 rounded-lg hover:bg-gray-50 transition-colors"
         aria-label="Toggle menu"
       >
-        <Menu className="h-5 w-5 sm:h-6 sm:w-6 text-gray-600" />
+        <Menu className="h-5 w-5 text-gray-600" />
       </button>
     </header>
   );
