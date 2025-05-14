@@ -101,6 +101,37 @@ export async function POST(request: Request) {
 
     const userInfo = await userInfoResponse.json();
 
+    // Pobierz listę stron użytkownika
+    const pagesResponse = await fetch(
+      `https://graph.facebook.com/v22.0/me/accounts?access_token=${tokenData.access_token}`
+    );
+
+    if (!pagesResponse.ok) {
+      const errorData = await pagesResponse.json();
+      console.error("Facebook Pages error:", errorData);
+      return NextResponse.json(
+        {
+          error: "Nie udało się pobrać listy stron Facebook",
+          details:
+            "Upewnij się, że masz utworzoną stronę na Facebooku i masz do niej dostęp",
+        },
+        { status: 400 }
+      );
+    }
+
+    const pagesData = await pagesResponse.json();
+
+    if (!pagesData.data || pagesData.data.length === 0) {
+      return NextResponse.json(
+        {
+          error: "Brak stron Facebook",
+          details:
+            "Nie znaleziono żadnych stron Facebook powiązanych z Twoim kontem. Utwórz stronę na Facebooku przed połączeniem konta.",
+        },
+        { status: 400 }
+      );
+    }
+
     try {
       // Zapisz token w bazie danych
       const connectedAccount = await db.connectedAccount.upsert({

@@ -518,7 +518,17 @@ export default function ConnectAccounts() {
                   router.push(data.authUrl);
                 } catch (error) {
                   console.error("Błąd podczas łączenia z Facebookiem:", error);
-                  toast.error("Nie udało się połączyć ze stroną Facebook");
+                  if (
+                    error instanceof Error &&
+                    error.message.includes("Brak stron Facebook")
+                  ) {
+                    toast.error("Brak stron Facebook", {
+                      description:
+                        "Utwórz stronę na Facebooku przed połączeniem konta",
+                    });
+                  } else {
+                    toast.error("Nie udało się połączyć ze stroną Facebook");
+                  }
                 }
               }}
               className="bg-blue-500 hover:bg-blue-600 text-white"
