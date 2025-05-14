@@ -6,10 +6,17 @@ import { toast } from "sonner";
 import { FaFacebook } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useTab, TabProvider } from "@/context/TabContext";
 
 function FacebookCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setActiveTab } = useTab();
+
+  const navigateToDashboard = () => {
+    setActiveTab("accounts");
+    router.push("/dashboard/");
+  };
 
   useEffect(() => {
     const code = searchParams.get("code");
@@ -56,7 +63,7 @@ function FacebookCallbackContent() {
     });
 
     setTimeout(() => {
-      router.push("/dashboard/");
+      navigateToDashboard();
     }, 3000);
   };
 
@@ -68,7 +75,7 @@ function FacebookCallbackContent() {
     });
 
     setTimeout(() => {
-      router.push("/dashboard/");
+      navigateToDashboard();
     }, 3000);
   };
 
@@ -116,7 +123,7 @@ function FacebookCallbackContent() {
           description: `Połączono konto: ${data.account.name}`,
           duration: 5000,
         });
-        router.push("/dashboard/");
+        navigateToDashboard();
       } else {
         throw new Error(data.error || "Nieznany błąd");
       }
@@ -190,7 +197,7 @@ function FacebookCallbackContent() {
       });
 
       setTimeout(() => {
-        router.push("/dashboard/");
+        navigateToDashboard();
       }, 3000);
     }
   };
@@ -254,14 +261,16 @@ function FacebookCallbackContent() {
 
 export default function FacebookCallback() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
-        </div>
-      }
-    >
-      <FacebookCallbackContent />
-    </Suspense>
+    <TabProvider>
+      <Suspense
+        fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+          </div>
+        }
+      >
+        <FacebookCallbackContent />
+      </Suspense>
+    </TabProvider>
   );
 }
