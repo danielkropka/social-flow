@@ -146,28 +146,39 @@ export default function ConnectAccounts() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6 p-4">
       {["facebook", "instagram", "twitter", "tiktok"].map((platform) => (
         <div
           key={platform}
-          className="flex flex-col md:flex-row items-center justify-between p-4 border border-gray-200 rounded-lg shadow-sm"
+          className="flex flex-col gap-4 p-6 border border-gray-200 rounded-lg shadow-sm bg-white"
         >
-          <div className="flex items-center space-x-3 mb-4 md:mb-0">
-            {getPlatformIcon(platform.toUpperCase() as Provider)}
-            <span className="font-medium capitalize">{platform}</span>
-            <div className="flex flex-col gap-3 md:flex-row items-center overflow-x-auto max-w-full max-h-56 md:max-w-3xl">
-              {getConnectedAccounts(platform).map((account) => (
-                <div
-                  key={account.id}
-                  className="flex items-center space-x-2 bg-gray-100 p-2 rounded-lg shadow-inner relative"
-                >
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              {getPlatformIcon(platform.toUpperCase() as Provider)}
+              <span className="font-semibold text-lg capitalize">
+                {platform}
+              </span>
+            </div>
+            <Button
+              onClick={() => handleAddAccount(platform)}
+              className="w-full md:w-auto"
+            >
+              Dodaj konto
+            </Button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+            {getConnectedAccounts(platform).map((account) => (
+              <div
+                key={account.id}
+                className="flex items-center justify-between gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
+              >
+                <div className="flex items-center gap-3 min-w-0">
                   {account.isLoading && (
-                    <div className="absolute inset-0 bg-gray-100/50 flex items-center justify-center rounded-lg">
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900" />
-                    </div>
+                    <Loader2 className="animate-spin h-4 w-4" />
                   )}
                   {account.profileImage && (
-                    <div className="relative w-8 h-8 rounded-full overflow-hidden">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                       <Image
                         src={account.profileImage}
                         alt={account.name}
@@ -176,24 +187,23 @@ export default function ConnectAccounts() {
                       />
                     </div>
                   )}
-                  <span className="text-sm">{account.name}</span>
-                  <button
-                    onClick={() => {
-                      setAccountToRemove(account);
-                      setShowDeletionModal(true);
-                    }}
-                    className="text-red-500 hover:text-red-700 disabled:opacity-50"
-                    disabled={account.isLoading}
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
+                  <span className="text-sm font-medium truncate">
+                    {account.name}
+                  </span>
                 </div>
-              ))}
-            </div>
+                <button
+                  onClick={() => {
+                    setAccountToRemove(account);
+                    setShowDeletionModal(true);
+                  }}
+                  className="text-red-500 hover:text-red-700 disabled:opacity-50 flex-shrink-0"
+                  disabled={account.isLoading}
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            ))}
           </div>
-          <Button onClick={() => handleAddAccount(platform)}>
-            Dodaj konto
-          </Button>
         </div>
       ))}
 
