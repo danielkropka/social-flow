@@ -40,6 +40,7 @@ export async function POST(req: Request) {
       where: {
         id: accountId,
         provider: "TWITTER",
+        userId: session.user.id,
       },
     });
 
@@ -48,11 +49,27 @@ export async function POST(req: Request) {
         {
           success: false,
           error: "Nie znaleziono konta Twitter",
-          details: "Konto Twitter nie zostało znalezione",
+          details:
+            "Konto Twitter nie zostało znalezione lub nie masz do niego dostępu",
         },
         { status: 404 }
       );
     }
+
+    // Sprawdź czy token dostępu istnieje
+    if (!account.accessToken || !account.accessTokenSecret) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Brak tokenu dostępu",
+          details: "Konto Twitter wymaga ponownej autoryzacji",
+        },
+        { status: 401 }
+      );
+    }
+
+    const accessToken = account.accessToken;
+    const accessTokenSecret = account.accessTokenSecret;
 
     // Inicjalizacja OAuth 1.0a
     const oauth = new OAuth({
@@ -88,8 +105,8 @@ export async function POST(req: Request) {
 
           const mediaHeaders = oauth.toHeader(
             oauth.authorize(mediaRequestData, {
-              key: account.accessToken!,
-              secret: account.accessTokenSecret!,
+              key: accessToken,
+              secret: accessTokenSecret,
             })
           );
 
@@ -103,7 +120,10 @@ export async function POST(req: Request) {
           });
 
           if (!mediaUploadResponse.ok) {
-            throw new Error("Błąd podczas wgrywania mediów");
+            const errorData = await mediaUploadResponse.json();
+            throw new Error(
+              errorData.detail || "Błąd podczas wgrywania mediów"
+            );
           }
 
           const mediaData = await mediaUploadResponse.json();
@@ -122,8 +142,8 @@ export async function POST(req: Request) {
 
     const headers = oauth.toHeader(
       oauth.authorize(requestData, {
-        key: account.accessToken!,
-        secret: account.accessTokenSecret!,
+        key: accessToken,
+        secret: accessTokenSecret,
       })
     );
 
