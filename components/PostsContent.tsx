@@ -116,7 +116,8 @@ export default function PostsContent() {
     const status = getStatus(post);
     const matchesStatus = statusFilter === "all" || status === statusFilter;
     const platform =
-      post.postConnectedAccounts[0]?.connectedAccount.provider.toLowerCase();
+      post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
+      "";
     const matchesPlatform =
       platformFilter === "all" || platform === platformFilter;
 
@@ -215,7 +216,8 @@ export default function PostsContent() {
           {filteredPosts.map((post) => {
             const status = getStatus(post);
             const platform =
-              post.postConnectedAccounts[0]?.connectedAccount.provider;
+              post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
+              "";
             const publishDate = post.publishedAt || post.createdAt;
             const mediaUrl = post.media[0]?.thumbnailUrl || post.media[0]?.url;
             const isBase64 =
