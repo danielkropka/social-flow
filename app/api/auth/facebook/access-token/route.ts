@@ -108,7 +108,6 @@ export async function POST(request: Request) {
 
     if (!pagesResponse.ok) {
       const errorData = await pagesResponse.json();
-      console.log("errorData:", errorData);
       console.error("Facebook Pages error:", errorData);
       return NextResponse.json(
         {
@@ -121,7 +120,6 @@ export async function POST(request: Request) {
     }
 
     const pagesData = await pagesResponse.json();
-    console.log("pagesData:", pagesData);
 
     if (!pagesData.data || pagesData.data.length === 0) {
       return NextResponse.json(

@@ -93,6 +93,27 @@ function FacebookCallbackContent() {
       const data = await response.json();
 
       if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error("Nie jesteś zalogowany");
+        } else if (response.status === 400) {
+          if (data.error === "Brak stron Facebook") {
+            throw new Error("Brak stron Facebook");
+          } else if (data.error === "Brak kodu autoryzacji") {
+            throw new Error("Brak kodu autoryzacji");
+          } else if (
+            data.error === "Nie udało się pobrać listy stron Facebook"
+          ) {
+            throw new Error("Problem z dostępem do stron Facebook");
+          }
+        } else if (response.status === 500) {
+          if (data.error === "Błąd konfiguracji") {
+            throw new Error("Błąd konfiguracji systemu");
+          } else if (
+            data.error === "Nie udało się zapisać danych konta Facebook"
+          ) {
+            throw new Error("Problem z zapisem danych konta");
+          }
+        }
         throw new Error(
           data.error || "Wystąpił błąd podczas łączenia z kontem Facebook"
         );
@@ -117,35 +138,57 @@ function FacebookCallbackContent() {
       if (error instanceof Error) {
         const errorText = error.message.toLowerCase();
 
-        if (errorText.includes("nie jesteś zalogowany")) {
-          errorMessage = "Brak zalogowania";
-          errorDescription =
-            "Musisz być zalogowany, aby połączyć konto Facebook.";
-        } else if (errorText.includes("nieprawidłowy state")) {
-          errorMessage = "Błąd weryfikacji";
-          errorDescription =
-            "Weryfikacja bezpieczeństwa nie powiodła się. Spróbuj ponownie.";
-        } else if (
-          errorText.includes("uprawnień") ||
-          errorText.includes("scope")
-        ) {
-          errorMessage = "Brak wymaganych uprawnień";
-          errorDescription =
-            "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
-        } else if (
-          errorText.includes("sesja") ||
-          errorText.includes("wygasła")
-        ) {
-          errorMessage = "Sesja wygasła";
-          errorDescription = "Spróbuj ponownie połączyć konto Facebook.";
-        } else if (errorText.includes("dane") || errorText.includes("pobrać")) {
-          errorMessage = "Problem z danymi konta";
-          errorDescription =
-            "Nie udało się pobrać wszystkich wymaganych danych z Twojego konta Facebook.";
-        } else if (errorText.includes("konfiguracji")) {
-          errorMessage = "Błąd konfiguracji";
-          errorDescription =
-            "Wystąpił problem z konfiguracją systemu. Skontaktuj się z pomocą techniczną.";
+        switch (errorText) {
+          case "nie jesteś zalogowany":
+            errorMessage = "Brak zalogowania";
+            errorDescription =
+              "Musisz być zalogowany, aby połączyć konto Facebook.";
+            break;
+          case "brak stron facebook":
+            errorMessage = "Brak stron Facebook";
+            errorDescription =
+              "Nie znaleziono żadnych stron Facebook powiązanych z Twoim kontem. Utwórz stronę na Facebooku przed połączeniem konta.";
+            break;
+          case "brak kodu autoryzacji":
+            errorMessage = "Brak kodu autoryzacji";
+            errorDescription =
+              "Nie otrzymano kodu autoryzacji z Facebook. Spróbuj ponownie.";
+            break;
+          case "problem z dostępem do stron facebook":
+            errorMessage = "Problem z dostępem do stron";
+            errorDescription =
+              "Upewnij się, że masz utworzoną stronę na Facebooku i masz do niej dostęp.";
+            break;
+          case "błąd konfiguracji systemu":
+            errorMessage = "Błąd konfiguracji";
+            errorDescription =
+              "Wystąpił problem z konfiguracją systemu. Skontaktuj się z pomocą techniczną.";
+            break;
+          case "problem z zapisem danych konta":
+            errorMessage = "Problem z zapisem danych";
+            errorDescription =
+              "Nie udało się zapisać danych Twojego konta Facebook. Spróbuj ponownie później.";
+            break;
+          case "nieprawidłowy state":
+            errorMessage = "Błąd weryfikacji";
+            errorDescription =
+              "Weryfikacja bezpieczeństwa nie powiodła się. Spróbuj ponownie.";
+            break;
+          default:
+            if (
+              errorText.includes("uprawnień") ||
+              errorText.includes("scope")
+            ) {
+              errorMessage = "Brak wymaganych uprawnień";
+              errorDescription =
+                "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
+            } else if (
+              errorText.includes("sesja") ||
+              errorText.includes("wygasła")
+            ) {
+              errorMessage = "Sesja wygasła";
+              errorDescription = "Spróbuj ponownie połączyć konto Facebook.";
+            }
         }
       }
 
