@@ -33,9 +33,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const { token, verifier, tokenSecret } = await request.json();
+    const { token, verifier } = await request.json();
 
-    if (!token || !verifier || !tokenSecret) {
+    if (!token || !verifier) {
       return NextResponse.json(
         {
           error: "Brak wymaganych danych",
@@ -73,7 +73,7 @@ export async function POST(request: Request) {
     const headers = oauth.toHeader(
       oauth.authorize(requestData, {
         key: token,
-        secret: tokenSecret,
+        secret: TWITTER_API_SECRET,
       })
     );
 

@@ -19,7 +19,7 @@ function TwitterCallbackContent() {
     console.log("oauth_verifier:", oauth_verifier);
     console.log("tokenSecret:", tokenSecret);
 
-    if (!oauth_token || !oauth_verifier || !tokenSecret) {
+    if (!oauth_token || !oauth_verifier) {
       toast.error("Brak wymaganych danych autoryzacji", {
         description: "Nie otrzymano wszystkich wymaganych danych z Twitter",
       });
@@ -27,13 +27,12 @@ function TwitterCallbackContent() {
       return;
     }
 
-    handleTwitterCallback(oauth_token, oauth_verifier, tokenSecret);
+    handleTwitterCallback(oauth_token, oauth_verifier);
   }, [searchParams]);
 
   const handleTwitterCallback = async (
     oauth_token: string,
-    oauth_verifier: string,
-    tokenSecret: string
+    oauth_verifier: string
   ) => {
     try {
       const response = await fetch("/api/auth/twitter/access-token", {
@@ -44,7 +43,6 @@ function TwitterCallbackContent() {
         body: JSON.stringify({
           token: oauth_token,
           verifier: oauth_verifier,
-          tokenSecret: tokenSecret,
         }),
       });
 
