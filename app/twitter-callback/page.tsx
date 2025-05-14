@@ -26,7 +26,7 @@ function TwitterCallbackContent() {
       toast.error("Brak wymaganych danych autoryzacji", {
         description: "Nie otrzymano wszystkich wymaganych danych z Twitter",
       });
-      router.push("/dashboard/");
+      navigateToDashboard();
       return;
     }
 

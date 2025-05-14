@@ -9,9 +9,16 @@ interface PostText {
   twitter?: string;
 }
 
+interface SocialAccount {
+  id: string;
+  name: string;
+  provider: string;
+  username: string;
+}
+
 interface PostCreationState {
   selectedFiles: File[];
-  selectedAccounts: string[];
+  selectedAccounts: SocialAccount[];
   postText: PostText;
   scheduledDate: Date | undefined;
   currentStep: number;
@@ -23,7 +30,7 @@ interface PostCreationState {
 
 type PostCreationAction =
   | { type: "SET_SELECTED_FILES"; payload: File[] }
-  | { type: "SET_SELECTED_ACCOUNTS"; payload: string[] }
+  | { type: "SET_SELECTED_ACCOUNTS"; payload: SocialAccount[] }
   | { type: "SET_POST_TEXT"; payload: PostText }
   | { type: "SET_SCHEDULED_DATE"; payload: Date | undefined }
   | { type: "SET_CURRENT_STEP"; payload: number }
@@ -80,7 +87,7 @@ function postCreationReducer(
 interface PostCreationContextType {
   state: PostCreationState;
   setSelectedFiles: (files: File[]) => void;
-  setSelectedAccounts: (accounts: string[]) => void;
+  setSelectedAccounts: (accounts: SocialAccount[]) => void;
   setPostText: (text: PostText) => void;
   setScheduledDate: (date: Date | undefined) => void;
   setCurrentStep: (step: number) => void;
@@ -102,7 +109,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_SELECTED_FILES", payload: files });
   };
 
-  const setSelectedAccounts = (accounts: string[]) => {
+  const setSelectedAccounts = (accounts: SocialAccount[]) => {
     dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts });
   };
 

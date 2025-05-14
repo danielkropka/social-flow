@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -12,8 +12,6 @@ import { pl } from "date-fns/locale";
 import { Search, Calendar, Clock, Loader2, Filter } from "lucide-react";
 import Image from "next/image";
 import { MediaType } from "@prisma/client";
-import { useApi } from "@/hooks/useApi";
-import { getPosts } from "@/lib/api/client";
 import { cn } from "@/lib/utils";
 
 interface Post {
@@ -43,12 +41,32 @@ export default function PostsContent() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
+  const [posts, setPosts] = useState<Post[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data, isLoading } = useApi<Post[]>(getPosts, {
-    showErrorToast: true,
-  });
+  useEffect(() => {
+    const fetchPosts = async () => {
+      try {
+        const response = await fetch("/api/posts");
+        const data = await response.json();
 
-  const posts = data ?? [];
+        if (!data.success) {
+          throw new Error(data.error || "Nie udało się pobrać postów");
+        }
+
+        setPosts(data.posts);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd"
+        );
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchPosts();
+  }, []);
 
   const getStatus = (post: Post) => {
     if (post.published) return "published";
@@ -110,6 +128,14 @@ export default function PostsContent() {
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
         <p className="text-gray-500">Ładowanie postów...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 space-y-4">
+        <p className="text-red-500">Wystąpił błąd: {error}</p>
       </div>
     );
   }
@@ -199,7 +225,7 @@ export default function PostsContent() {
             return (
               <div
                 key={post.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
+                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 transform"
               >
                 {post.media[0] && (
                   <div className="relative h-48 bg-gray-100">

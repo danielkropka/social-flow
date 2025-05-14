@@ -175,7 +175,7 @@ export async function POST(request: Request) {
         },
         update: {
           accessToken: tokenData.oauth_token,
-          refreshToken: tokenData.oauth_token_secret,
+          accessTokenSecret: tokenData.oauth_token_secret,
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Tokeny OAuth 1.0a nie wygasają
           username: userInfo.data.username,
           profileImage: userInfo.data.profile_image_url,
@@ -184,7 +184,7 @@ export async function POST(request: Request) {
           provider: "TWITTER",
           providerAccountId: userInfo.data.id,
           accessToken: tokenData.oauth_token,
-          refreshToken: tokenData.oauth_token_secret,
+          accessTokenSecret: tokenData.oauth_token_secret,
           expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Tokeny OAuth 1.0a nie wygasają
           name: userInfo.data.name,
           username: userInfo.data.username,

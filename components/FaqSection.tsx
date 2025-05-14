@@ -39,7 +39,7 @@ export default function FaqSection() {
     {
       question: "Czy mogę otrzymać zwrot pieniędzy?",
       answer:
-        "Tak, oferujemy 7-dniowy okres zwrotu pieniędzy, podczas którego możesz zrezygnować z subskrypcji bez żadnych dodatkowych kosztów.",
+        "Z uwagi na specyfikę naszych usług, nie możemy oferować zwrotów pieniędzy. Zachęcamy do dokładnego zapoznania się z naszą ofertą przed zakupem. W razie pytań, nasz zespół wsparcia jest zawsze gotowy do pomocy.",
     },
   ];
 

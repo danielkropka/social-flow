@@ -122,6 +122,7 @@ model ConnectedAccount {
     provider          Provider
     providerAccountId String
     accessToken       String
+    accessTokenSecret String?
     refreshToken      String?
     expiresAt         DateTime?
     name              String
