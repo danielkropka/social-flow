@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
 import Image from "next/image";
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
-import { Search, Loader2, Users, ArrowRight } from "lucide-react";
+import { Search, Loader2, Users } from "lucide-react";
 import { ConnectedAccount } from "@prisma/client";
 import { cn } from "@/lib/utils";
 

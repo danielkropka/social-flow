@@ -63,108 +63,42 @@ export async function POST(req: Request) {
       );
     }
 
-    // Walidacja mediów
-    if (mediaUrls) {
-      if (!Array.isArray(mediaUrls)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Nieprawidłowy format mediów",
-            details: "Media muszą być przekazane jako tablica",
-          },
-          { status: 400 }
-        );
-      }
-
-      // Sprawdź czy wszystkie media mają wymagane pola
-      const invalidMedia = mediaUrls.find(
-        (media: any) => !media || typeof media !== "object" || !media.url
-      );
-      if (invalidMedia) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Nieprawidłowy format mediów",
-            details: "Każde medium musi mieć pole 'url'",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Walidacja daty publikacji
+    // Jeśli post jest zaplanowany, zapisz go w bazie i zwróć sukces
     if (scheduledDate) {
-      const scheduledDateObj = new Date(scheduledDate);
-      if (isNaN(scheduledDateObj.getTime())) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Nieprawidłowa data publikacji",
-            details: "Podaj prawidłową datę w formacie ISO",
+      const post = await db.post.create({
+        data: {
+          content,
+          published: false,
+          publishedAt: scheduledDate,
+          userId: session.user.id,
+          media: {
+            create:
+              mediaUrls?.map(
+                (media: { url: string; thumbnailUrl: string | null }) => ({
+                  url: media.url,
+                  type: media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
+                    ? MediaType.VIDEO
+                    : MediaType.IMAGE,
+                  thumbnailUrl: media.thumbnailUrl,
+                })
+              ) || [],
           },
-          { status: 400 }
-        );
-      }
-
-      if (scheduledDateObj < new Date()) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Nieprawidłowa data publikacji",
-            details: "Data publikacji nie może być z przeszłości",
-          },
-          { status: 400 }
-        );
-      }
-    }
-
-    // Przygotuj dane mediów
-    const mediaData =
-      mediaUrls?.map((media: { url: string; thumbnailUrl: string | null }) => {
-        if (!media?.url) {
-          throw new Error("Nieprawidłowy format mediów - brak URL");
-        }
-
-        const isBase64 = media.url.startsWith("data:");
-        const isVideo = isBase64
-          ? media.url.includes("video/")
-          : !!media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i);
-
-        return {
-          url: media.url,
-          type: isVideo ? MediaType.VIDEO : MediaType.IMAGE,
-          thumbnailUrl: isVideo ? media.thumbnailUrl : null,
-        };
-      }) || [];
-
-    // Tworzenie posta w bazie danych
-    const post = await db.post.create({
-      data: {
-        content,
-        published: !scheduledDate,
-        publishedAt: scheduledDate,
-        userId: session.user.id,
-        media: {
-          create: mediaData,
-        },
-        postConnectedAccounts: {
-          create: accountIds.map((accountId: string) => ({
-            connectedAccountId: accountId,
-          })),
-        },
-      },
-      include: {
-        media: true,
-        postConnectedAccounts: {
-          include: {
-            connectedAccount: true,
+          postConnectedAccounts: {
+            create: accountIds.map((accountId: string) => ({
+              connectedAccountId: accountId,
+            })),
           },
         },
-      },
-    });
+        include: {
+          media: true,
+          postConnectedAccounts: {
+            include: {
+              connectedAccount: true,
+            },
+          },
+        },
+      });
 
-    // Jeśli post jest zaplanowany, zwróć sukces
-    if (scheduledDate) {
       return NextResponse.json({
         success: true,
         data: post,
@@ -231,12 +165,52 @@ export async function POST(req: Request) {
       }
     }
 
-    // Aktualizuj status posta w bazie danych
-    await db.post.update({
-      where: { id: post.id },
+    // Sprawdź czy wszystkie publikacje się powiodły
+    const allSuccessful = results.every((result) => result.success);
+    if (!allSuccessful) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Błąd publikacji",
+          details: "Nie udało się opublikować posta na wszystkich platformach",
+          results,
+        },
+        { status: 400 }
+      );
+    }
+
+    // Jeśli wszystkie publikacje się powiodły, zapisz post w bazie
+    const post = await db.post.create({
       data: {
+        content,
         published: true,
         publishedAt: new Date(),
+        userId: session.user.id,
+        media: {
+          create:
+            mediaUrls?.map(
+              (media: { url: string; thumbnailUrl: string | null }) => ({
+                url: media.url,
+                type: media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
+                  ? MediaType.VIDEO
+                  : MediaType.IMAGE,
+                thumbnailUrl: media.thumbnailUrl,
+              })
+            ) || [],
+        },
+        postConnectedAccounts: {
+          create: accountIds.map((accountId: string) => ({
+            connectedAccountId: accountId,
+          })),
+        },
+      },
+      include: {
+        media: true,
+        postConnectedAccounts: {
+          include: {
+            connectedAccount: true,
+          },
+        },
       },
     });
 

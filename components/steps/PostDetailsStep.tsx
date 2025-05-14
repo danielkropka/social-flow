@@ -20,6 +20,13 @@ import * as z from "zod";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { PublishingModal } from "@/components/PublishingModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { FaTwitter, FaFacebook, FaInstagram } from "react-icons/fa";
 
 const getMinScheduleTime = () => {
   const now = new Date();
@@ -129,9 +136,38 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
       const result = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          result.error || "Wystąpił błąd podczas publikacji posta"
+        // Aktualizacja statusu publikacji w przypadku błędu
+        if (result.results) {
+          setPublishingStatus((prev) =>
+            prev.map((status) => {
+              const platformResult = result.results.find(
+                (r: { accountId: string; success: boolean; error?: string }) =>
+                  r.accountId === status.accountId
+              );
+              return {
+                ...status,
+                status: platformResult?.success ? "success" : "error",
+                error: platformResult?.error,
+              };
+            })
+          );
+        } else {
+          setPublishingStatus((prev) =>
+            prev.map((status) => ({
+              ...status,
+              status: "error" as const,
+              error: result.details || result.error || "Nieznany błąd",
+            }))
+          );
+        }
+
+        toast.error(
+          result.details ||
+            result.error ||
+            "Wystąpił błąd podczas publikacji posta"
         );
+        setIsPublishing(false);
+        return;
       }
 
       // Aktualizacja statusu publikacji na podstawie wyników
@@ -148,14 +184,6 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
               error: platformResult?.error,
             };
           })
-        );
-      } else {
-        // Jeśli nie ma wyników (np. dla zaplanowanych postów), oznacz wszystkie jako sukces
-        setPublishingStatus((prev) =>
-          prev.map((status) => ({
-            ...status,
-            status: "success" as const,
-          }))
         );
       }
 
@@ -180,6 +208,30 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
 
       toast.error("Wystąpił błąd podczas publikacji posta");
       setIsPublishing(false);
+    }
+  };
+
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case "TWITTER":
+        return <FaTwitter className="h-5 w-5 text-blue-400" />;
+      case "FACEBOOK":
+        return <FaFacebook className="h-5 w-5 text-blue-600" />;
+      case "INSTAGRAM":
+        return <FaInstagram className="h-5 w-5 text-pink-600" />;
+      default:
+        return null;
+    }
+  };
+
+  const getStatusColor = (status: "pending" | "success" | "error") => {
+    switch (status) {
+      case "success":
+        return "text-green-500";
+      case "error":
+        return "text-red-500";
+      default:
+        return "text-gray-500";
     }
   };
 
@@ -215,6 +267,66 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
         }}
         publishingStatus={publishingStatus}
       />
+
+      <Dialog
+        open={isPublishingModalOpen}
+        onOpenChange={setIsPublishingModalOpen}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Status publikacji</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            {publishingStatus.map((status) => (
+              <div
+                key={status.accountId}
+                className="flex items-center justify-between p-4 bg-gray-50 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  {getProviderIcon(status.provider)}
+                  <div>
+                    <p className="font-medium">{status.accountName}</p>
+                    <p className="text-sm text-gray-500">{status.provider}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  {status.status === "pending" && (
+                    <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+                  )}
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      getStatusColor(status.status)
+                    )}
+                  >
+                    {status.status === "pending" && "Publikowanie..."}
+                    {status.status === "success" && "Opublikowano"}
+                    {status.status === "error" && "Błąd"}
+                  </span>
+                </div>
+              </div>
+            ))}
+            {publishingStatus.some((status) => status.status === "error") && (
+              <div className="mt-4 p-4 bg-red-50 rounded-lg">
+                <h4 className="font-medium text-red-700 mb-2">
+                  Szczegóły błędów:
+                </h4>
+                {publishingStatus
+                  .filter((status) => status.status === "error")
+                  .map((status) => (
+                    <div
+                      key={status.accountId}
+                      className="text-sm text-red-600"
+                    >
+                      <p className="font-medium">{status.accountName}:</p>
+                      <p>{status.error}</p>
+                    </div>
+                  ))}
+              </div>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <form
         onSubmit={form.handleSubmit(onSubmit)}

@@ -8,6 +8,15 @@ import crypto from "crypto";
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 
+interface TweetMedia {
+  media_ids: string[];
+}
+
+interface TweetData {
+  text: string;
+  media?: TweetMedia;
+}
+
 export async function POST(req: Request) {
   try {
     // Sprawdzenie autoryzacji
@@ -25,7 +34,7 @@ export async function POST(req: Request) {
 
     // Pobierz dane z żądania
     const body = await req.json();
-    const { content, mediaUrls, accountId, scheduledDate } = body;
+    const { content, mediaUrls, accountId } = body;
 
     // Pobierz dane konta Twitter
     const account = await db.connectedAccount.findUnique({
@@ -62,7 +71,7 @@ export async function POST(req: Request) {
     });
 
     // Przygotuj dane do publikacji
-    const tweetData: any = {
+    const tweetData: TweetData = {
       text: content,
     };
 

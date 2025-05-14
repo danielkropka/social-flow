@@ -6,10 +6,6 @@ import {
 } from "@/components/ui/dialog";
 import { Loader2, CheckCircle2, XCircle } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
-import { useTab } from "@/context/TabContext";
-import { useEffect } from "react";
 
 interface PublishingStatus {
   accountId: string;
@@ -30,13 +26,6 @@ export function PublishingModal({
   onClose,
   publishingStatus,
 }: PublishingModalProps) {
-  const allCompleted = publishingStatus.every(
-    (status) => status.status === "success" || status.status === "error"
-  );
-  const hasErrors = publishingStatus.some(
-    (status) => status.status === "error"
-  );
-
   const getPlatformIcon = (provider: string) => {
     switch (provider.toLowerCase()) {
       case "facebook":
