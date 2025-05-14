@@ -6,7 +6,7 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
 import PostsContent from "@/components/PostsContent";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import AccountsContent from "@/components/AccountsContent";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
