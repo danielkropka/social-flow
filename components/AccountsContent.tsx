@@ -405,13 +405,14 @@ export default function ConnectAccounts() {
                   const response = await fetch(
                     "/api/auth/twitter/request-token"
                   );
+                  console.log("response:", response);
                   if (!response.ok) {
                     throw new Error("Nie udało się pobrać tokena");
                   }
                   const data = await response.json();
 
                   if (!data.callbackConfirmed) {
-                    throw new Error("Nie udało się pobrać tokena");
+                    throw new Error("Link nie został potwierdzony");
                   }
 
                   router.push(
