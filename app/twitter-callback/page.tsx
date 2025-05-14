@@ -15,6 +15,9 @@ function TwitterCallbackContent() {
     const oauth_token = searchParams.get("oauth_token");
     const oauth_verifier = searchParams.get("oauth_verifier");
     const tokenSecret = localStorage.getItem("twitter_token_secret");
+    console.log("oauth_token:", oauth_token);
+    console.log("oauth_verifier:", oauth_verifier);
+    console.log("tokenSecret:", tokenSecret);
 
     if (!oauth_token || !oauth_verifier || !tokenSecret) {
       toast.error("Brak wymaganych danych autoryzacji", {
