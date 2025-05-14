@@ -4,11 +4,10 @@ import { useState } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
-import { TabProvider } from "@/context/TabContext";
+import { useTab } from "@/context/TabContext";
 import PostsContent from "@/components/PostsContent";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import AccountsContent from "@/components/AccountsContent";
-import { useTab } from "@/context/TabContext";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -63,9 +62,7 @@ export default function DashboardLayout({
 }) {
   return (
     <PostCreationProvider>
-      <TabProvider>
-        <DashboardContent>{children}</DashboardContent>
-      </TabProvider>
+      <DashboardContent>{children}</DashboardContent>
     </PostCreationProvider>
   );
 }
