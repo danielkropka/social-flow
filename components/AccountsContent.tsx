@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import Image from "next/image";
-import { Loader2, X } from "lucide-react";
+import { Loader2, X, Plus } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -139,73 +139,101 @@ export default function ConnectAccounts() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center p-8">
-        <Loader2 className="animate-spin h-8 w-8" />
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="animate-spin h-8 w-8 text-primary" />
+          <p className="text-muted-foreground">Ładowanie kont...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4">
-      {["facebook", "instagram", "twitter", "tiktok"].map((platform) => (
-        <div
-          key={platform}
-          className="flex flex-col gap-4 p-6 border border-gray-200 rounded-lg shadow-sm bg-white"
-        >
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              {getPlatformIcon(platform.toUpperCase() as Provider)}
-              <span className="font-semibold text-lg capitalize">
-                {platform}
-              </span>
-            </div>
-            <Button
-              onClick={() => handleAddAccount(platform)}
-              className="w-full md:w-auto"
-            >
-              Dodaj konto
-            </Button>
-          </div>
+    <div className="max-w-7xl mx-auto space-y-8 p-6">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold">Połączone konta</h1>
+        <p className="text-muted-foreground">
+          Zarządzaj swoimi kontami społecznościowymi i planuj posty
+        </p>
+      </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-            {getConnectedAccounts(platform).map((account) => (
-              <div
-                key={account.id}
-                className="flex items-center justify-between gap-3 bg-gray-50 p-3 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
-              >
-                <div className="flex items-center gap-3 min-w-0">
-                  {account.isLoading && (
-                    <Loader2 className="animate-spin h-4 w-4" />
-                  )}
-                  {account.profileImage && (
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
-                      <Image
-                        src={account.profileImage}
-                        alt={account.name}
-                        fill
-                        className="object-cover"
-                      />
-                    </div>
-                  )}
-                  <span className="text-sm font-medium truncate">
-                    {account.name}
+      <div className="grid grid-cols-1 gap-6">
+        {["facebook", "instagram", "twitter", "tiktok"].map((platform) => (
+          <div
+            key={platform}
+            className="flex flex-col gap-4 p-6 border border-border rounded-xl shadow-sm bg-card hover:shadow-md transition-shadow"
+          >
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                {getPlatformIcon(platform.toUpperCase() as Provider)}
+                <div className="flex flex-col">
+                  <span className="font-semibold text-lg capitalize">
+                    {platform}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {getConnectedAccounts(platform).length} połączonych kont
                   </span>
                 </div>
-                <button
-                  onClick={() => {
-                    setAccountToRemove(account);
-                    setShowDeletionModal(true);
-                  }}
-                  className="text-red-500 hover:text-red-700 disabled:opacity-50 flex-shrink-0"
-                  disabled={account.isLoading}
-                >
-                  <X className="h-4 w-4" />
-                </button>
               </div>
-            ))}
+              <Button
+                onClick={() => handleAddAccount(platform)}
+                className="w-full md:w-auto gap-2"
+                variant="outline"
+              >
+                <Plus className="h-4 w-4" />
+                Dodaj konto
+              </Button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {getConnectedAccounts(platform).length === 0 ? (
+                <div className="col-span-full flex items-center justify-center p-8 bg-muted/50 rounded-lg border border-dashed">
+                  <p className="text-muted-foreground text-center">
+                    Brak połączonych kont. Kliknij "Dodaj konto", aby rozpocząć.
+                  </p>
+                </div>
+              ) : (
+                getConnectedAccounts(platform).map((account) => (
+                  <div
+                    key={account.id}
+                    className="flex items-center justify-between gap-3 bg-muted/30 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      {account.isLoading && (
+                        <Loader2 className="animate-spin h-4 w-4 text-primary" />
+                      )}
+                      {account.profileImage && (
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border">
+                          <Image
+                            src={account.profileImage}
+                            alt={account.name}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                      )}
+                      <span className="text-sm font-medium truncate">
+                        {account.name}
+                      </span>
+                    </div>
+                    <button
+                      onClick={() => {
+                        setAccountToRemove(account);
+                        setShowDeletionModal(true);
+                      }}
+                      className="text-destructive hover:text-destructive/80 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-destructive/10 rounded-full transition-colors"
+                      disabled={account.isLoading}
+                      title="Usuń konto"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
 
       <Dialog open={showDeletionModal} onOpenChange={setShowDeletionModal}>
         <DialogContent>
@@ -216,10 +244,12 @@ export default function ConnectAccounts() {
                 Czy na pewno chcesz usunąć konto{" "}
                 <strong>{accountToRemove?.name}</strong>?
               </span>
-              <span className="text-sm text-red-600">
-                Uwaga: Wszystkie zaplanowane posty dla tego konta zostaną
-                anulowane.
-              </span>
+              <div className="mt-2 p-3 bg-destructive/10 rounded-lg">
+                <span className="text-sm text-destructive">
+                  Uwaga: Wszystkie zaplanowane posty dla tego konta zostaną
+                  anulowane.
+                </span>
+              </div>
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">

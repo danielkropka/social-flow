@@ -38,15 +38,6 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         />
         <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
           <Card className="max-w-6xl mx-auto">
-            <CardHeader>
-              <CardTitle className="text-xl font-semibold">
-                {activeTab === "posts"
-                  ? "Posty"
-                  : activeTab === "accounts"
-                  ? "Połączone konta"
-                  : "Utwórz post"}
-              </CardTitle>
-            </CardHeader>
             <CardContent>{renderContent()}</CardContent>
           </Card>
         </main>

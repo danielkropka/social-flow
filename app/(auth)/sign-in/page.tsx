@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
 import { GoogleLogo } from "@/components/icons/GoogleLogo";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -106,52 +105,31 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50/50 to-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          maxWidth: "28rem",
-          width: "100%",
-          backgroundColor: "white",
-          padding: "1.5rem",
-          borderRadius: "1rem",
-          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1.5rem",
-          position: "relative",
-          zIndex: 10,
-          margin: "1rem",
-        }}
-      >
+      <div className="animate-fade-in-up max-w-[28rem] w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-2xl flex flex-col gap-8 relative z-10 m-4 border border-gray-100">
         <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#5DADE2] to-[#1ABC9C] text-transparent bg-clip-text">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-transparent bg-clip-text">
             Social Flow
           </h1>
-          <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
             Witaj ponownie
           </h2>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">
+          <p className="mt-3 text-base sm:text-lg text-gray-600">
             Zaloguj się do swojego konta
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 sm:space-y-6"
-        >
-          <div className="space-y-3 sm:space-y-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-5">
             <div>
               <label
                 htmlFor="email"
-                className="text-sm sm:text-base font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 block mb-2"
               >
                 Email
               </label>
@@ -160,11 +138,15 @@ export default function SignIn() {
                 type="email"
                 {...register("email")}
                 placeholder="nazwa@example.com"
-                className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+                className={`mt-1 transition-all duration-200 ${
+                  errors.email
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "focus:ring-blue-500 focus:border-blue-500"
+                }`}
                 disabled={isLoading}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-2 text-sm text-red-600 animate-shake">
                   {errors.email.message}
                 </p>
               )}
@@ -173,7 +155,7 @@ export default function SignIn() {
             <div>
               <label
                 htmlFor="password"
-                className="text-sm sm:text-base font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 block mb-2"
               >
                 Hasło
               </label>
@@ -182,11 +164,15 @@ export default function SignIn() {
                 type="password"
                 {...register("password")}
                 placeholder="••••••••"
-                className={`mt-1 ${errors.password ? "border-red-500" : ""}`}
+                className={`mt-1 transition-all duration-200 ${
+                  errors.password
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "focus:ring-blue-500 focus:border-blue-500"
+                }`}
                 disabled={isLoading}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-2 text-sm text-red-600 animate-shake">
                   {errors.password.message}
                 </p>
               )}
@@ -198,19 +184,19 @@ export default function SignIn() {
                   id="remember"
                   type="checkbox"
                   {...register("remember")}
-                  className="rounded border-gray-300 text-blue-600"
+                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-colors"
                   disabled={isLoading}
                 />
                 <label
                   htmlFor="remember"
-                  className="ml-2 text-sm sm:text-base text-gray-600"
+                  className="ml-2 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
                 >
                   Zapamiętaj mnie
                 </label>
               </div>
               <Link
                 href="/forgot-password"
-                className="text-sm sm:text-base text-blue-600 hover:text-blue-500 transition-colors"
+                className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
               >
                 Zapomniałeś hasła?
               </Link>
@@ -219,10 +205,10 @@ export default function SignIn() {
 
           <Button
             type="submit"
-            className="w-full h-10 sm:h-12 text-base sm:text-lg relative overflow-hidden group"
+            className="w-full h-12 text-base font-medium relative overflow-hidden group transition-all duration-300 hover:shadow-lg"
             disabled={isLoading}
           >
-            <span className="relative z-10">
+            <span className="relative z-10 flex items-center justify-center">
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
@@ -232,15 +218,15 @@ export default function SignIn() {
                 "Zaloguj się"
               )}
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#5DADE2] to-[#1ABC9C] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-sm sm:text-base">
-              <span className="px-2 bg-white text-gray-500">
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">
                 Lub kontynuuj z
               </span>
             </div>
@@ -249,28 +235,28 @@ export default function SignIn() {
           <Button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full h-10 sm:h-12 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-700 transition-colors"
+            className="w-full h-12 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center text-gray-700 transition-all duration-300 hover:shadow-md"
             disabled={isLoading}
           >
             <GoogleLogo />
-            <span className="text-sm sm:text-base ml-2">
-              {isLoading ? "Logowanie..." : "Google"}
+            <span className="text-sm font-medium ml-3">
+              {isLoading ? "Logowanie..." : "Kontynuuj z Google"}
             </span>
           </Button>
 
           <div className="text-center">
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-sm text-gray-600">
               Nie masz jeszcze konta?{" "}
               <Link
                 href="/sign-up"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Zarejestruj się
               </Link>
             </p>
           </div>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 }

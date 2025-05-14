@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 interface FaqItem {
   question: string;
@@ -63,18 +62,10 @@ export default function FaqSection() {
 
         <div className="space-y-3">
           {faqItems.map((item, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
-              style={{
-                background: "white",
-                borderRadius: "0.75rem",
-                border: "1px solid rgb(229 231 235)",
-                overflow: "hidden",
-              }}
+              className="bg-white rounded-xl border border-gray-200 overflow-hidden animate-fade-in-up"
+              style={{ animationDelay: `${index * 100}ms` }}
             >
               <button
                 onClick={() => setOpenIndex(openIndex === index ? null : index)}
@@ -99,22 +90,16 @@ export default function FaqSection() {
                   />
                 </svg>
               </button>
-              <AnimatePresence>
-                {openIndex === index && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    transition={{ duration: 0.2 }}
-                    style={{ overflow: "hidden" }}
-                  >
-                    <div className="px-6 py-4 text-gray-600 border-t border-gray-100">
-                      {item.answer}
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </motion.div>
+              <div
+                className={`overflow-hidden transition-all duration-200 ${
+                  openIndex === index ? "max-h-96" : "max-h-0"
+                }`}
+              >
+                <div className="px-6 py-4 text-gray-600 border-t border-gray-100">
+                  {item.answer}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
       </div>

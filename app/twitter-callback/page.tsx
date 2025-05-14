@@ -80,53 +80,55 @@ function TwitterCallbackContent() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto px-4 py-12">
-      <Card className="relative overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1">
+    <div className="min-h-screen flex items-center justify-center bg-gray-50/50 px-4 py-12">
+      <Card className="w-full max-w-2xl relative overflow-hidden shadow-xl">
+        <div className="absolute top-0 left-0 w-full h-1.5">
           <div className="h-full bg-gradient-to-r from-blue-400 via-blue-500 to-blue-400 animate-gradient" />
         </div>
 
-        <div className="p-8">
+        <div className="p-8 md:p-10">
           <div className="flex flex-col items-center">
-            <div className="mb-8 relative">
-              <div className="absolute -inset-1 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 opacity-75 blur animate-pulse" />
-              <div className="relative bg-white rounded-full p-4 shadow-xl">
-                <FaTwitter className="h-12 w-12 text-blue-400" />
+            <div className="mb-10 relative">
+              <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-blue-400 to-blue-500 opacity-75 blur-lg animate-pulse" />
+              <div className="relative bg-white rounded-full p-5 shadow-xl">
+                <FaTwitter className="h-14 w-14 text-blue-400" />
               </div>
             </div>
 
-            <div className="text-center space-y-6">
-              <div>
-                <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
+            <div className="text-center space-y-8">
+              <div className="space-y-3">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
                   Łączenie konta Twitter
                 </h1>
-                <p className="text-gray-500">
+                <p className="text-gray-600 text-lg">
                   Trwa proces autoryzacji i konfiguracji Twojego konta
                 </p>
               </div>
 
-              <div className="flex items-center justify-center gap-3 text-blue-400">
-                <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="font-medium">Przetwarzanie...</span>
+              <div className="flex items-center justify-center gap-4 text-blue-500 bg-blue-50/50 px-6 py-3 rounded-full">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="font-medium text-lg">Przetwarzanie...</span>
               </div>
 
-              <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-start gap-4 text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+              <div className="space-y-5 pt-8 border-t border-gray-100">
+                <div className="flex items-start gap-4 text-base text-gray-700 hover:text-blue-500 transition-colors">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-2 animate-pulse" />
                   <p>Weryfikacja uprawnień i poświadczeń</p>
                 </div>
-                <div className="flex items-start gap-4 text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                <div className="flex items-start gap-4 text-base text-gray-700 hover:text-blue-500 transition-colors">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-2 animate-pulse" />
                   <p>Konfiguracja dostępu do publikowania treści</p>
                 </div>
-                <div className="flex items-start gap-4 text-sm text-gray-600">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
+                <div className="flex items-start gap-4 text-base text-gray-700 hover:text-blue-500 transition-colors">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 mt-2 animate-pulse" />
                   <p>Przygotowanie integracji z Social Flow</p>
                 </div>
               </div>
 
-              <div className="text-xs text-gray-400 mt-6">
-                <p>Proces może potrwać kilka sekund...</p>
+              <div className="text-sm text-gray-500 mt-8 bg-gray-50/50 px-4 py-2 rounded-lg">
+                <p>
+                  Proces może potrwać kilka sekund. Prosimy o cierpliwość...
+                </p>
               </div>
             </div>
           </div>
@@ -140,8 +142,11 @@ export default function TwitterCallback() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center min-h-screen">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-500" />
+        <div className="flex items-center justify-center min-h-screen bg-gray-50/50">
+          <div className="flex flex-col items-center gap-4">
+            <Loader2 className="h-10 w-10 animate-spin text-blue-500" />
+            <p className="text-gray-600 font-medium">Ładowanie...</p>
+          </div>
         </div>
       }
     >

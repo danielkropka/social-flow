@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Star } from "@/components/ui/star";
 
@@ -60,46 +59,49 @@ export default function ReviewsSection() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reviews.map((review, index) => (
-            <motion.div
+            <div
               key={index}
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: index * 0.1 }}
+              className="group relative bg-gradient-to-br from-white to-gray-50/50 p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:-translate-y-1 animate-fade-in-up"
               style={{
-                background: "white",
-                padding: "1.5rem",
-                borderRadius: "0.75rem",
-                boxShadow: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-                border: "1px solid rgb(229 231 235)",
+                animationDelay: `${index * 100}ms`,
               }}
             >
               <div className="flex items-center gap-4 mb-4">
-                <Avatar className="h-12 w-12">
+                <Avatar className="h-12 w-12 ring-2 ring-blue-100 group-hover:ring-blue-200 transition-all duration-300">
                   <AvatarImage src={review.avatar} alt={review.name} />
-                  <AvatarFallback>{review.name[0]}</AvatarFallback>
+                  <AvatarFallback className="bg-blue-50 text-blue-600">
+                    {review.name[0]}
+                  </AvatarFallback>
                 </Avatar>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{review.name}</h3>
+                  <h3 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors duration-300">
+                    {review.name}
+                  </h3>
                   <p className="text-sm text-gray-600">{review.title}</p>
                 </div>
               </div>
-              <div className="flex gap-1 mb-3">
+              <div className="flex gap-1 mb-4">
                 {[...Array(5)].map((_, i) => (
                   <Star
                     key={i}
-                    className={`h-5 w-5 ${
+                    className={`h-5 w-5 transition-transform duration-300 ${
                       i < review.rating
-                        ? "text-blue-600 fill-blue-600"
+                        ? "text-blue-600 fill-blue-600 group-hover:scale-110"
                         : "text-gray-200 fill-gray-200"
                     }`}
                   />
                 ))}
               </div>
-              <p className="text-gray-600">{review.content}</p>
-            </motion.div>
+              <p className="text-gray-600 leading-relaxed">{review.content}</p>
+            </div>
           ))}
         </div>
+
+        {/* <div className="text-center mt-12">
+          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-95">
+            Zobacz więcej opinii
+          </button>
+        </div> */}
       </div>
     </section>
   );

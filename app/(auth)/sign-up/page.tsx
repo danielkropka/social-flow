@@ -4,7 +4,6 @@ import { useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { motion } from "framer-motion";
 import { GoogleLogo } from "@/components/icons/GoogleLogo";
 import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
@@ -119,53 +118,32 @@ export default function SignUp() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
       {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50/50 to-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
+        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
       </div>
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={{
-          maxWidth: "28rem",
-          width: "100%",
-          backgroundColor: "white",
-          padding: "1.5rem",
-          borderRadius: "1rem",
-          boxShadow: "0 20px 25px -5px rgba(0,0,0,0.1)",
-          display: "flex",
-          flexDirection: "column",
-          gap: "1.5rem",
-          position: "relative",
-          zIndex: 10,
-          margin: "1rem",
-        }}
-      >
+      <div className="animate-fade-in-up max-w-[28rem] w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-2xl flex flex-col gap-8 relative z-10 m-4 border border-gray-100">
         <div className="text-center">
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-[#5DADE2] to-[#1ABC9C] text-transparent bg-clip-text">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-transparent bg-clip-text">
             Social Flow
           </h1>
-          <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
             Stwórz konto
           </h2>
-          <p className="mt-2 text-sm sm:text-base text-gray-600">
+          <p className="mt-3 text-base sm:text-lg text-gray-600">
             Dołącz do Social Flow już dziś
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="space-y-4 sm:space-y-6"
-        >
-          <div className="space-y-3 sm:space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label
                   htmlFor="firstName"
-                  className="text-sm sm:text-base font-medium text-gray-700"
+                  className="text-sm font-medium text-gray-700 block mb-2"
                 >
                   Imię
                 </label>
@@ -174,11 +152,15 @@ export default function SignUp() {
                   type="text"
                   {...register("firstName")}
                   placeholder="Jan"
-                  className={`mt-1 ${errors.firstName ? "border-red-500" : ""}`}
+                  className={`mt-1 transition-all duration-200 ${
+                    errors.firstName
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "focus:ring-blue-500 focus:border-blue-500"
+                  }`}
                   disabled={isLoading}
                 />
                 {errors.firstName && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p className="mt-2 text-sm text-red-600 animate-shake">
                     {errors.firstName.message}
                   </p>
                 )}
@@ -186,7 +168,7 @@ export default function SignUp() {
               <div>
                 <label
                   htmlFor="lastName"
-                  className="text-sm sm:text-base font-medium text-gray-700"
+                  className="text-sm font-medium text-gray-700 block mb-2"
                 >
                   Nazwisko
                 </label>
@@ -195,11 +177,15 @@ export default function SignUp() {
                   type="text"
                   {...register("lastName")}
                   placeholder="Kowalski"
-                  className={`mt-1 ${errors.lastName ? "border-red-500" : ""}`}
+                  className={`mt-1 transition-all duration-200 ${
+                    errors.lastName
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "focus:ring-blue-500 focus:border-blue-500"
+                  }`}
                   disabled={isLoading}
                 />
                 {errors.lastName && (
-                  <p className="mt-1 text-sm text-red-600">
+                  <p className="mt-2 text-sm text-red-600 animate-shake">
                     {errors.lastName.message}
                   </p>
                 )}
@@ -209,7 +195,7 @@ export default function SignUp() {
             <div>
               <label
                 htmlFor="email"
-                className="text-sm sm:text-base font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 block mb-2"
               >
                 Email
               </label>
@@ -218,11 +204,15 @@ export default function SignUp() {
                 type="email"
                 {...register("email")}
                 placeholder="nazwa@example.com"
-                className={`mt-1 ${errors.email ? "border-red-500" : ""}`}
+                className={`mt-1 transition-all duration-200 ${
+                  errors.email
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "focus:ring-blue-500 focus:border-blue-500"
+                }`}
                 disabled={isLoading}
               />
               {errors.email && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-2 text-sm text-red-600 animate-shake">
                   {errors.email.message}
                 </p>
               )}
@@ -231,7 +221,7 @@ export default function SignUp() {
             <div>
               <label
                 htmlFor="password"
-                className="text-sm sm:text-base font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 block mb-2"
               >
                 Hasło
               </label>
@@ -240,11 +230,15 @@ export default function SignUp() {
                 type="password"
                 {...register("password")}
                 placeholder="Min. 8 znaków"
-                className={`mt-1 ${errors.password ? "border-red-500" : ""}`}
+                className={`mt-1 transition-all duration-200 ${
+                  errors.password
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "focus:ring-blue-500 focus:border-blue-500"
+                }`}
                 disabled={isLoading}
               />
               {errors.password && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-2 text-sm text-red-600 animate-shake">
                   {errors.password.message}
                 </p>
               )}
@@ -253,7 +247,7 @@ export default function SignUp() {
             <div>
               <label
                 htmlFor="confirmPassword"
-                className="text-sm sm:text-base font-medium text-gray-700"
+                className="text-sm font-medium text-gray-700 block mb-2"
               >
                 Potwierdź hasło
               </label>
@@ -262,75 +256,45 @@ export default function SignUp() {
                 type="password"
                 {...register("confirmPassword")}
                 placeholder="••••••••"
-                className={`mt-1 ${
-                  errors.confirmPassword ? "border-red-500" : ""
+                className={`mt-1 transition-all duration-200 ${
+                  errors.confirmPassword
+                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                    : "focus:ring-blue-500 focus:border-blue-500"
                 }`}
                 disabled={isLoading}
               />
               {errors.confirmPassword && (
-                <p className="mt-1 text-sm text-red-600">
+                <p className="mt-2 text-sm text-red-600 animate-shake">
                   {errors.confirmPassword.message}
                 </p>
               )}
             </div>
-
-            <div className="flex items-start gap-2">
-              <input
-                type="checkbox"
-                id="terms"
-                {...register("terms")}
-                className="mt-1 rounded border-gray-300 text-blue-600"
-                disabled={isLoading}
-              />
-              <label
-                htmlFor="terms"
-                className="text-sm sm:text-base text-gray-600"
-              >
-                Akceptuję{" "}
-                <Link
-                  href="/terms"
-                  className="text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  regulamin
-                </Link>{" "}
-                oraz{" "}
-                <Link
-                  href="/privacy"
-                  className="text-blue-600 hover:text-blue-700 transition-colors"
-                >
-                  politykę prywatności
-                </Link>
-              </label>
-            </div>
-            {errors.terms && (
-              <p className="text-sm text-red-600">{errors.terms.message}</p>
-            )}
           </div>
 
           <Button
             type="submit"
-            className="w-full h-10 sm:h-12 text-base sm:text-lg relative overflow-hidden group"
+            className="w-full h-12 text-base font-medium relative overflow-hidden group transition-all duration-300 hover:shadow-lg"
             disabled={isLoading}
           >
-            <span className="relative z-10">
+            <span className="relative z-10 flex items-center justify-center">
               {isLoading ? (
                 <div className="flex items-center justify-center">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
-                  Tworzenie konta...
+                  Rejestracja...
                 </div>
               ) : (
                 "Zarejestruj się"
               )}
             </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-[#5DADE2] to-[#1ABC9C] opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
           </Button>
 
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300" />
+              <div className="w-full border-t border-gray-200" />
             </div>
-            <div className="relative flex justify-center text-sm sm:text-base">
-              <span className="px-2 bg-white text-gray-500">
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-white text-gray-500">
                 Lub kontynuuj z
               </span>
             </div>
@@ -339,28 +303,28 @@ export default function SignUp() {
           <Button
             type="button"
             onClick={handleGoogleSignUp}
-            className="w-full h-10 sm:h-12 bg-white border border-gray-300 hover:bg-gray-50 flex items-center justify-center text-gray-700 transition-colors"
+            className="w-full h-12 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center text-gray-700 transition-all duration-300 hover:shadow-md"
             disabled={isLoading}
           >
             <GoogleLogo />
-            <span className="text-sm sm:text-base ml-2">
-              {isLoading ? "Rejestracja..." : "Google"}
+            <span className="text-sm font-medium ml-3">
+              {isLoading ? "Rejestracja..." : "Kontynuuj z Google"}
             </span>
           </Button>
 
           <div className="text-center">
-            <p className="text-sm sm:text-base text-gray-600">
+            <p className="text-sm text-gray-600">
               Masz już konto?{" "}
               <Link
                 href="/sign-in"
-                className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
+                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
               >
                 Zaloguj się
               </Link>
             </p>
           </div>
         </form>
-      </motion.div>
+      </div>
     </div>
   );
 }

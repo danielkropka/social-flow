@@ -5,7 +5,6 @@ import { buttonVariants } from "./ui/button";
 import PricingSection from "./PricingSection";
 import PlatformsSection from "./PlatformsSection";
 import ReviewsSection from "./ReviewsSection";
-import { motion } from "framer-motion";
 import FaqSection from "./FaqSection";
 import Link from "next/link";
 import { cn } from "@/lib/utils";
@@ -18,13 +17,8 @@ export default function HeroSection() {
       setIsMobile(window.innerWidth < 1024);
     };
 
-    // Inicjalne ustawienie
     handleResize();
-
-    // Nasłuchiwanie na zmiany rozmiaru okna
     window.addEventListener("resize", handleResize);
-
-    // Cleanup
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -34,22 +28,6 @@ export default function HeroSection() {
     "Planowanie z wyprzedzeniem",
     "Oszczędność czasu i pieniędzy (zaczynając od 30 zł/miesiąc)",
   ];
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: -20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      x: 0,
-      transition: {
-        delay: i * 0.1,
-      },
-    }),
-  };
 
   const handleScrollToSection = (
     event: React.MouseEvent<HTMLAnchorElement>,
@@ -72,49 +50,46 @@ export default function HeroSection() {
       {/* Content */}
       <div className="relative">
         <div className="flex flex-col lg:flex-row max-w-7xl mx-auto mt-24 lg:mt-32 px-4 gap-8">
-          <motion.div
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-            transition={{ duration: 0.8 }}
+          <div
+            className="flex flex-col w-full lg:w-1/2 animate-fade-in-up"
             style={{
-              display: "flex",
-              flexDirection: "column",
-              width: "100%",
               maxWidth: isMobile ? "100%" : "32rem",
+              opacity: 0,
+              animation: "fade-in-up 0.5s ease-out forwards",
             }}
           >
-            <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900">
-              Przestań skakać między aplikacjami &mdash;&nbsp;
-              <span className="text-blue-600">publikuj posty tu i teraz</span>.
-            </h1>
-            <span className="mt-4 text-lg lg:text-xl text-gray-600">
-              <span className="text-blue-600 font-semibold">
-                Jedno narzędzie
-              </span>{" "}
-              do jednoczesnego wrzucania treści na wszystkie Twoje profile
-              społecznościowe.&nbsp;
-              <span className="text-blue-600 font-semibold">
-                Zaoszczędź czas
-              </span>{" "}
-              i skup się na tworzeniu świetnego contentu.
-            </span>
-            <div className="flex flex-col gap-2 mt-4 text-lg">
+            <div className="min-h-[200px] lg:min-h-[300px]">
+              <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900">
+                Przestań skakać między aplikacjami &mdash;&nbsp;
+                <span className="text-blue-600">publikuj posty tu i teraz</span>
+                .
+              </h1>
+              <span className="mt-4 text-lg lg:text-xl text-gray-600 block">
+                <span className="text-blue-600 font-semibold">
+                  Jedno narzędzie
+                </span>{" "}
+                do jednoczesnego wrzucania treści na wszystkie Twoje profile
+                społecznościowe.&nbsp;
+                <span className="text-blue-600 font-semibold">
+                  Zaoszczędź czas
+                </span>{" "}
+                i skup się na tworzeniu świetnego contentu.
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2 mt-4 text-lg min-h-[200px]">
               {advantages.map((advantage, i) => (
-                <motion.div
+                <div
                   key={advantage}
-                  custom={i}
-                  variants={itemVariants}
-                  initial="hidden"
-                  animate="visible"
+                  className="flex items-center gap-2"
                   style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.5rem",
+                    opacity: 0,
+                    animation: `fade-in-up 0.5s ease-out forwards`,
+                    animationDelay: `${i * 100 + 200}ms`,
                   }}
                 >
                   <svg
-                    className="w-6 h-6 text-blue-600"
+                    className="w-6 h-6 text-blue-600 flex-shrink-0"
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -127,18 +102,16 @@ export default function HeroSection() {
                     />
                   </svg>
                   <span className="text-gray-600">{advantage}</span>
-                </motion.div>
+                </div>
               ))}
             </div>
-            <motion.section
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.5 }}
+
+            <section
+              className="flex flex-col mt-12 w-full lg:w-1/2"
               style={{
-                display: "flex",
-                flexDirection: "column",
-                marginTop: "3rem",
-                width: isMobile ? "100%" : "50%",
+                opacity: 0,
+                animation: "fade-in-up 0.5s ease-out forwards",
+                animationDelay: "600ms",
               }}
             >
               <Link
@@ -152,32 +125,28 @@ export default function HeroSection() {
                 <span className="relative z-10">Wypróbuj za darmo</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
-            </motion.section>
-          </motion.div>
+            </section>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
+          <div
+            className="flex-1 relative flex justify-center items-center"
             style={{
-              flex: 1,
-              position: "relative",
-              display: "flex",
-              justifyContent: "center",
-              alignItems: "center",
+              opacity: 0,
+              animation: "fade-in-up 0.5s ease-out forwards",
+              animationDelay: "300ms",
             }}
           >
             <div className="relative w-full max-w-[800px] bg-gray-50/50 rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6 mx-4 lg:mx-0">
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-red-400" />
-                <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-yellow-400" />
-                <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-green-400" />
+                <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-red-400 hover:bg-red-500 transition-colors cursor-pointer" />
+                <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-yellow-400 hover:bg-yellow-500 transition-colors cursor-pointer" />
+                <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-green-400 hover:bg-green-500 transition-colors cursor-pointer" />
               </div>
 
               <div className="space-y-3 lg:space-y-4">
                 <div className="flex items-center gap-3 mb-4 lg:mb-6">
                   <div className="flex gap-2">
-                    <div className="w-6 lg:w-8 h-6 lg:h-8 rounded bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                    <div className="w-6 lg:w-8 h-6 lg:h-8 rounded bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md">
                       <svg
                         className="w-3 lg:w-4 h-3 lg:h-4 text-[#1877F2]"
                         fill="currentColor"
@@ -186,7 +155,7 @@ export default function HeroSection() {
                         <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                       </svg>
                     </div>
-                    <div className="w-6 lg:w-8 h-6 lg:h-8 rounded bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 transition-colors">
+                    <div className="w-6 lg:w-8 h-6 lg:h-8 rounded bg-white border border-gray-200 flex items-center justify-center hover:bg-gray-50 hover:scale-110 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md">
                       <svg
                         className="w-3 lg:w-4 h-3 lg:h-4 text-[#E4405F]"
                         fill="currentColor"
@@ -196,34 +165,49 @@ export default function HeroSection() {
                       </svg>
                     </div>
                   </div>
-                  <span className="text-xs lg:text-sm text-gray-500">
+                  <span className="text-xs lg:text-sm text-gray-600 font-medium">
                     Wybrane platformy
                   </span>
                 </div>
 
-                <div className="w-full h-24 lg:h-32 bg-white rounded-lg border border-gray-200 flex items-center justify-center p-4">
-                  <span className="text-xs lg:text-sm text-gray-500 text-center">
-                    Przeciągnij i upuść zdjęcia lub kliknij, aby wybrać
-                  </span>
+                <div className="w-full h-24 lg:h-32 bg-white rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center p-4 hover:border-blue-400 hover:bg-blue-50/50 transition-all duration-200 cursor-pointer group">
+                  <div className="flex flex-col items-center gap-2">
+                    <svg
+                      className="w-8 h-8 text-gray-400 group-hover:text-blue-400 transition-colors"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                      />
+                    </svg>
+                    <span className="text-xs lg:text-sm text-gray-500 group-hover:text-blue-600 text-center transition-colors">
+                      Przeciągnij i upuść zdjęcia lub kliknij, aby wybrać
+                    </span>
+                  </div>
                 </div>
 
-                <div className="w-full h-20 lg:h-24 bg-white rounded-lg border border-gray-200 p-3">
-                  <div className="w-2/3 h-3 lg:h-4 bg-gray-100 rounded mb-2" />
-                  <div className="w-1/2 h-3 lg:h-4 bg-gray-100 rounded" />
+                <div className="w-full h-20 lg:h-24 bg-white rounded-lg border border-gray-200 p-3 hover:border-gray-300 transition-colors">
+                  <div className="w-2/3 h-3 lg:h-4 bg-gray-100 rounded mb-2 animate-pulse" />
+                  <div className="w-1/2 h-3 lg:h-4 bg-gray-100 rounded animate-pulse" />
                 </div>
 
                 <div className="flex justify-between items-center">
                   <div className="flex items-center gap-2">
-                    <div className="w-6 lg:w-8 h-6 lg:h-8 rounded bg-white border border-gray-200" />
-                    <div className="w-16 lg:w-24 h-3 lg:h-4 bg-gray-100 rounded" />
+                    <div className="w-6 lg:w-8 h-6 lg:h-8 rounded bg-white border border-gray-200 hover:border-gray-300 transition-colors" />
+                    <div className="w-16 lg:w-24 h-3 lg:h-4 bg-gray-100 rounded animate-pulse" />
                   </div>
-                  <button className="px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-900 text-white rounded-lg text-sm lg:text-base hover:bg-gray-800 transition-colors">
+                  <button className="px-3 lg:px-4 py-1.5 lg:py-2 bg-gray-900 text-white rounded-lg text-sm lg:text-base hover:bg-gray-800 hover:scale-105 transition-all duration-200 shadow-sm hover:shadow-md">
                     Zaplanuj post
                   </button>
                 </div>
               </div>
             </div>
-          </motion.div>
+          </div>
         </div>
         <ReviewsSection />
         <PlatformsSection />
