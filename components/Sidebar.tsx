@@ -7,7 +7,6 @@ import {
   Share2,
   LogOut,
   ChevronDown,
-  Menu,
   Layout,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
