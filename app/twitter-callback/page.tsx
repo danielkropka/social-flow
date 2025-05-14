@@ -71,10 +71,6 @@ function TwitterCallbackContent() {
             ? error.message
             : "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
         duration: 7000,
-        action: {
-          label: "Spróbuj ponownie",
-          onClick: () => router.push("/dashboard/"),
-        },
       });
 
       setTimeout(() => {

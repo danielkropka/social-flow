@@ -53,10 +53,6 @@ function FacebookCallbackContent() {
     toast.error(errorMessage, {
       description: errorDescription,
       duration: 7000,
-      action: {
-        label: "Spróbuj ponownie",
-        onClick: () => router.push("/dashboard/"),
-      },
     });
 
     setTimeout(() => {
@@ -69,10 +65,6 @@ function FacebookCallbackContent() {
       description:
         "Nie otrzymano wszystkich wymaganych danych do połączenia konta.",
       duration: 7000,
-      action: {
-        label: "Spróbuj ponownie",
-        onClick: () => router.push("/dashboard/"),
-      },
     });
 
     setTimeout(() => {

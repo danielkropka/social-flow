@@ -51,10 +51,6 @@ function InstagramCallbackContent() {
     toast.error(errorMessage, {
       description: errorDetails,
       duration: 7000,
-      action: {
-        label: "Spróbuj ponownie",
-        onClick: () => router.push("/dashboard/"),
-      },
     });
 
     setTimeout(() => {
@@ -132,10 +128,6 @@ function InstagramCallbackContent() {
       toast.error(errorMessage, {
         description: errorDescription,
         duration: 7000,
-        action: {
-          label: "Spróbuj ponownie",
-          onClick: () => router.push("/dashboard/"),
-        },
       });
 
       setTimeout(() => {
