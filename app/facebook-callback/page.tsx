@@ -187,10 +187,6 @@ function FacebookCallbackContent() {
       toast.error(errorMessage, {
         description: errorDescription,
         duration: 7000,
-        action: {
-          label: "Spróbuj ponownie",
-          onClick: () => router.push("/dashboard/"),
-        },
       });
 
       setTimeout(() => {
