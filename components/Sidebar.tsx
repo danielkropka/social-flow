@@ -8,7 +8,6 @@ import {
   LogOut,
   ChevronDown,
   Layout,
-  Home,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";

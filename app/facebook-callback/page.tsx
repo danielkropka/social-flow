@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { FaFacebook } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
-import { useTab, TabProvider } from "@/context/TabContext";
+import { useTab } from "@/context/TabContext";
 
 function FacebookCallbackContent() {
   const router = useRouter();

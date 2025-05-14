@@ -186,7 +186,7 @@ export default function PostsContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPosts.map((post, index) => {
+          {filteredPosts.map((post) => {
             const status = getStatus(post);
             const platform =
               post.postConnectedAccounts[0]?.connectedAccount.provider;

@@ -189,7 +189,8 @@ export default function ConnectAccounts() {
               {getConnectedAccounts(platform).length === 0 ? (
                 <div className="col-span-full flex items-center justify-center p-8 bg-muted/50 rounded-lg border border-dashed">
                   <p className="text-muted-foreground text-center">
-                    Brak połączonych kont. Kliknij "Dodaj konto", aby rozpocząć.
+                    Brak połączonych kont. Kliknij &quot;Dodaj konto&quot;, aby
+                    rozpocząć.
                   </p>
                 </div>
               ) : (
