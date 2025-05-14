@@ -20,6 +20,11 @@ export async function POST(req: Request) {
   try {
     // Sprawdzenie autoryzacji
     const session = await getAuthSession();
+    console.log("[TWITTER_POST] Session check:", {
+      hasSession: !!session,
+      userId: session?.user?.id,
+    });
+
     if (!session?.user?.id) {
       return NextResponse.json(
         {
@@ -35,6 +40,12 @@ export async function POST(req: Request) {
     const body = await req.json();
     const { content, mediaUrls, accountId } = body;
 
+    console.log("[TWITTER_POST] Request data:", {
+      accountId,
+      hasContent: !!content,
+      mediaCount: mediaUrls?.length || 0,
+    });
+
     // Pobierz dane konta Twitter
     const account = await db.connectedAccount.findUnique({
       where: {
@@ -42,6 +53,12 @@ export async function POST(req: Request) {
         provider: "TWITTER",
         userId: session.user.id,
       },
+    });
+
+    console.log("[TWITTER_POST] Account check:", {
+      found: !!account,
+      hasAccessToken: !!account?.accessToken,
+      hasAccessTokenSecret: !!account?.accessTokenSecret,
     });
 
     if (!account) {
@@ -93,6 +110,7 @@ export async function POST(req: Request) {
 
     // Jeśli są media, najpierw je wgraj
     if (mediaUrls && mediaUrls.length > 0) {
+      console.log("[TWITTER_POST] Uploading media...");
       const mediaIds = await Promise.all(
         mediaUrls.map(async (media: { url: string }) => {
           const mediaResponse = await fetch(media.url);
@@ -110,6 +128,11 @@ export async function POST(req: Request) {
             })
           );
 
+          console.log("[TWITTER_POST] Media upload request:", {
+            url: mediaRequestData.url,
+            headers: mediaHeaders,
+          });
+
           const mediaUploadResponse = await fetch(mediaRequestData.url, {
             method: "POST",
             headers: {
@@ -120,9 +143,16 @@ export async function POST(req: Request) {
           });
 
           if (!mediaUploadResponse.ok) {
-            const errorData = await mediaUploadResponse.json();
+            const errorData = await mediaUploadResponse
+              .json()
+              .catch(() => null);
+            console.error("[TWITTER_POST] Media upload error:", {
+              status: mediaUploadResponse.status,
+              statusText: mediaUploadResponse.statusText,
+              errorData,
+            });
             throw new Error(
-              errorData.detail || "Błąd podczas wgrywania mediów"
+              errorData?.detail || "Błąd podczas wgrywania mediów"
             );
           }
 
@@ -146,6 +176,12 @@ export async function POST(req: Request) {
         secret: accessTokenSecret,
       })
     );
+
+    console.log("[TWITTER_POST] Tweet request:", {
+      url: requestData.url,
+      headers: headers,
+      tweetData,
+    });
 
     // Wyślij post
     try {
@@ -172,6 +208,7 @@ export async function POST(req: Request) {
       }
 
       const result = await response.json();
+      console.log("[TWITTER_POST] Success:", result);
       return NextResponse.json({
         success: true,
         data: result,
