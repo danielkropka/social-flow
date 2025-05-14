@@ -148,28 +148,65 @@ export async function POST(req: Request) {
     );
 
     // Wyślij post
-    const response = await fetch(requestData.url, {
-      method: "POST",
-      headers: {
-        ...headers,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(tweetData),
-    });
+    try {
+      const response = await fetch(requestData.url, {
+        method: "POST",
+        headers: {
+          ...headers,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(tweetData),
+      });
 
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.detail || "Błąd podczas publikacji na Twitterze"
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => null);
+        console.error("[TWITTER_POST] Response error:", {
+          status: response.status,
+          statusText: response.statusText,
+          errorData,
+        });
+        throw new Error(
+          errorData?.detail ||
+            `Błąd podczas publikacji na Twitterze (${response.status})`
+        );
+      }
+
+      const result = await response.json();
+      return NextResponse.json({
+        success: true,
+        data: result,
+      });
+    } catch (error) {
+      console.error("[TWITTER_POST] Fetch error:", {
+        error,
+        requestData,
+        headers: headers,
+        tweetData,
+      });
+
+      if (error instanceof Error) {
+        if (error.message.includes("fetch failed")) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Błąd połączenia z Twitterem",
+              details:
+                "Nie można połączyć się z serwerem Twittera. Sprawdź swoje połączenie internetowe i spróbuj ponownie.",
+            },
+            { status: 503 }
+          );
+        }
+      }
+
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Wystąpił błąd podczas publikacji na Twitterze",
+          details: error instanceof Error ? error.message : "Nieznany błąd",
+        },
+        { status: 500 }
       );
     }
-
-    const result = await response.json();
-
-    return NextResponse.json({
-      success: true,
-      data: result,
-    });
   } catch (error) {
     console.error("[TWITTER_POST]", error);
     return NextResponse.json(
