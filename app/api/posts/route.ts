@@ -63,6 +63,8 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log(mediaUrls);
+
     // Jeśli post jest zaplanowany, zapisz go w bazie i zwróć sukces
     if (scheduledDate) {
       const post = await db.post.create({
