@@ -1,12 +1,13 @@
 import { db } from "@/lib/prisma";
-import { getAuthSession } from "@/lib/auth";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { MediaType } from "@prisma/client";
 
 export async function POST(req: Request) {
   try {
     // Sprawdzenie autoryzacji
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
         {
@@ -126,6 +127,7 @@ export async function POST(req: Request) {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
+                  Cookie: req.headers.get("cookie") || "",
                 },
                 body: JSON.stringify({
                   content,
@@ -260,7 +262,7 @@ export async function POST(req: Request) {
 
 export async function GET() {
   try {
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
     if (!session?.user?.id) {
       return NextResponse.json(
         {
