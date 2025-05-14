@@ -6,10 +6,17 @@ import { toast } from "sonner";
 import { FaTwitter } from "react-icons/fa";
 import { Loader2 } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { useTab } from "@/context/TabContext";
 
 function TwitterCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { setActiveTab } = useTab();
+
+  const navigateToDashboard = () => {
+    setActiveTab("accounts");
+    router.push("/dashboard/");
+  };
 
   useEffect(() => {
     const oauth_token = searchParams.get("oauth_token");
@@ -57,7 +64,7 @@ function TwitterCallbackContent() {
         });
 
         setTimeout(() => {
-          router.push("/dashboard/");
+          navigateToDashboard();
         }, 3000);
       } else {
         throw new Error(data.details || data.error || "Nieznany błąd");
@@ -74,7 +81,7 @@ function TwitterCallbackContent() {
       });
 
       setTimeout(() => {
-        router.push("/dashboard/");
+        navigateToDashboard();
       }, 3000);
     }
   };
