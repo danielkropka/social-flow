@@ -21,6 +21,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConnectedAccount, Provider } from "@prisma/client";
 import { toast } from "sonner";
+import crypto from "crypto";
 
 interface ConnectedAccountWithDetails extends ConnectedAccount {
   isLoading?: boolean;
@@ -499,16 +500,22 @@ export default function ConnectAccounts() {
               onClick={async () => {
                 setShowFacebookModal(false);
                 try {
-                  const response = await fetch(
-                    "/api/auth/facebook/request-token"
-                  );
-                  if (!response.ok) {
-                    throw new Error("Nie udało się pobrać tokena");
-                  }
-                  const data = await response.json();
-                  router.push(
-                    `https://www.facebook.com/v20.0/dialog/oauth?client_id=${data.client_id}&redirect_uri=${data.redirect_uri}&scope=pages_show_list%2Cpages_read_engagement%2Cpages_manage_posts%2Cpublic_profile&response_type=code`
-                  );
+                  // Wymagane uprawnienia dla Facebook Graph API
+                  const scopes = [
+                    "pages_show_list", // Lista stron Facebook
+                    "pages_read_engagement", // Dostęp do interakcji na stronach
+                    "pages_manage_posts", // Zarządzanie postami na stronach
+                    "pages_manage_metadata", // Zarządzanie metadanymi stron
+                    "public_profile", // Podstawowe informacje o profilu
+                    "email", // Dostęp do adresu email
+                  ].join(",");
+
+                  const REDIRECT_URI =
+                    "https://social-flow.pl/facebook-callback";
+                  const state = crypto.randomBytes(32).toString("hex");
+                  const authUrl = `https://www.facebook.com/v22.0/dialog/oauth?client_id=${process.env.FACEBOOK_APP_ID}&redirect_uri=${REDIRECT_URI}&state=${state}&scope=${scopes}`;
+
+                  router.push(authUrl);
                 } catch (error) {
                   console.error("Błąd podczas łączenia z Facebookiem:", error);
                   toast.error("Nie udało się połączyć ze stroną Facebook");

@@ -4,7 +4,7 @@ import { db } from "@/lib/prisma";
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
-const REDIRECT_URI = "https://social-flow-flame.vercel.app/facebook-callback";
+const REDIRECT_URI = "https://social-flow.pl/facebook-callback";
 
 export async function POST(request: Request) {
   try {
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
 
     // Wymiana kodu na token dostępu
     const tokenResponse = await fetch(
-      `https://graph.facebook.com/v20.0/oauth/access_token?client_id=${FACEBOOK_APP_ID}&redirect_uri=${REDIRECT_URI}&client_secret=${FACEBOOK_APP_SECRET}&code=${code}`
+      `https://graph.facebook.com/v22.0/oauth/access_token?client_id=${FACEBOOK_APP_ID}&redirect_uri=${REDIRECT_URI}&client_secret=${FACEBOOK_APP_SECRET}&code=${code}`
     );
 
     if (!tokenResponse.ok) {
@@ -65,7 +65,7 @@ export async function POST(request: Request) {
 
     // Pobierz długoterminowy token
     const longLivedTokenResponse = await fetch(
-      `https://graph.facebook.com/v20.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${FACEBOOK_APP_ID}&client_secret=${FACEBOOK_APP_SECRET}&fb_exchange_token=${tokenData.access_token}`
+      `https://graph.facebook.com/v22.0/oauth/access_token?grant_type=fb_exchange_token&client_id=${FACEBOOK_APP_ID}&client_secret=${FACEBOOK_APP_SECRET}&fb_exchange_token=${tokenData.access_token}`
     );
 
     if (!longLivedTokenResponse.ok) {
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
 
     // Pobierz informacje o użytkowniku
     const userInfoResponse = await fetch(
-      `https://graph.facebook.com/v20.0/me?fields=id,name,email,picture&access_token=${tokenData.access_token}`
+      `https://graph.facebook.com/v22.0/me?fields=id,name,email,picture&access_token=${tokenData.access_token}`
     );
 
     if (!userInfoResponse.ok) {
