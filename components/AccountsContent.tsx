@@ -410,7 +410,7 @@ export default function ConnectAccounts() {
                   }
                   const data = await response.json();
 
-                  if (data.callbackConfirmed !== "true") {
+                  if (!data.callbackConfirmed) {
                     throw new Error("Nie udało się pobrać tokena");
                   }
 
