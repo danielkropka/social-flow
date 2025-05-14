@@ -194,25 +194,22 @@ export async function POST(req: Request) {
                 data: appendRequestData.data,
               });
 
+              const formData = new FormData();
+              Object.entries(appendRequestData.data).forEach(([key, value]) => {
+                formData.append(key, value as string);
+              });
+              formData.append(
+                "media",
+                new Blob([mediaBuffer], { type: `image/${mediaType}` })
+              );
+
               const appendResponse = await fetch(appendRequestData.url, {
                 method: "POST",
                 headers: {
                   ...appendHeaders,
                   "Content-Type": "multipart/form-data",
                 },
-                body: (() => {
-                  const formData = new FormData();
-                  Object.entries(appendRequestData.data).forEach(
-                    ([key, value]) => {
-                      formData.append(key, value as string);
-                    }
-                  );
-                  formData.append(
-                    "media",
-                    new Blob([mediaBuffer], { type: `image/${mediaType}` })
-                  );
-                  return formData;
-                })(),
+                body: formData,
               });
 
               if (!appendResponse.ok) {
@@ -221,6 +218,7 @@ export async function POST(req: Request) {
                   status: appendResponse.status,
                   statusText: appendResponse.statusText,
                   errorData,
+                  headers: appendHeaders,
                 });
                 throw new Error(
                   errorData?.errors?.[0]?.message ||
