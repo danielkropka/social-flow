@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import OAuth from "oauth-1.0a";
-import crypto from "crypto";
+import crypto, { randomUUID } from "crypto";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
@@ -141,7 +141,10 @@ export async function POST(req: Request) {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
+                  additional_owners: [randomUUID().toString()],
+                  media_category: "tweet_image",
                   total_bytes: mediaBuffer.byteLength.toString(),
+                  shared: true,
                   media_type: `image/${mediaType}`,
                 }),
               });
