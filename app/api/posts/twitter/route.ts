@@ -125,20 +125,25 @@ export async function POST(req: Request) {
               const initRequestData = {
                 url: "https://api.twitter.com/2/media/upload/initialize",
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
-                },
-                data: {
-                  total_bytes: mediaBuffer.byteLength.toString(),
-                  media_type: `image/${mediaType}`,
-                },
               };
+
+              const initHeaders = oauth.toHeader(
+                oauth.authorize(initRequestData, {
+                  key: accessToken,
+                  secret: accessTokenSecret,
+                })
+              );
 
               const initResponse = await fetch(initRequestData.url, {
                 method: "POST",
-                headers: initRequestData.headers,
-                body: JSON.stringify(initRequestData.data),
+                headers: {
+                  ...initHeaders,
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  total_bytes: mediaBuffer.byteLength.toString(),
+                  media_type: `image/${mediaType}`,
+                }),
               });
 
               if (!initResponse.ok) {
@@ -151,26 +156,30 @@ export async function POST(req: Request) {
               }
 
               const initData = await initResponse.json();
-
               const mediaId = initData.data.id;
 
               const appendRequestData = {
                 url: `https://api.twitter.com/2/media/upload/${mediaId}/append`,
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "multipart/form-data",
-                },
-                data: {
-                  media_id: mediaId,
-                  segment_index: 100,
-                },
               };
+
+              const appendHeaders = oauth.toHeader(
+                oauth.authorize(appendRequestData, {
+                  key: accessToken,
+                  secret: accessTokenSecret,
+                })
+              );
 
               const appendResponse = await fetch(appendRequestData.url, {
                 method: "POST",
-                headers: appendRequestData.headers,
-                body: JSON.stringify(appendRequestData.data),
+                headers: {
+                  ...appendHeaders,
+                  "Content-Type": "multipart/form-data",
+                },
+                body: JSON.stringify({
+                  media_id: mediaId,
+                  segment_index: 0,
+                }),
               });
 
               if (!appendResponse.ok) {
@@ -185,15 +194,21 @@ export async function POST(req: Request) {
               const finalizeRequestData = {
                 url: `https://api.twitter.com/2/media/upload/${mediaId}/finalize`,
                 method: "POST",
-                headers: {
-                  Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
-                },
               };
+
+              const finalizeHeaders = oauth.toHeader(
+                oauth.authorize(finalizeRequestData, {
+                  key: accessToken,
+                  secret: accessTokenSecret,
+                })
+              );
 
               const finalizeResponse = await fetch(finalizeRequestData.url, {
                 method: "POST",
-                headers: finalizeRequestData.headers,
+                headers: {
+                  ...finalizeHeaders,
+                  "Content-Type": "application/json",
+                },
               });
 
               if (!finalizeResponse.ok) {
