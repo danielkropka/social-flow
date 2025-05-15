@@ -104,7 +104,7 @@ export async function POST(req: Request) {
                 method: "POST",
                 headers: {
                   "Content-Type": "application/json",
-                  Authorization: `Bearer ${accessToken}`,
+                  Authorization: `OAuth ${accessToken}`,
                 },
                 body: JSON.stringify({
                   additional_owners: [randomUUID().toString()],
@@ -137,13 +137,13 @@ export async function POST(req: Request) {
       tweetData.media = { media_ids: mediaIds };
     }
 
-    // Wyślij post używając OAuth 2.0
+    // Wyślij post używając OAuth 2.0 User Context
     try {
       const response = await fetch("https://api.twitter.com/2/tweets", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
+          Authorization: `OAuth ${accessToken}`,
         },
         body: JSON.stringify(tweetData),
       });
