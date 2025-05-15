@@ -2,11 +2,10 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { db } from "@/lib/prisma";
-import OAuth from "oauth-1.0a";
 import crypto, { randomUUID } from "crypto";
 
-const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
-const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
+const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
+const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET;
 
 interface TweetMedia {
   media_ids: string[];
@@ -59,7 +58,6 @@ export async function POST(req: Request) {
     console.log("[TWITTER_POST] Account check:", {
       found: !!account,
       hasAccessToken: !!account?.accessToken,
-      hasAccessTokenSecret: !!account?.accessTokenSecret,
     });
 
     if (!account) {
@@ -75,7 +73,7 @@ export async function POST(req: Request) {
     }
 
     // Sprawdź czy token dostępu istnieje
-    if (!account.accessToken || !account.accessTokenSecret) {
+    if (!account.accessToken) {
       return NextResponse.json(
         {
           success: false,
@@ -87,22 +85,6 @@ export async function POST(req: Request) {
     }
 
     const accessToken = account.accessToken;
-    const accessTokenSecret = account.accessTokenSecret;
-
-    // Inicjalizacja OAuth 1.0a
-    const oauth = new OAuth({
-      consumer: {
-        key: TWITTER_API_KEY!,
-        secret: TWITTER_API_SECRET!,
-      },
-      signature_method: "HMAC-SHA1",
-      hash_function(base_string, key) {
-        return crypto
-          .createHmac("sha1", key)
-          .update(base_string)
-          .digest("base64");
-      },
-    });
 
     // Przygotuj dane do publikacji
     const tweetData: TweetData = {
@@ -121,111 +103,32 @@ export async function POST(req: Request) {
               const mediaBuffer = Buffer.from(base64Data, "base64");
               const mediaType = media.url.split(";")[0].split("/")[1];
 
-              // Inicjalizacja wgrywania
-              const initRequestData = {
-                url: "https://api.twitter.com/2/media/upload/initialize",
-                method: "POST",
-              };
-
-              const initHeaders = oauth.toHeader(
-                oauth.authorize(initRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              const initResponse = await fetch(initRequestData.url, {
+              const initOptions = {
                 method: "POST",
                 headers: {
-                  ...initHeaders,
                   "Content-Type": "application/json",
+                  Authorization: `Bearer ${accessToken}`,
                 },
                 body: JSON.stringify({
                   additional_owners: [randomUUID().toString()],
                   media_category: "tweet_image",
                   total_bytes: mediaBuffer.byteLength.toString(),
-                  shared: true,
                   media_type: `image/${mediaType}`,
                 }),
-              });
+              };
+
+              const initResponse = await fetch(
+                "https://api.twitter.com/2/media/upload/initialize",
+                initOptions
+              );
 
               if (!initResponse.ok) {
                 const errorData = await initResponse.json().catch(() => null);
-                console.error("[TWITTER_POST] Media INIT error:", {
-                  status: initResponse.status,
-                  statusText: initResponse.statusText,
-                  errorData,
-                });
+                const { title, detail, status } = errorData;
+                throw new Error(`${title}: ${detail} (Status: ${status})`);
               }
 
-              const initData = await initResponse.json();
-              const mediaId = initData.data.id;
-
-              const appendRequestData = {
-                url: `https://api.twitter.com/2/media/upload/${mediaId}/append`,
-                method: "POST",
-              };
-
-              const appendHeaders = oauth.toHeader(
-                oauth.authorize(appendRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              const appendResponse = await fetch(appendRequestData.url, {
-                method: "POST",
-                headers: {
-                  ...appendHeaders,
-                  "Content-Type": "multipart/form-data",
-                },
-                body: JSON.stringify({
-                  media_id: mediaId,
-                  segment_index: 0,
-                }),
-              });
-
-              if (!appendResponse.ok) {
-                const errorData = await appendResponse.json().catch(() => null);
-                console.error("[TWITTER_POST] Media APPEND error:", {
-                  status: appendResponse.status,
-                  statusText: appendResponse.statusText,
-                  errorData,
-                });
-              }
-
-              const finalizeRequestData = {
-                url: `https://api.twitter.com/2/media/upload/${mediaId}/finalize`,
-                method: "POST",
-              };
-
-              const finalizeHeaders = oauth.toHeader(
-                oauth.authorize(finalizeRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              const finalizeResponse = await fetch(finalizeRequestData.url, {
-                method: "POST",
-                headers: {
-                  ...finalizeHeaders,
-                  "Content-Type": "application/json",
-                },
-              });
-
-              if (!finalizeResponse.ok) {
-                const errorData = await finalizeResponse
-                  .json()
-                  .catch(() => null);
-                console.error("[TWITTER_POST] Media FINALIZE error:", {
-                  status: finalizeResponse.status,
-                  statusText: finalizeResponse.statusText,
-                  errorData,
-                });
-              }
-
-              return mediaId;
+              return "123";
             }
           } catch (error) {
             console.error("[TWITTER_POST] Media upload error:", error);
@@ -237,32 +140,13 @@ export async function POST(req: Request) {
       tweetData.media = { media_ids: mediaIds };
     }
 
-    // Przygotuj nagłówki dla API
-    const requestData = {
-      url: "https://api.twitter.com/2/tweets",
-      method: "POST",
-    };
-
-    const headers = oauth.toHeader(
-      oauth.authorize(requestData, {
-        key: accessToken,
-        secret: accessTokenSecret,
-      })
-    );
-
-    console.log("[TWITTER_POST] Tweet request:", {
-      url: requestData.url,
-      headers: headers,
-      tweetData,
-    });
-
-    // Wyślij post
+    // Wyślij post używając OAuth 2.0
     try {
-      const response = await fetch(requestData.url, {
+      const response = await fetch("https://api.twitter.com/2/tweets", {
         method: "POST",
         headers: {
-          ...headers,
           "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify(tweetData),
       });
@@ -289,8 +173,6 @@ export async function POST(req: Request) {
     } catch (error) {
       console.error("[TWITTER_POST] Fetch error:", {
         error,
-        requestData,
-        headers: headers,
         tweetData,
       });
 
