@@ -159,11 +159,11 @@ export async function POST(req: Request) {
                 method: "POST",
                 headers: {
                   Authorization: `Bearer ${accessToken}`,
-                  "Content-Type": "application/json",
+                  "Content-Type": "multipart/form-data",
                 },
                 data: {
                   media_id: mediaId,
-                  segment_index: 0,
+                  segment_index: 100,
                 },
               };
 
