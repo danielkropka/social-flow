@@ -123,35 +123,22 @@ export async function POST(req: Request) {
 
               // Inicjalizacja wgrywania
               const initRequestData = {
-                url: "https://upload.twitter.com/1.1/media/upload.json",
+                url: "https://api.twitter.com/2/media/upload/initialize",
                 method: "POST",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
                 data: {
-                  command: "INIT",
                   total_bytes: mediaBuffer.byteLength.toString(),
                   media_type: `image/${mediaType}`,
                 },
               };
 
-              const initHeaders = oauth.toHeader(
-                oauth.authorize(initRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              console.log("[TWITTER_POST] Media INIT request:", {
-                url: initRequestData.url,
-                headers: initHeaders,
-                data: initRequestData.data,
-              });
-
               const initResponse = await fetch(initRequestData.url, {
                 method: "POST",
-                headers: {
-                  ...initHeaders,
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams(initRequestData.data).toString(),
+                headers: initRequestData.headers,
+                body: JSON.stringify(initRequestData.data),
               });
 
               if (!initResponse.ok) {
@@ -161,55 +148,29 @@ export async function POST(req: Request) {
                   statusText: initResponse.statusText,
                   errorData,
                 });
-                throw new Error(
-                  errorData?.errors?.[0]?.message ||
-                    "Błąd podczas inicjalizacji wgrywania mediów"
-                );
               }
 
               const initData = await initResponse.json();
-              const mediaId = initData.media_id_string;
 
-              // Wgrywanie danych
+              const mediaId = initData.data.id;
+
               const appendRequestData = {
-                url: "https://upload.twitter.com/1.1/media/upload.json",
+                url: `https://api.twitter.com/2/media/upload/${mediaId}/append`,
                 method: "POST",
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
+                },
                 data: {
-                  command: "APPEND",
                   media_id: mediaId,
                   segment_index: 0,
                 },
               };
 
-              const appendHeaders = oauth.toHeader(
-                oauth.authorize(appendRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              console.log("[TWITTER_POST] Media APPEND request:", {
-                url: appendRequestData.url,
-                headers: appendHeaders,
-                data: appendRequestData.data,
-              });
-
-              const formData = new FormData();
-              Object.entries(appendRequestData.data).forEach(([key, value]) => {
-                formData.append(key, value as string);
-              });
-              formData.append(
-                "media",
-                new Blob([mediaBuffer], { type: `image/${mediaType}` })
-              );
-
               const appendResponse = await fetch(appendRequestData.url, {
                 method: "POST",
-                headers: {
-                  ...appendHeaders,
-                  "Content-Type": "multipart/form-data",
-                },
-                body: formData,
+                headers: appendRequestData.headers,
+                body: JSON.stringify(appendRequestData.data),
               });
 
               if (!appendResponse.ok) {
@@ -218,44 +179,21 @@ export async function POST(req: Request) {
                   status: appendResponse.status,
                   statusText: appendResponse.statusText,
                   errorData,
-                  headers: appendHeaders,
                 });
-                throw new Error(
-                  errorData?.errors?.[0]?.message ||
-                    "Błąd podczas wgrywania danych mediów"
-                );
               }
 
-              // Finalizacja wgrywania
               const finalizeRequestData = {
-                url: "https://upload.twitter.com/1.1/media/upload.json",
+                url: `https://api.twitter.com/2/media/upload/${mediaId}/finalize`,
                 method: "POST",
-                data: {
-                  command: "FINALIZE",
-                  media_id: mediaId,
+                headers: {
+                  Authorization: `Bearer ${accessToken}`,
+                  "Content-Type": "application/json",
                 },
               };
 
-              const finalizeHeaders = oauth.toHeader(
-                oauth.authorize(finalizeRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              console.log("[TWITTER_POST] Media FINALIZE request:", {
-                url: finalizeRequestData.url,
-                headers: finalizeHeaders,
-                data: finalizeRequestData.data,
-              });
-
               const finalizeResponse = await fetch(finalizeRequestData.url, {
                 method: "POST",
-                headers: {
-                  ...finalizeHeaders,
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams(finalizeRequestData.data).toString(),
+                headers: finalizeRequestData.headers,
               });
 
               if (!finalizeResponse.ok) {
@@ -267,178 +205,6 @@ export async function POST(req: Request) {
                   statusText: finalizeResponse.statusText,
                   errorData,
                 });
-                throw new Error(
-                  errorData?.errors?.[0]?.message ||
-                    "Błąd podczas finalizacji wgrywania mediów"
-                );
-              }
-
-              return mediaId;
-            } else {
-              const mediaResponse = await fetch(media.url);
-              if (!mediaResponse.ok) {
-                throw new Error(
-                  `Nie można pobrać pliku: ${mediaResponse.statusText}`
-                );
-              }
-
-              const mediaBuffer = await mediaResponse.arrayBuffer();
-              const mediaType = media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
-                ? "video/mp4"
-                : "image/jpeg";
-
-              // Inicjalizacja wgrywania
-              const initRequestData = {
-                url: "https://upload.twitter.com/1.1/media/upload.json",
-                method: "POST",
-                data: {
-                  command: "INIT",
-                  total_bytes: mediaBuffer.byteLength.toString(),
-                  media_type: mediaType,
-                },
-              };
-
-              const initHeaders = oauth.toHeader(
-                oauth.authorize(initRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              console.log("[TWITTER_POST] Media INIT request:", {
-                url: initRequestData.url,
-                headers: initHeaders,
-                data: initRequestData.data,
-              });
-
-              const initResponse = await fetch(initRequestData.url, {
-                method: "POST",
-                headers: {
-                  ...initHeaders,
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams(initRequestData.data).toString(),
-              });
-
-              if (!initResponse.ok) {
-                const errorData = await initResponse.json().catch(() => null);
-                console.error("[TWITTER_POST] Media INIT error:", {
-                  status: initResponse.status,
-                  statusText: initResponse.statusText,
-                  errorData,
-                });
-                throw new Error(
-                  errorData?.errors?.[0]?.message ||
-                    "Błąd podczas inicjalizacji wgrywania mediów"
-                );
-              }
-
-              const initData = await initResponse.json();
-              const mediaId = initData.media_id_string;
-
-              // Wgrywanie danych
-              const appendRequestData = {
-                url: "https://upload.twitter.com/1.1/media/upload.json",
-                method: "POST",
-                data: {
-                  command: "APPEND",
-                  media_id: mediaId,
-                  segment_index: 0,
-                },
-              };
-
-              const appendHeaders = oauth.toHeader(
-                oauth.authorize(appendRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              console.log("[TWITTER_POST] Media APPEND request:", {
-                url: appendRequestData.url,
-                headers: appendHeaders,
-                data: appendRequestData.data,
-              });
-
-              const appendResponse = await fetch(appendRequestData.url, {
-                method: "POST",
-                headers: {
-                  ...appendHeaders,
-                  "Content-Type": "multipart/form-data",
-                },
-                body: (() => {
-                  const formData = new FormData();
-                  Object.entries(appendRequestData.data).forEach(
-                    ([key, value]) => {
-                      formData.append(key, value as string);
-                    }
-                  );
-                  formData.append(
-                    "media",
-                    new Blob([mediaBuffer], { type: mediaType })
-                  );
-                  return formData;
-                })(),
-              });
-
-              if (!appendResponse.ok) {
-                const errorData = await appendResponse.json().catch(() => null);
-                console.error("[TWITTER_POST] Media APPEND error:", {
-                  status: appendResponse.status,
-                  statusText: appendResponse.statusText,
-                  errorData,
-                });
-                throw new Error(
-                  errorData?.errors?.[0]?.message ||
-                    "Błąd podczas wgrywania danych mediów"
-                );
-              }
-
-              // Finalizacja wgrywania
-              const finalizeRequestData = {
-                url: "https://upload.twitter.com/1.1/media/upload.json",
-                method: "POST",
-                data: {
-                  command: "FINALIZE",
-                  media_id: mediaId,
-                },
-              };
-
-              const finalizeHeaders = oauth.toHeader(
-                oauth.authorize(finalizeRequestData, {
-                  key: accessToken,
-                  secret: accessTokenSecret,
-                })
-              );
-
-              console.log("[TWITTER_POST] Media FINALIZE request:", {
-                url: finalizeRequestData.url,
-                headers: finalizeHeaders,
-                data: finalizeRequestData.data,
-              });
-
-              const finalizeResponse = await fetch(finalizeRequestData.url, {
-                method: "POST",
-                headers: {
-                  ...finalizeHeaders,
-                  "Content-Type": "application/x-www-form-urlencoded",
-                },
-                body: new URLSearchParams(finalizeRequestData.data).toString(),
-              });
-
-              if (!finalizeResponse.ok) {
-                const errorData = await finalizeResponse
-                  .json()
-                  .catch(() => null);
-                console.error("[TWITTER_POST] Media FINALIZE error:", {
-                  status: finalizeResponse.status,
-                  statusText: finalizeResponse.statusText,
-                  errorData,
-                });
-                throw new Error(
-                  errorData?.errors?.[0]?.message ||
-                    "Błąd podczas finalizacji wgrywania mediów"
-                );
               }
 
               return mediaId;
