@@ -33,14 +33,13 @@ export async function POST(request: Request) {
       );
     }
 
-    const { code, code_verifier } = await request.json();
+    const { code, state } = await request.json();
 
-    if (!code || !code_verifier) {
+    if (!code || !state) {
       return NextResponse.json(
         {
           error: "Brak wymaganych danych",
-          details:
-            "Nie otrzymano kodu autoryzacyjnego lub code_verifier z Twitter",
+          details: "Nie otrzymano kodu autoryzacyjnego lub state z Twitter",
         },
         { status: 400 }
       );
@@ -52,15 +51,13 @@ export async function POST(request: Request) {
       {
         method: "POST",
         headers: {
+          Authorization: `Basic ${Buffer.from(
+            `${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`
+          ).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          code,
-          grant_type: "authorization_code",
-          client_id: TWITTER_CLIENT_ID,
-          client_secret: TWITTER_CLIENT_SECRET,
-          redirect_uri: TWITTER_REDIRECT_URI,
-          code_verifier: code_verifier,
+          grant_type: "client_credentials",
         }),
       }
     );
@@ -79,7 +76,7 @@ export async function POST(request: Request) {
 
     const tokenData = await tokenResponse.json();
 
-    if (!tokenData.access_token) {
+    if (!tokenData.access_token || tokenData.token_type !== "bearer") {
       console.error("Nieprawidłowa odpowiedź z Twitter:", tokenData);
       return NextResponse.json(
         {

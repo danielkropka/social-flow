@@ -20,9 +20,9 @@ function TwitterCallbackContent() {
 
   useEffect(() => {
     const code = searchParams.get("code");
-    const code_verifier = searchParams.get("code_verifier");
+    const state = searchParams.get("state");
 
-    if (!code || !code_verifier) {
+    if (!code || !state) {
       toast.error("Brak wymaganych danych autoryzacji", {
         description: "Nie otrzymano wszystkich wymaganych danych z Twitter",
       });
@@ -30,10 +30,10 @@ function TwitterCallbackContent() {
       return;
     }
 
-    handleTwitterCallback(code, code_verifier);
+    handleTwitterCallback(code, state);
   }, [searchParams]);
 
-  const handleTwitterCallback = async (code: string, code_verifier: string) => {
+  const handleTwitterCallback = async (code: string, state: string) => {
     try {
       const response = await fetch("/api/auth/twitter/access-token", {
         method: "POST",
@@ -42,7 +42,7 @@ function TwitterCallbackContent() {
         },
         body: JSON.stringify({
           code,
-          code_verifier,
+          state,
         }),
       });
 
