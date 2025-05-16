@@ -4,8 +4,6 @@ import { getAuthSession } from "@/lib/auth";
 
 const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
 const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET;
-const TWITTER_REDIRECT_URI =
-  process.env.TWITTER_REDIRECT_URI || "https://social-flow.pl/twitter-callback";
 
 export async function POST(request: Request) {
   try {
