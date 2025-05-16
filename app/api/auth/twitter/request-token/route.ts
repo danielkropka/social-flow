@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import crypto from "crypto";
+import { db } from "@/lib/prisma";
 
 const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
 const REDIRECT_URI =
@@ -34,9 +35,18 @@ export async function GET() {
     try {
       // Generowanie URL do autoryzacji OAuth 2.0
       const { codeVerifier, codeChallenge } = generateCodeChallenge();
+      const state = crypto.randomBytes(32).toString("hex");
 
-      // Zapisz code_verifier w sesji lub bazie danych
-      // TODO: Zapisz code_verifier w bazie danych powiązany z użytkownikiem
+      // Zapisz code_verifier w bazie danych
+      await db.oAuthState.create({
+        data: {
+          userId: session.user.id,
+          provider: "TWITTER",
+          state,
+          codeVerifier,
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 minut
+        },
+      });
 
       const authUrl =
         `https://twitter.com/i/oauth2/authorize?` +
@@ -47,13 +57,10 @@ export async function GET() {
           scope: "tweet.read tweet.write users.read offline.access",
           code_challenge_method: "S256",
           code_challenge: codeChallenge,
-          state: crypto.randomBytes(32).toString("hex"),
+          state,
         });
 
-      return NextResponse.json({
-        authUrl,
-        codeVerifier, // TODO: Usuń to po implementacji zapisywania w bazie danych
-      });
+      return NextResponse.json({ authUrl });
     } catch (error) {
       console.error("Błąd podczas generowania URL autoryzacji Twitter:", error);
       return NextResponse.json(

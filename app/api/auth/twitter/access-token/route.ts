@@ -44,21 +44,41 @@ export async function POST(request: Request) {
       );
     }
 
+    // Pobierz code_verifier z bazy danych
+    const oauthState = await db.oAuthState.findFirst({
+      where: {
+        userId: session.user.id,
+        provider: "TWITTER",
+        state,
+        expiresAt: {
+          gt: new Date(),
+        },
+      },
+    });
+
+    if (!oauthState) {
+      return NextResponse.json(
+        {
+          error: "Nieprawidłowy state",
+          details: "Nie znaleziono lub wygasł state dla tego żądania",
+        },
+        { status: 400 }
+      );
+    }
+
     // Wymiana kodu na token dostępu
     const tokenResponse = await fetch("https://api.x.com/oauth2/token", {
       method: "POST",
       headers: {
-        Authorization: `Basic ${Buffer.from(
-          `${TWITTER_API_KEY}:${TWITTER_API_SECRET}`
-        ).toString("base64")}`,
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
         client_id: TWITTER_CLIENT_ID,
+        client_secret: TWITTER_API_SECRET,
         grant_type: "authorization_code",
         code: code as string,
         redirect_uri: "https://social-flow.pl/twitter-callback",
-        code_verifier: "challenge",
+        code_verifier: oauthState.codeVerifier,
       }),
     });
 
@@ -123,6 +143,13 @@ export async function POST(request: Request) {
     }
 
     try {
+      // Usuń użyty state
+      await db.oAuthState.delete({
+        where: {
+          id: oauthState.id,
+        },
+      });
+
       // Zapisz token w bazie danych
       const connectedAccount = await db.connectedAccount.upsert({
         where: {
