@@ -4,6 +4,7 @@ import { getAuthSession } from "@/lib/auth";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
+const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET!;
 
 export async function POST(request: Request) {
   try {
@@ -55,6 +56,7 @@ export async function POST(request: Request) {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
+          client_secret: TWITTER_CLIENT_SECRET,
           grant_type: "client_credentials",
         }),
       }
