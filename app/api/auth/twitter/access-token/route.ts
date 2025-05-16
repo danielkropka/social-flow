@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
-import crypto from "crypto";
-import OAuth from "oauth-1.0a";
 
-const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
-const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
+const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
+const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET;
+const TWITTER_REDIRECT_URI =
+  process.env.TWITTER_REDIRECT_URI || "https://social-flow.pl/twitter-callback";
 
 export async function POST(request: Request) {
   try {
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
+    if (!TWITTER_CLIENT_ID || !TWITTER_CLIENT_SECRET) {
       console.error("Brak konfiguracji Twitter");
       return NextResponse.json(
         {
@@ -33,62 +33,41 @@ export async function POST(request: Request) {
       );
     }
 
-    const { token, verifier } = await request.json();
+    const { code, code_verifier } = await request.json();
 
-    if (!token || !verifier) {
+    if (!code || !code_verifier) {
       return NextResponse.json(
         {
           error: "Brak wymaganych danych",
-          details: "Nie otrzymano wszystkich wymaganych danych z Twitter",
+          details:
+            "Nie otrzymano kodu autoryzacyjnego lub code_verifier z Twitter",
         },
         { status: 400 }
       );
     }
 
-    // Inicjalizacja OAuth 1.0a
-    const oauth = new OAuth({
-      consumer: {
-        key: TWITTER_API_KEY,
-        secret: TWITTER_API_SECRET,
-      },
-      signature_method: "HMAC-SHA1",
-      hash_function(base_string, key) {
-        return crypto
-          .createHmac("sha1", key)
-          .update(base_string)
-          .digest("base64");
-      },
-    });
-
-    // Generowanie parametrów OAuth dla access token
-    const requestData = {
-      url: "https://api.twitter.com/oauth/access_token",
-      method: "POST",
-      data: {
-        oauth_token: token,
-        oauth_verifier: verifier,
-      },
-    };
-
-    const headers = oauth.toHeader(
-      oauth.authorize(requestData, {
-        key: token,
-        secret: TWITTER_API_SECRET,
-      })
+    // Wymiana kodu na token dostępu
+    const tokenResponse = await fetch(
+      "https://api.twitter.com/2/oauth2/token",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          code,
+          grant_type: "authorization_code",
+          client_id: TWITTER_CLIENT_ID,
+          client_secret: TWITTER_CLIENT_SECRET,
+          redirect_uri: TWITTER_REDIRECT_URI,
+          code_verifier: code_verifier,
+        }),
+      }
     );
 
-    // Wymiana kodu na token dostępu
-    const tokenResponse = await fetch(requestData.url, {
-      method: "POST",
-      headers: {
-        ...headers,
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-    });
-
     if (!tokenResponse.ok) {
-      const errorText = await tokenResponse.text();
-      console.error("Twitter API error:", errorText);
+      const errorData = await tokenResponse.json();
+      console.error("Twitter API error:", errorData);
       return NextResponse.json(
         {
           error: "Błąd podczas wymiany kodu na token",
@@ -98,43 +77,25 @@ export async function POST(request: Request) {
       );
     }
 
-    const responseText = await tokenResponse.text();
-    const tokenData = Object.fromEntries(new URLSearchParams(responseText));
+    const tokenData = await tokenResponse.json();
 
-    if (!tokenData.oauth_token || !tokenData.oauth_token_secret) {
+    if (!tokenData.access_token) {
       console.error("Nieprawidłowa odpowiedź z Twitter:", tokenData);
       return NextResponse.json(
         {
           error: "Nieprawidłowa odpowiedź z Twitter API",
-          details: "Brak wymaganych danych w odpowiedzi",
+          details: "Brak tokenu dostępu w odpowiedzi",
         },
         { status: 400 }
       );
     }
-
-    // Generowanie nagłówków dla API v2
-    const userInfoHeaders = oauth.toHeader(
-      oauth.authorize(
-        {
-          url: "https://api.twitter.com/2/users/me",
-          method: "GET",
-          data: {
-            "user.fields": "profile_image_url,username,name",
-          },
-        },
-        {
-          key: tokenData.oauth_token,
-          secret: tokenData.oauth_token_secret,
-        }
-      )
-    );
 
     // Pobierz informacje o użytkowniku
     const userInfoResponse = await fetch(
       "https://api.twitter.com/2/users/me?user.fields=profile_image_url,username,name",
       {
         headers: {
-          ...userInfoHeaders,
+          Authorization: `Bearer ${tokenData.access_token}`,
         },
       }
     );
@@ -174,18 +135,18 @@ export async function POST(request: Request) {
           },
         },
         update: {
-          accessToken: tokenData.oauth_token,
-          accessTokenSecret: tokenData.oauth_token_secret,
-          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Tokeny OAuth 1.0a nie wygasają
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
           username: userInfo.data.username,
           profileImage: userInfo.data.profile_image_url,
         },
         create: {
           provider: "TWITTER",
           providerAccountId: userInfo.data.id,
-          accessToken: tokenData.oauth_token,
-          accessTokenSecret: tokenData.oauth_token_secret,
-          expiresAt: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // Tokeny OAuth 1.0a nie wygasają
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: new Date(Date.now() + tokenData.expires_in * 1000),
           name: userInfo.data.name,
           username: userInfo.data.username,
           profileImage: userInfo.data.profile_image_url,
