@@ -4,6 +4,7 @@ import { getAuthSession } from "@/lib/auth";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
+const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID!;
 
 export async function POST(request: Request) {
   try {
@@ -53,10 +54,11 @@ export async function POST(request: Request) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
+        client_id: TWITTER_CLIENT_ID,
         grant_type: "authorization_code",
         code: code as string,
         redirect_uri: "https://social-flow.pl/twitter-callback",
-        code_verifier: state as string,
+        code_verifier: "challenge",
       }),
     });
 
