@@ -446,19 +446,12 @@ export default function ConnectAccounts() {
                   const response = await fetch(
                     "/api/auth/twitter/request-token"
                   );
-                  console.log("response:", response);
                   if (!response.ok) {
                     throw new Error("Nie udało się pobrać tokena");
                   }
                   const data = await response.json();
 
-                  if (!data.callbackConfirmed) {
-                    throw new Error("Link nie został potwierdzony");
-                  }
-
-                  router.push(
-                    `https://api.x.com/oauth/authorize?oauth_token=${data.token}`
-                  );
+                  router.push(data.authUrl);
                 } catch (error) {
                   console.error("Błąd podczas łączenia z Twitterem:", error);
                   toast.error("Nie udało się połączyć z Twitterem");
