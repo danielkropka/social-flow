@@ -55,7 +55,6 @@ export async function POST(request: Request) {
       },
       body: new URLSearchParams({
         client_secret: TWITTER_CLIENT_SECRET,
-        client_type: "",
         grant_type: "client_credentials",
       }),
     });
