@@ -45,22 +45,19 @@ export async function POST(request: Request) {
     }
 
     // Wymiana kodu na token dostępu
-    const tokenResponse = await fetch(
-      "https://api.twitter.com/2/oauth2/token",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${Buffer.from(
-            `${TWITTER_API_KEY}:${TWITTER_API_SECRET}`
-          ).toString("base64")}`,
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams({
-          client_secret: TWITTER_CLIENT_SECRET,
-          grant_type: "client_credentials",
-        }),
-      }
-    );
+    const tokenResponse = await fetch("https://api.x.com/2/oauth2/token", {
+      method: "POST",
+      headers: {
+        Authorization: `Basic ${Buffer.from(
+          `${TWITTER_API_KEY}:${TWITTER_API_SECRET}`
+        ).toString("base64")}`,
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+      body: new URLSearchParams({
+        client_secret: TWITTER_CLIENT_SECRET,
+        grant_type: "client_credentials",
+      }),
+    });
 
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json();
@@ -89,7 +86,7 @@ export async function POST(request: Request) {
 
     // Pobierz informacje o użytkowniku
     const userInfoResponse = await fetch(
-      "https://api.twitter.com/2/users/me?user.fields=profile_image_url,username,name",
+      "https://api.x.com/2/users/me?user.fields=profile_image_url,username,name",
       {
         headers: {
           Authorization: `Bearer ${tokenData.access_token}`,
