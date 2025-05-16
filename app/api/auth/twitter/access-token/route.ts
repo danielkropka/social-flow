@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     }
 
     // Wymiana kodu na token dostępu
-    const tokenResponse = await fetch("https://api.x.com/2/oauth2/token", {
+    const tokenResponse = await fetch("https://api.x.com/oauth2/token", {
       method: "POST",
       headers: {
         Authorization: `Basic ${Buffer.from(
@@ -54,7 +54,6 @@ export async function POST(request: Request) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        client_secret: TWITTER_CLIENT_SECRET,
         grant_type: "client_credentials",
       }),
     });
