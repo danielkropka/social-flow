@@ -81,7 +81,8 @@ model User {
     subscriptionStart    DateTime?
     subscriptionEnd      DateTime?
 
-    posts Post[]
+    posts      Post[]
+    OAuthState OAuthState[]
 }
 
 model Media {
@@ -151,4 +152,19 @@ model PostConnectedAccount {
     @@unique([postId, connectedAccountId])
     @@index([postId])
     @@index([connectedAccountId])
+}
+
+model OAuthState {
+    id           String   @id @default(cuid()) @map("_id")
+    userId       String
+    provider     String
+    state        String
+    codeVerifier String
+    expiresAt    DateTime
+    createdAt    DateTime @default(now())
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([state])
+    @@index([provider])
 }
