@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { getAuthSession } from "@/lib/auth";
 
-const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
-const TWITTER_CLIENT_SECRET = process.env.TWITTER_CLIENT_SECRET;
+const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
+const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 
 export async function POST(request: Request) {
   try {
@@ -20,7 +20,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!TWITTER_CLIENT_ID || !TWITTER_CLIENT_SECRET) {
+    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
       console.error("Brak konfiguracji Twitter");
       return NextResponse.json(
         {
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
         method: "POST",
         headers: {
           Authorization: `Basic ${Buffer.from(
-            `${TWITTER_CLIENT_ID}:${TWITTER_CLIENT_SECRET}`
+            `${TWITTER_API_KEY}:${TWITTER_API_SECRET}`
           ).toString("base64")}`,
           "Content-Type": "application/x-www-form-urlencoded",
         },
