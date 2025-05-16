@@ -53,7 +53,10 @@ export async function POST(request: Request) {
         "Content-Type": "application/x-www-form-urlencoded",
       },
       body: new URLSearchParams({
-        grant_type: "client_credentials",
+        grant_type: "authorization_code",
+        code: code as string,
+        redirect_uri: "https://social-flow.pl/twitter-callback",
+        code_verifier: state as string,
       }),
     });
 
