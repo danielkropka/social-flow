@@ -58,7 +58,6 @@ export async function GET() {
     const requestTokenResponse = await fetch(requestOptions.url, {
       method: requestOptions.method,
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
         ...oauth.toHeader(oauth.authorize(requestOptions)),
       },
     });
