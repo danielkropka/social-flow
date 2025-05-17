@@ -41,8 +41,8 @@ export async function POST(req: Request) {
   try {
     const oauth = new OAuth({
       consumer: {
-        key: process.env.TWITTER_API_KEY,
-        secret: process.env.TWITTER_API_SECRET,
+        key: accessToken,
+        secret: accessTokenSecret,
       },
       signature_method: "HMAC-SHA1",
       hash_function(base_string, key) {
