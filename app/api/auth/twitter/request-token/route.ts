@@ -62,6 +62,7 @@ export async function GET() {
       },
     });
 
+    console.log(requestTokenResponse);
     if (!requestTokenResponse.ok) {
       throw new Error("Nie udało się pobrać tokena");
     }
