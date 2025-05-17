@@ -39,10 +39,17 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.log("Tokeny dostępu:", {
+      accessToken,
+      accessTokenSecret,
+      apiKey: process.env.TWITTER_API_KEY,
+      apiSecret: process.env.TWITTER_API_SECRET,
+    });
+
     const oauth = new OAuth({
       consumer: {
-        key: accessToken,
-        secret: accessTokenSecret,
+        key: process.env.TWITTER_API_KEY!,
+        secret: process.env.TWITTER_API_SECRET!,
       },
       signature_method: "HMAC-SHA1",
       hash_function(base_string, key) {
@@ -73,8 +80,7 @@ export async function POST(req: Request) {
         }
 
         const initForm = new FormData();
-        initForm.append("media_type", mediaType);
-        initForm.append("shared", "true");
+        initForm.append("command", "INIT");
         initForm.append("total_bytes", mediaData.size.toString());
         initForm.append(
           "media_category",
@@ -90,6 +96,13 @@ export async function POST(req: Request) {
         const initAuthorization = oauth.authorize(initRequestData, {
           key: accessToken,
           secret: accessTokenSecret,
+        });
+
+        console.log("Inicjalizacja uploadu:", {
+          size: mediaData.size,
+          type: mediaType,
+          auth: initAuthorization,
+          headers: oauth.toHeader(initAuthorization),
         });
 
         const initResponse = await fetch(initRequestData.url, {
