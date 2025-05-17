@@ -54,17 +54,17 @@ export async function POST(request: Request) {
     );
 
     if (!accessTokenResponse.ok) {
-      const errorData = await accessTokenResponse.json();
-      console.error("Twitter API error:", errorData);
-      return NextResponse.json(
-        { error: "Nie udało się przydzielić tokenu" },
-        { status: 400 }
-      );
+      throw new Error("Nie udało się przydzielić tokenu");
     }
 
-    const accessTokenData = await accessTokenResponse.json();
-    const accessToken = accessTokenData.oauth_token;
-    const accessTokenSecret = accessTokenData.oauth_token_secret;
+    const accessTokenText = await accessTokenResponse.text();
+    const accessTokenParams = new URLSearchParams(accessTokenText);
+    const accessToken = accessTokenParams.get("oauth_token");
+    const accessTokenSecret = accessTokenParams.get("oauth_token_secret");
+
+    if (!accessToken || !accessTokenSecret) {
+      throw new Error("Brak wymaganych tokenów w odpowiedzi");
+    }
 
     const fields = ["profile_image_url", "username", "name"];
 
