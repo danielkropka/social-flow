@@ -218,6 +218,16 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
+        console.log("Finalizacja uploadu:", {
+          media_id: media_id_string,
+          auth: finalizeAuthorization,
+          headers: oauth.toHeader(finalizeAuthorization),
+          formData: {
+            command: "FINALIZE",
+            media_id: media_id_string,
+          },
+        });
+
         const finalizeResponse = await fetch(finalizeRequestData.url, {
           method: "POST",
           headers: {
@@ -227,10 +237,18 @@ export async function POST(req: Request) {
         });
 
         if (!finalizeResponse.ok) {
+          const errorData = await finalizeResponse.text();
+          console.error("Odpowiedź z API podczas finalizacji:", {
+            status: finalizeResponse.status,
+            statusText: finalizeResponse.statusText,
+            headers: Object.fromEntries(finalizeResponse.headers.entries()),
+            body: errorData,
+          });
           throw new Error("Błąd podczas finalizacji uploadu mediów");
         }
 
         const finalizeData = await finalizeResponse.json();
+        console.log("Odpowiedź z FINALIZE:", finalizeData);
 
         // Step 4: STATUS (jeśli potrzebne)
         if (finalizeData.processing_info) {
@@ -253,6 +271,12 @@ export async function POST(req: Request) {
               secret: accessTokenSecret,
             });
 
+            console.log("Sprawdzanie statusu:", {
+              media_id: media_id_string,
+              auth: statusAuthorization,
+              headers: oauth.toHeader(statusAuthorization),
+            });
+
             const statusResponse = await fetch(statusRequestData.url, {
               headers: {
                 Authorization:
@@ -260,7 +284,20 @@ export async function POST(req: Request) {
               },
             });
 
+            if (!statusResponse.ok) {
+              const errorData = await statusResponse.text();
+              console.error("Odpowiedź z API podczas sprawdzania statusu:", {
+                status: statusResponse.status,
+                statusText: statusResponse.statusText,
+                headers: Object.fromEntries(statusResponse.headers.entries()),
+                body: errorData,
+              });
+              throw new Error("Błąd podczas sprawdzania statusu mediów");
+            }
+
             const statusData = await statusResponse.json();
+            console.log("Odpowiedź ze STATUS:", statusData);
+
             if (statusData.processing_info.state === "succeeded") {
               processingComplete = true;
             } else if (statusData.processing_info.state === "failed") {
