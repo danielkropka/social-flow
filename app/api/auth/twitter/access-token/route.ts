@@ -68,22 +68,19 @@ export async function POST(request: Request) {
 
     const fields = ["profile_image_url", "username", "name"];
 
-    const userResponse = await fetch("https://api.x.com/2/users/me", {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      body: JSON.stringify({
-        "user.fields": fields.join(","),
-      }),
-    });
+    const userResponse = await fetch(
+      `https://api.x.com/2/users/me?user.fields=${fields.join(",")}`,
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
 
     if (!userResponse.ok) {
       const errorData = await userResponse.json();
       console.error("Twitter API error:", errorData);
-      return NextResponse.json(
-        { error: "Nie udało się pobrać danych użytkownika" },
-        { status: 400 }
-      );
+      throw new Error("Nie udało się pobrać danych użytkownika");
     }
 
     const userData = await userResponse.json();
