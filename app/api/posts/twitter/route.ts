@@ -60,18 +60,144 @@ export async function POST(req: Request) {
     const bearerToken = data.access_token;
     const tokenType = data.token_type;
 
-    console.log(bearerToken);
-    console.log(tokenType);
-
     if (!tokenType || tokenType !== "bearer") {
       throw new Error("Nieprawidłowy token dostępu");
     }
 
-    return NextResponse.json({
-      success: true,
-      bearerToken,
-      tokenType,
+    const mediaIds: string[] = [];
+
+    // Upload mediów
+    if (mediaUrls && mediaUrls.length > 0) {
+      for (let i = 0; i < Math.min(mediaUrls.length, 4); i++) {
+        const mediaUrl = mediaUrls[i];
+        let mediaData: Blob;
+        let mediaType: string;
+
+        if (mediaUrl.startsWith("data:")) {
+          const base64Data = mediaUrl.split(",")[1];
+          mediaType = mediaUrl.split(";")[0].split(":")[1];
+          mediaData = new Blob([base64Data], { type: mediaType });
+        } else {
+          const response = await fetch(mediaUrl);
+          mediaData = await response.blob();
+          mediaType = mediaData.type;
+        }
+
+        // Step 1: INIT
+        const initFormData = new FormData();
+        initFormData.append("command", "INIT");
+        initFormData.append("total_bytes", mediaData.size.toString());
+        initFormData.append("media_type", mediaType);
+
+        const initResponse = await fetch("https://api.x.com/2/media/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+          },
+          body: initFormData,
+        });
+
+        if (!initResponse.ok) {
+          throw new Error("Błąd podczas inicjalizacji uploadu mediów");
+        }
+
+        const { media_id_string } = await initResponse.json();
+
+        // Step 2: APPEND
+        const appendFormData = new FormData();
+        appendFormData.append("command", "APPEND");
+        appendFormData.append("media_id", media_id_string);
+        appendFormData.append("segment_index", "0");
+        appendFormData.append("media", mediaData);
+
+        const appendResponse = await fetch("https://api.x.com/2/media/upload", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+          },
+          body: appendFormData,
+        });
+
+        if (!appendResponse.ok) {
+          throw new Error("Błąd podczas uploadu mediów");
+        }
+
+        // Step 3: FINALIZE
+        const finalizeFormData = new FormData();
+        finalizeFormData.append("command", "FINALIZE");
+        finalizeFormData.append("media_id", media_id_string);
+
+        const finalizeResponse = await fetch(
+          "https://api.x.com/2/media/upload",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${bearerToken}`,
+            },
+            body: finalizeFormData,
+          }
+        );
+
+        if (!finalizeResponse.ok) {
+          throw new Error("Błąd podczas finalizacji uploadu mediów");
+        }
+
+        const finalizeData = await finalizeResponse.json();
+
+        // Step 4: STATUS (jeśli potrzebne)
+        if (finalizeData.processing_info) {
+          let processingComplete = false;
+          while (!processingComplete) {
+            await new Promise((resolve) =>
+              setTimeout(
+                resolve,
+                finalizeData.processing_info.check_after_secs * 1000
+              )
+            );
+
+            const statusResponse = await fetch(
+              `https://api.x.com/2/media/upload?command=STATUS&media_id=${media_id_string}`,
+              {
+                headers: {
+                  Authorization: `Bearer ${bearerToken}`,
+                },
+              }
+            );
+
+            const statusData = await statusResponse.json();
+            if (statusData.processing_info.state === "succeeded") {
+              processingComplete = true;
+            } else if (statusData.processing_info.state === "failed") {
+              throw new Error("Przetwarzanie mediów nie powiodło się");
+            }
+          }
+        }
+
+        mediaIds.push(media_id_string);
+      }
+    }
+
+    // Tworzenie posta z mediami
+    const postData = {
+      text: content,
+      media: { media_ids: mediaIds },
+    };
+
+    const postResponse = await fetch("https://api.twitter.com/2/tweets", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${bearerToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(postData),
     });
+
+    if (!postResponse.ok) {
+      throw new Error("Nie udało się opublikować posta na Twitter");
+    }
+
+    const responseData = await postResponse.json();
+    return NextResponse.json(responseData);
   } catch (error) {
     console.error("Error while posting to Twitter:", error);
     return NextResponse.json(
