@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     });
 
     // Jeśli są media, najpierw je wgraj
-    let mediaIds: string[] = [];
+    const mediaIds: string[] = [];
     if (mediaUrls && mediaUrls.length > 0) {
       for (const media of mediaUrls) {
         const mediaData = await fetch(media.url).then((res) =>
