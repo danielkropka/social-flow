@@ -86,6 +86,13 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
+        console.log("Twitter media upload debug:", {
+          initUrl,
+          authorizationHeader: oauth.toHeader(initAuthorization).Authorization,
+          accessTokenLength: accessToken?.length,
+          accessTokenSecretLength: accessTokenSecret?.length,
+        });
+
         const initResponse = await fetch(initUrl, {
           method: "POST",
           headers: {
@@ -98,14 +105,19 @@ export async function POST(req: Request) {
           console.error("Twitter media upload INIT error:", {
             status: initResponse.status,
             statusText: initResponse.statusText,
-            errorData,
+            errorData: JSON.stringify(errorData, null, 2),
             mediaType: media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
               ? "video/mp4"
               : "image/jpeg",
             fileSize: mediaBuffer.length,
+            initUrl,
+            authorizationHeader:
+              oauth.toHeader(initAuthorization).Authorization,
           });
           throw new Error(
-            `Błąd podczas inicjalizacji uploadu mediów: ${initResponse.status} ${initResponse.statusText}`
+            `Błąd podczas inicjalizacji uploadu mediów: ${
+              initResponse.status
+            } ${initResponse.statusText} - ${JSON.stringify(errorData)}`
           );
         }
 
