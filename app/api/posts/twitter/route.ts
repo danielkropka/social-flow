@@ -79,13 +79,30 @@ export async function POST(req: Request) {
           mediaType = mediaData.type;
         }
 
+        // Upewnij się, że mamy poprawny typ mediów
+        if (!mediaType) {
+          mediaType = mediaData.type || "image/jpeg";
+        }
+
+        // Określ kategorię mediów na podstawie typu
+        let mediaCategory = "tweet_image";
+        if (mediaType.startsWith("video/")) {
+          mediaCategory = "tweet_video";
+        } else if (mediaType.startsWith("image/gif")) {
+          mediaCategory = "tweet_gif";
+        }
+
+        console.log("Typ i kategoria mediów:", {
+          mediaType,
+          mediaCategory,
+          size: mediaData.size,
+        });
+
         const initForm = new FormData();
         initForm.append("command", "INIT");
         initForm.append("total_bytes", mediaData.size.toString());
-        initForm.append(
-          "media_category",
-          mediaType.startsWith("image/") ? "tweet_image" : "tweet_video"
-        );
+        initForm.append("media_type", mediaType);
+        initForm.append("media_category", mediaCategory);
 
         // Step 1: INIT
         const initRequestData = {
@@ -151,6 +168,7 @@ export async function POST(req: Request) {
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
+          appendForm.append("media_type", mediaType);
           appendForm.append(
             "media",
             new Blob([chunkBuffer], { type: mediaType })
