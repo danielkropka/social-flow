@@ -13,7 +13,6 @@ export async function POST(req: Request) {
   }
 
   const { content, mediaUrls, accountId } = await req.json();
-  console.log(content, mediaUrls, accountId);
 
   const account = await db.connectedAccount.findFirst({
     where: {
@@ -39,13 +38,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    console.log("Tokeny dostępu:", {
-      accessToken,
-      accessTokenSecret,
-      apiKey: process.env.TWITTER_API_KEY,
-      apiSecret: process.env.TWITTER_API_SECRET,
-    });
-
     const oauth = new OAuth({
       consumer: {
         key: process.env.TWITTER_API_KEY!,
@@ -67,35 +59,35 @@ export async function POST(req: Request) {
       for (let i = 0; i < Math.min(mediaUrls.length, 4); i++) {
         const mediaUrl = mediaUrls[i].url;
         let mediaData: Blob;
-        let mediaType: string;
 
         if (mediaUrl.startsWith("data:")) {
           const base64Data = mediaUrl.split(",")[1];
-          mediaType = mediaUrl.split(";")[0].split(":")[1];
-          mediaData = new Blob([base64Data], { type: mediaType });
+          const originalMediaType = mediaUrl.split(";")[0].split(":")[1];
+          mediaData = new Blob([base64Data], { type: originalMediaType });
         } else {
           const response = await fetch(mediaUrl);
           mediaData = await response.blob();
-          mediaType = mediaData.type;
         }
 
-        // Upewnij się, że mamy poprawny typ mediów
-        if (!mediaType) {
-          mediaType = mediaData.type || "image/jpeg";
+        // Określ typ mediów dla Twittera
+        const originalMediaType = mediaData.type;
+        let mediaType = "tweet_image";
+        if (originalMediaType.startsWith("video/")) {
+          mediaType = "tweet_video";
+        } else if (originalMediaType.startsWith("image/gif")) {
+          mediaType = "tweet_gif";
         }
 
-        // Określ kategorię mediów na podstawie typu
-        let mediaXType = "tweet_image";
-        if (mediaType.startsWith("video/")) {
-          mediaXType = "tweet_video";
-        } else if (mediaType.startsWith("image/gif")) {
-          mediaXType = "tweet_gif";
-        }
+        console.log("Typ mediów:", {
+          originalMediaType,
+          twitterMediaType: mediaType,
+          size: mediaData.size,
+        });
 
         const initForm = new FormData();
         initForm.append("command", "INIT");
         initForm.append("total_bytes", mediaData.size.toString());
-        initForm.append("media_type", mediaXType);
+        initForm.append("media_type", mediaType);
 
         // Step 1: INIT
         const initRequestData = {
@@ -108,11 +100,18 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
+        console.log("Inicjalizacja uploadu:", {
+          size: mediaData.size,
+          type: mediaType,
+          auth: initAuthorization,
+          headers: oauth.toHeader(initAuthorization),
+        });
+
         const initResponse = await fetch(initRequestData.url, {
           method: "POST",
           headers: {
             Authorization: oauth.toHeader(initAuthorization).Authorization,
-            "Content-Transfer-Encoding": "base64",
+            "Content-Type": "multipart/form-data",
           },
           body: initForm,
         });
@@ -131,6 +130,7 @@ export async function POST(req: Request) {
         }
 
         const initData = await initResponse.json();
+        console.log("Odpowiedź z INIT:", initData);
 
         if (!initData.media_id_string) {
           throw new Error("Brak media_id_string w odpowiedzi z API");
@@ -154,10 +154,10 @@ export async function POST(req: Request) {
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media_type", mediaXType);
+          appendForm.append("media_type", mediaType);
           appendForm.append(
             "media",
-            new Blob([chunkBuffer], { type: mediaType })
+            new Blob([chunkBuffer], { type: originalMediaType })
           );
 
           const appendRequestData = {
@@ -170,10 +170,20 @@ export async function POST(req: Request) {
             secret: accessTokenSecret,
           });
 
+          console.log("Upload chunka:", {
+            chunkIndex,
+            totalChunks,
+            chunkSize: chunk.size,
+            mediaType,
+            auth: appendAuthorization,
+            headers: oauth.toHeader(appendAuthorization),
+          });
+
           const appendResponse = await fetch(appendRequestData.url, {
             method: "POST",
             headers: {
               Authorization: oauth.toHeader(appendAuthorization).Authorization,
+              "Content-Type": "multipart/form-data",
             },
             body: appendForm,
           });
@@ -196,6 +206,7 @@ export async function POST(req: Request) {
         const finalizeForm = new FormData();
         finalizeForm.append("command", "FINALIZE");
         finalizeForm.append("media_id", media_id_string);
+        finalizeForm.append("media_type", mediaType);
 
         const finalizeRequestData = {
           url: "https://upload.twitter.com/1.1/media/upload.json",
@@ -207,10 +218,18 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
+        console.log("Finalizacja uploadu:", {
+          media_id: media_id_string,
+          mediaType,
+          auth: finalizeAuthorization,
+          headers: oauth.toHeader(finalizeAuthorization),
+        });
+
         const finalizeResponse = await fetch(finalizeRequestData.url, {
           method: "POST",
           headers: {
             Authorization: oauth.toHeader(finalizeAuthorization).Authorization,
+            "Content-Type": "multipart/form-data",
           },
           body: finalizeForm,
         });
