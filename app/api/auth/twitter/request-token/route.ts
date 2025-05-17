@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import OAuth from "oauth-1.0a";
+import crypto from "crypto";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
@@ -37,6 +38,12 @@ export async function GET() {
         secret: TWITTER_API_SECRET!,
       },
       signature_method: "HMAC-SHA1",
+      hash_function: (baseString: string, key: string) => {
+        return crypto
+          .createHmac("sha1", key)
+          .update(baseString)
+          .digest("base64");
+      },
     });
 
     const requestOptions = {
