@@ -54,22 +54,20 @@ function TwitterCallbackContent() {
       if (!response.ok) {
         switch (response.status) {
           case 400:
-            throw new Error(data.message || "Nieprawidłowe dane autoryzacji");
+            throw new Error(data.error || "Nieprawidłowe dane autoryzacji");
           case 401:
-            throw new Error(data.message || "Brak autoryzacji");
+            throw new Error(data.error || "Brak autoryzacji");
           case 403:
             throw new Error(
-              data.message || "Brak uprawnień do wykonania operacji"
+              data.error || "Brak uprawnień do wykonania operacji"
             );
           case 429:
             throw new Error(
-              data.message ||
-                "Przekroczono limit prób. Spróbuj ponownie później"
+              data.error || "Przekroczono limit prób. Spróbuj ponownie później"
             );
           default:
             throw new Error(
-              data.message ||
-                data.error ||
+              data.error ||
                 "Wystąpił nieoczekiwany błąd podczas łączenia z Twitterem"
             );
         }
