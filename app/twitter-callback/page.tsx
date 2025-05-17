@@ -19,10 +19,10 @@ function TwitterCallbackContent() {
   };
 
   useEffect(() => {
-    const code = searchParams.get("code");
-    const state = searchParams.get("state");
+    const oauth_token = searchParams.get("oauth_token");
+    const oauth_verifier = searchParams.get("oauth_verifier");
 
-    if (!code || !state) {
+    if (!oauth_token || !oauth_verifier) {
       toast.error("Brak wymaganych danych autoryzacji", {
         description: "Nie otrzymano wszystkich wymaganych danych z Twitter",
       });
@@ -30,10 +30,13 @@ function TwitterCallbackContent() {
       return;
     }
 
-    handleTwitterCallback(code, state);
+    handleTwitterCallback(oauth_token, oauth_verifier);
   }, [searchParams]);
 
-  const handleTwitterCallback = async (code: string, state: string) => {
+  const handleTwitterCallback = async (
+    oauth_token: string,
+    oauth_verifier: string
+  ) => {
     try {
       const response = await fetch("/api/auth/twitter/access-token", {
         method: "POST",
@@ -41,17 +44,35 @@ function TwitterCallbackContent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          code,
-          state,
+          oauth_token,
+          oauth_verifier,
         }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(
-          data.details || data.error || "Błąd podczas autoryzacji"
-        );
+        switch (response.status) {
+          case 400:
+            throw new Error(data.message || "Nieprawidłowe dane autoryzacji");
+          case 401:
+            throw new Error(data.message || "Brak autoryzacji");
+          case 403:
+            throw new Error(
+              data.message || "Brak uprawnień do wykonania operacji"
+            );
+          case 429:
+            throw new Error(
+              data.message ||
+                "Przekroczono limit prób. Spróbuj ponownie później"
+            );
+          default:
+            throw new Error(
+              data.message ||
+                data.error ||
+                "Wystąpił nieoczekiwany błąd podczas łączenia z Twitterem"
+            );
+        }
       }
 
       if (data.success) {
@@ -64,16 +85,20 @@ function TwitterCallbackContent() {
           navigateToDashboard();
         }, 3000);
       } else {
-        throw new Error(data.details || data.error || "Nieznany błąd");
+        throw new Error(
+          data.message || data.error || "Nie udało się połączyć konta"
+        );
       }
     } catch (error) {
       console.error("Błąd podczas łączenia z Twitterem:", error);
 
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Wystąpił nieoczekiwany błąd podczas łączenia z Twitterem";
+
       toast.error("Nie udało się połączyć konta Twitter", {
-        description:
-          error instanceof Error
-            ? error.message
-            : "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+        description: errorMessage,
         duration: 7000,
       });
 

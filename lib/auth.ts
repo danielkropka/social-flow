@@ -121,6 +121,12 @@ export const authOptions: NextAuthOptions = {
         token.subscriptionInterval = dbUser.subscriptionInterval;
       }
 
+      // Zachowaj tymczasowe tokeny Twittera jeśli istnieją
+      if (token.twitterRequestToken && token.twitterRequestTokenSecret) {
+        token.twitterRequestToken = token.twitterRequestToken;
+        token.twitterRequestTokenSecret = token.twitterRequestTokenSecret;
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -138,6 +144,11 @@ export const authOptions: NextAuthOptions = {
         session.user.subscriptionEnd = token.subscriptionEnd as Date;
         session.user.subscriptionInterval =
           token.subscriptionInterval as PlanInterval;
+
+        // Dodaj tymczasowe tokeny Twittera do sesji
+        session.twitterRequestToken = token.twitterRequestToken as string;
+        session.twitterRequestTokenSecret =
+          token.twitterRequestTokenSecret as string;
       }
       return session;
     },
