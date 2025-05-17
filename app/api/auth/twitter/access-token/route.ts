@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
+import { db } from "@/lib/prisma";
+import { encryptToken } from "@/lib/utils";
 
 export async function POST(request: Request) {
   // Pobierz zalogowanego użytkownika
@@ -83,6 +85,19 @@ export async function POST(request: Request) {
 
     const userData = await userResponse.json();
     const account = userData.data;
+
+    await db.connectedAccount.create({
+      data: {
+        userId: session.user.id,
+        provider: "TWITTER",
+        providerAccountId: account.id,
+        accessToken: encryptToken(accessToken),
+        accessTokenSecret: encryptToken(accessTokenSecret),
+        profileImage: account.profile_image_url,
+        username: account.username,
+        name: account.name,
+      },
+    });
 
     return NextResponse.json({
       success: true,
