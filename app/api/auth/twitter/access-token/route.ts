@@ -22,7 +22,6 @@ export async function POST(request: Request) {
   const requestToken = await db.twitterRequestToken.findFirst({
     where: {
       userId: session.user.id,
-      token: oauth_token,
       createdAt: {
         gte: new Date(Date.now() - 10 * 60 * 1000), // tokeny starsze niż 10 minut są nieważne
       },
