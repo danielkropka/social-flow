@@ -63,28 +63,20 @@ export async function GET() {
     });
 
     if (!requestTokenResponse.ok) {
-      const errorData = await requestTokenResponse.json();
-      console.error("Twitter API error:", errorData);
-      return NextResponse.json(
-        {
-          error: "Nie udało się pobrać tokena",
-          details: `Błąd API Twitter: ${requestTokenResponse.status} ${requestTokenResponse.statusText}`,
-        },
-        { status: 400 }
-      );
+      throw new Error("Nie udało się pobrać tokena");
     }
 
-    const requestTokenData = await requestTokenResponse.json();
-    const requestToken = requestTokenData.oauth_token;
-    const requestTokenSecret = requestTokenData.oauth_token_secret;
+    const requestDataText = await requestTokenResponse.text();
+    const requestParams = new URLSearchParams(requestDataText);
+    const requestToken = requestParams.get("oauth_token");
+    const requestTokenSecret = requestParams.get("oauth_token_secret");
 
-    if (requestTokenData.oauth_callback_confirmed !== "true") {
-      return NextResponse.json(
-        {
-          error: "Twitter nie potwierdził poprawnego callbacku",
-        },
-        { status: 400 }
-      );
+    if (!requestToken || !requestTokenSecret) {
+      throw new Error("Brak wymaganych tokenów w odpowiedzi");
+    }
+
+    if (requestParams.get("oauth_callback_confirmed") !== "true") {
+      throw new Error("Twitter nie potwierdził poprawnego callbacku");
     }
 
     // Zapisz tokeny w sesji
