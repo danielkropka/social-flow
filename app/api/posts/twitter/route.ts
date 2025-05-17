@@ -54,11 +54,12 @@ export async function POST(req: Request) {
   const bearerToken = parsedData.get("access_token");
   const tokenType = parsedData.get("token_type");
 
-  if (!tokenType || tokenType !== "Bearer") {
+  console.log(bearerToken);
+  console.log(tokenType);
+
+  if (!tokenType || tokenType !== "bearer") {
     throw new Error("Nieprawidłowy token dostępu");
   }
-
-  console.log(bearerToken);
 
   return NextResponse.json({
     success: true,
