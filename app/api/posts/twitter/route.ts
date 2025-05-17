@@ -96,7 +96,7 @@ export async function POST(req: Request) {
         const initOptions = {
           method: "POST",
           headers: {
-            Authorization: `OAuth ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
           body: initForm,
         };
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
           const appendOptions = {
             method: "POST",
             headers: {
-              Authorization: `OAuth ${accessToken}`,
+              Authorization: `Bearer ${accessToken}`,
               "Content-Type": "multipart/form-data",
             },
             body: appendForm,
@@ -167,7 +167,7 @@ export async function POST(req: Request) {
         const finalizeOptions = {
           method: "POST",
           headers: {
-            Authorization: `OAuth ${accessToken}`,
+            Authorization: `Bearer ${accessToken}`,
           },
         };
 
@@ -196,7 +196,7 @@ export async function POST(req: Request) {
             const statusOptions = {
               method: "GET",
               headers: {
-                Authorization: `OAuth ${accessToken}`,
+                Authorization: `Bearer ${accessToken}`,
               },
             };
 
@@ -227,7 +227,7 @@ export async function POST(req: Request) {
     const postResponse = await fetch("https://api.twitter.com/2/tweets", {
       method: "POST",
       headers: {
-        Authorization: `OAuth ${accessToken}`,
+        Authorization: `Bearer ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(postData),
