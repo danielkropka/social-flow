@@ -85,23 +85,17 @@ export async function POST(req: Request) {
         }
 
         // Określ kategorię mediów na podstawie typu
-        let mediaCategory = "tweet_image";
+        let mediaXType = "tweet_image";
         if (mediaType.startsWith("video/")) {
-          mediaCategory = "tweet_video";
+          mediaXType = "tweet_video";
         } else if (mediaType.startsWith("image/gif")) {
-          mediaCategory = "tweet_gif";
+          mediaXType = "tweet_gif";
         }
-
-        console.log("Typ i kategoria mediów:", {
-          mediaType,
-          mediaCategory,
-          size: mediaData.size,
-        });
 
         const initForm = new FormData();
         initForm.append("command", "INIT");
         initForm.append("total_bytes", mediaData.size.toString());
-        initForm.append("media_type", mediaCategory);
+        initForm.append("media_type", mediaXType);
 
         // Step 1: INIT
         const initRequestData = {
@@ -114,17 +108,11 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
-        console.log("Inicjalizacja uploadu:", {
-          size: mediaData.size,
-          type: mediaType,
-          auth: initAuthorization,
-          headers: oauth.toHeader(initAuthorization),
-        });
-
         const initResponse = await fetch(initRequestData.url, {
           method: "POST",
           headers: {
             Authorization: oauth.toHeader(initAuthorization).Authorization,
+            "Content-Transfer-Encoding": "base64",
           },
           body: initForm,
         });
@@ -143,7 +131,6 @@ export async function POST(req: Request) {
         }
 
         const initData = await initResponse.json();
-        console.log("Odpowiedź z INIT:", initData);
 
         if (!initData.media_id_string) {
           throw new Error("Brak media_id_string w odpowiedzi z API");
@@ -167,7 +154,7 @@ export async function POST(req: Request) {
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media_type", mediaCategory);
+          appendForm.append("media_type", mediaXType);
           appendForm.append(
             "media",
             new Blob([chunkBuffer], { type: mediaType })
@@ -181,21 +168,6 @@ export async function POST(req: Request) {
           const appendAuthorization = oauth.authorize(appendRequestData, {
             key: accessToken,
             secret: accessTokenSecret,
-          });
-
-          console.log("Upload chunka:", {
-            chunkIndex,
-            totalChunks,
-            chunkSize: chunk.size,
-            mediaType,
-            auth: appendAuthorization,
-            headers: oauth.toHeader(appendAuthorization),
-            formData: {
-              command: "APPEND",
-              media_id: media_id_string,
-              segment_index: chunkIndex.toString(),
-              media: `Blob(${chunk.size} bytes)`,
-            },
           });
 
           const appendResponse = await fetch(appendRequestData.url, {
@@ -233,16 +205,6 @@ export async function POST(req: Request) {
         const finalizeAuthorization = oauth.authorize(finalizeRequestData, {
           key: accessToken,
           secret: accessTokenSecret,
-        });
-
-        console.log("Finalizacja uploadu:", {
-          media_id: media_id_string,
-          auth: finalizeAuthorization,
-          headers: oauth.toHeader(finalizeAuthorization),
-          formData: {
-            command: "FINALIZE",
-            media_id: media_id_string,
-          },
         });
 
         const finalizeResponse = await fetch(finalizeRequestData.url, {
