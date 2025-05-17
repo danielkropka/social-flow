@@ -69,7 +69,7 @@ export async function POST(req: Request) {
     // Upload mediów
     if (mediaUrls && mediaUrls.length > 0) {
       for (let i = 0; i < Math.min(mediaUrls.length, 4); i++) {
-        const mediaUrl = mediaUrls[i];
+        const mediaUrl = mediaUrls[i].url;
         let mediaData: Blob;
         let mediaType: string;
 
@@ -103,23 +103,37 @@ export async function POST(req: Request) {
 
         const { media_id_string } = await initResponse.json();
 
-        // Step 2: APPEND
-        const appendFormData = new FormData();
-        appendFormData.append("command", "APPEND");
-        appendFormData.append("media_id", media_id_string);
-        appendFormData.append("segment_index", "0");
-        appendFormData.append("media", mediaData);
+        // Step 2: APPEND - dzielenie na chunki
+        const CHUNK_SIZE = 1024 * 1024; // 1MB
+        const totalChunks = Math.ceil(mediaData.size / CHUNK_SIZE);
 
-        const appendResponse = await fetch("https://api.x.com/2/media/upload", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${bearerToken}`,
-          },
-          body: appendFormData,
-        });
+        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+          const start = chunkIndex * CHUNK_SIZE;
+          const end = Math.min(start + CHUNK_SIZE, mediaData.size);
+          const chunk = mediaData.slice(start, end);
 
-        if (!appendResponse.ok) {
-          throw new Error("Błąd podczas uploadu mediów");
+          const appendFormData = new FormData();
+          appendFormData.append("command", "APPEND");
+          appendFormData.append("media_id", media_id_string);
+          appendFormData.append("segment_index", chunkIndex.toString());
+          appendFormData.append("media", chunk);
+
+          const appendResponse = await fetch(
+            "https://api.x.com/2/media/upload",
+            {
+              method: "POST",
+              headers: {
+                Authorization: `Bearer ${bearerToken}`,
+              },
+              body: appendFormData,
+            }
+          );
+
+          if (!appendResponse.ok) {
+            throw new Error(
+              `Błąd podczas uploadu chunka ${chunkIndex + 1} z ${totalChunks}`
+            );
+          }
         }
 
         // Step 3: FINALIZE
