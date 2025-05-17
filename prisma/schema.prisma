@@ -81,8 +81,9 @@ model User {
     subscriptionStart    DateTime?
     subscriptionEnd      DateTime?
 
-    posts      Post[]
-    OAuthState OAuthState[]
+    posts               Post[]
+    OAuthState          OAuthState[]
+    TwitterRequestToken TwitterRequestToken[]
 }
 
 model Media {
@@ -167,4 +168,15 @@ model OAuthState {
     @@index([userId])
     @@index([state])
     @@index([provider])
+}
+
+model TwitterRequestToken {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String   @db.ObjectId
+    token     String
+    secret    String
+    createdAt DateTime @default(now())
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
 }

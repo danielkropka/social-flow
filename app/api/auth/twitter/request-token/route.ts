@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
+import { db } from "@/lib/prisma";
+import { encryptToken } from "@/lib/utils";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
@@ -62,7 +64,6 @@ export async function GET() {
       },
     });
 
-    console.log(requestTokenResponse);
     if (!requestTokenResponse.ok) {
       throw new Error("Nie udało się pobrać tokena");
     }
@@ -80,9 +81,13 @@ export async function GET() {
       throw new Error("Twitter nie potwierdził poprawnego callbacku");
     }
 
-    // Zapisz tokeny w sesji
-    session.twitterRequestToken = requestToken;
-    session.twitterRequestTokenSecret = requestTokenSecret;
+    await db.twitterRequestToken.create({
+      data: {
+        userId: session.user.id,
+        token: encryptToken(requestToken),
+        secret: encryptToken(requestTokenSecret),
+      },
+    });
 
     return NextResponse.json({
       authUrl: `https://api.x.com/oauth/authorize?oauth_token=${requestToken}`,
