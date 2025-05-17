@@ -89,6 +89,11 @@ export async function POST(req: Request) {
         initFormData.append("total_bytes", mediaData.size.toString());
         initFormData.append("media_type", mediaType);
 
+        console.log("Inicjalizacja uploadu:", {
+          size: mediaData.size,
+          type: mediaType,
+        });
+
         const initResponse = await fetch("https://api.x.com/2/media/upload", {
           method: "POST",
           headers: {
@@ -98,10 +103,26 @@ export async function POST(req: Request) {
         });
 
         if (!initResponse.ok) {
-          throw new Error("Błąd podczas inicjalizacji uploadu mediów");
+          const errorData = await initResponse.text();
+          console.error("Odpowiedź z API podczas inicjalizacji:", {
+            status: initResponse.status,
+            statusText: initResponse.statusText,
+            headers: Object.fromEntries(initResponse.headers.entries()),
+            body: errorData,
+          });
+          throw new Error(
+            `Błąd podczas inicjalizacji uploadu mediów: ${initResponse.status} ${initResponse.statusText}`
+          );
         }
 
-        const { media_id_string } = await initResponse.json();
+        const initData = await initResponse.json();
+        console.log("Odpowiedź z INIT:", initData);
+
+        if (!initData.media_id_string) {
+          throw new Error("Brak media_id_string w odpowiedzi z API");
+        }
+
+        const { media_id_string } = initData;
 
         // Step 2: APPEND - dzielenie na chunki
         const CHUNK_SIZE = 1024 * 1024; // 1MB
