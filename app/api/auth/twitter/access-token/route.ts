@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/prisma";
 import { decryptToken, encryptToken } from "@/lib/utils";
+import OAuth from "oauth-1.0a";
+import crypto from "crypto";
 
 export async function POST(request: Request) {
   // Pobierz zalogowanego użytkownika
@@ -68,14 +70,35 @@ export async function POST(request: Request) {
 
     const fields = ["profile_image_url", "username", "name"];
 
-    const userResponse = await fetch(
-      `https://api.x.com/2/users/me?user.fields=${fields.join(",")}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      }
-    );
+    const oauth = new OAuth({
+      consumer: {
+        key: process.env.TWITTER_API_KEY!,
+        secret: process.env.TWITTER_API_SECRET!,
+      },
+      signature_method: "HMAC-SHA1",
+      hash_function(base_string, key) {
+        return crypto
+          .createHmac("sha1", key)
+          .update(base_string)
+          .digest("base64");
+      },
+    });
+
+    const requestData = {
+      url: `https://api.x.com/2/users/me?user.fields=${fields.join(",")}`,
+      method: "GET",
+    };
+
+    const authorization = oauth.authorize(requestData, {
+      key: accessToken,
+      secret: accessTokenSecret,
+    });
+
+    const userResponse = await fetch(requestData.url, {
+      headers: {
+        Authorization: oauth.toHeader(authorization).Authorization,
+      },
+    });
 
     if (!userResponse.ok) {
       const errorData = await userResponse.json();
