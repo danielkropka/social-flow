@@ -54,6 +54,8 @@ export async function POST(req: Request) {
     );
 
     if (!response.ok) {
+      const errorData = await response.json();
+      console.error("Error while generating bearer token:", errorData);
       throw new Error("Nie udało się uzyskać tokenu dostępu");
     }
 
