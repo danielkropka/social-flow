@@ -101,8 +101,7 @@ export async function POST(req: Request) {
         const initForm = new FormData();
         initForm.append("command", "INIT");
         initForm.append("total_bytes", mediaData.size.toString());
-        initForm.append("media_type", mediaType);
-        initForm.append("media_category", mediaCategory);
+        initForm.append("media_type", mediaCategory);
 
         // Step 1: INIT
         const initRequestData = {
@@ -168,7 +167,7 @@ export async function POST(req: Request) {
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media_type", mediaType);
+          appendForm.append("media_type", mediaCategory);
           appendForm.append(
             "media",
             new Blob([chunkBuffer], { type: mediaType })
