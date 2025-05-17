@@ -2,8 +2,6 @@ import { getAuthSession } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/prisma";
 import { decryptToken } from "@/lib/utils";
-import OAuth from "oauth-1.0a";
-import crypto from "crypto";
 
 export async function POST(req: Request) {
   const session = await getAuthSession();
@@ -39,20 +37,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const oauth = new OAuth({
-      consumer: {
-        key: process.env.TWITTER_API_KEY,
-        secret: process.env.TWITTER_API_SECRET,
-      },
-      signature_method: "HMAC-SHA1",
-      hash_function(base_string, key) {
-        return crypto
-          .createHmac("sha1", key)
-          .update(base_string)
-          .digest("base64");
-      },
-    });
-
     const options = {
       method: "POST",
       headers: {
@@ -99,26 +83,27 @@ export async function POST(req: Request) {
           mediaType = mediaData.type;
         }
 
-        // Step 1: INIT
-        const initFormData = new FormData();
-        initFormData.append("command", "INIT");
-        initFormData.append("total_bytes", mediaData.size.toString());
-        initFormData.append("media_type", mediaType);
+        const initForm = new FormData();
+        initForm.append("media_type", mediaType);
+        initForm.append("shared", "true");
+        initForm.append("total_bytes", mediaData.size.toString());
+        initForm.append(
+          "media_category",
+          mediaType === "image" ? "tweet_image" : "tweet_video"
+        );
 
-        console.log("Inicjalizacja uploadu:", {
-          size: mediaData.size,
-          type: mediaType,
-        });
+        // Step 1: INIT
+        const initOptions = {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+          },
+          body: initForm,
+        };
 
         const initResponse = await fetch(
-          "https://upload.twitter.com/1.1/media/upload.json",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${bearerToken}`,
-            },
-            body: initFormData,
-          }
+          "https://api.twitter.com/2/media/upload/initialize",
+          initOptions
         );
 
         if (!initResponse.ok) {
@@ -152,21 +137,23 @@ export async function POST(req: Request) {
           const end = Math.min(start + CHUNK_SIZE, mediaData.size);
           const chunk = mediaData.slice(start, end);
 
-          const appendFormData = new FormData();
-          appendFormData.append("command", "APPEND");
-          appendFormData.append("media_id", media_id_string);
-          appendFormData.append("segment_index", chunkIndex.toString());
-          appendFormData.append("media", chunk);
+          const appendForm = new FormData();
+          appendForm.append("media_id", media_id_string);
+          appendForm.append("segment_index", chunkIndex.toString());
+          appendForm.append("media", chunk);
+
+          const appendOptions = {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${bearerToken}`,
+              "Content-Type": "multipart/form-data",
+            },
+            body: appendForm,
+          };
 
           const appendResponse = await fetch(
-            "https://upload.twitter.com/1.1/media/upload.json",
-            {
-              method: "POST",
-              headers: {
-                Authorization: `Bearer ${bearerToken}`,
-              },
-              body: appendFormData,
-            }
+            `https://api.twitter.com/2/media/upload/${media_id_string}/append`,
+            appendOptions
           );
 
           if (!appendResponse.ok) {
@@ -177,19 +164,16 @@ export async function POST(req: Request) {
         }
 
         // Step 3: FINALIZE
-        const finalizeFormData = new FormData();
-        finalizeFormData.append("command", "FINALIZE");
-        finalizeFormData.append("media_id", media_id_string);
+        const finalizeOptions = {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${bearerToken}`,
+          },
+        };
 
         const finalizeResponse = await fetch(
-          "https://upload.twitter.com/1.1/media/upload.json",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${bearerToken}`,
-            },
-            body: finalizeFormData,
-          }
+          `https://api.twitter.com/2/media/upload/${media_id_string}/finalize`,
+          finalizeOptions
         );
 
         if (!finalizeResponse.ok) {
@@ -209,13 +193,21 @@ export async function POST(req: Request) {
               )
             );
 
+            const statusForm = new FormData();
+            statusForm.append("command", "STATUS");
+            statusForm.append("media_id", media_id_string);
+
+            const statusOptions = {
+              method: "GET",
+              headers: {
+                Authorization: `Bearer ${bearerToken}`,
+              },
+              body: statusForm,
+            };
+
             const statusResponse = await fetch(
-              `https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=${media_id_string}`,
-              {
-                headers: {
-                  Authorization: `Bearer ${bearerToken}`,
-                },
-              }
+              `https://api.twitter.com/2/media/upload`,
+              statusOptions
             );
 
             const statusData = await statusResponse.json();
