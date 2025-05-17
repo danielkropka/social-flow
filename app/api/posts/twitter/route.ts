@@ -34,10 +34,26 @@ export async function POST(req: Request) {
     const accessToken = decryptToken(account.accessToken);
     const accessTokenSecret = decryptToken(account.accessTokenSecret);
 
+    // Walidacja kluczy API
+    if (!process.env.TWITTER_API_KEY || !process.env.TWITTER_API_SECRET) {
+      throw new Error("Brak skonfigurowanych kluczy API Twittera");
+    }
+
+    if (!accessToken || !accessTokenSecret) {
+      throw new Error("Brak tokenów dostępu do Twittera");
+    }
+
+    console.log("Twitter API debug:", {
+      apiKeyLength: process.env.TWITTER_API_KEY.length,
+      apiSecretLength: process.env.TWITTER_API_SECRET.length,
+      accessTokenLength: accessToken.length,
+      accessTokenSecretLength: accessTokenSecret.length,
+    });
+
     const oauth = new OAuth({
       consumer: {
-        key: process.env.TWITTER_API_KEY!,
-        secret: process.env.TWITTER_API_SECRET!,
+        key: process.env.TWITTER_API_KEY,
+        secret: process.env.TWITTER_API_SECRET,
       },
       signature_method: "HMAC-SHA1",
       hash_function(base_string, key) {
