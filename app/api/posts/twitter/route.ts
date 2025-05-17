@@ -68,21 +68,30 @@ export async function POST(req: Request) {
         });
 
         // Wysyłanie INIT
-        const initResponse = await fetch(
-          `${mediaRequestData.url}?command=INIT&total_bytes=${
-            mediaBuffer.length
-          }&media_type=${
-            media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
-              ? "video/mp4"
-              : "image/jpeg"
-          }`,
-          {
-            method: "POST",
-            headers: {
-              Authorization: oauth.toHeader(mediaAuthorization).Authorization,
-            },
-          }
-        );
+        const initUrl = `${mediaRequestData.url}?command=INIT&total_bytes=${
+          mediaBuffer.length
+        }&media_type=${
+          media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
+            ? "video/mp4"
+            : "image/jpeg"
+        }`;
+
+        const initRequestData = {
+          url: initUrl,
+          method: "POST",
+        };
+
+        const initAuthorization = oauth.authorize(initRequestData, {
+          key: accessToken,
+          secret: accessTokenSecret,
+        });
+
+        const initResponse = await fetch(initUrl, {
+          method: "POST",
+          headers: {
+            Authorization: oauth.toHeader(initAuthorization).Authorization,
+          },
+        });
 
         if (!initResponse.ok) {
           const errorData = await initResponse.json().catch(() => ({}));
