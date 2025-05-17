@@ -53,15 +53,12 @@ export async function POST(req: Request) {
     );
 
     if (!response.ok) {
-      const errorData = await response.json();
-      console.error("Error while generating bearer token:", errorData);
       throw new Error("Nie udało się uzyskać tokenu dostępu");
     }
 
-    const data = await response.text();
-    const parsedData = new URLSearchParams(data);
-    const bearerToken = parsedData.get("access_token");
-    const tokenType = parsedData.get("token_type");
+    const data = await response.json();
+    const bearerToken = data.access_token;
+    const tokenType = data.token_type;
 
     console.log(bearerToken);
     console.log(tokenType);
