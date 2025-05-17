@@ -44,12 +44,11 @@ export async function POST(req: Request) {
         Authorization: `Basic ${Buffer.from(
           `${process.env.TWITTER_API_KEY}:${process.env.TWITTER_API_SECRET}`
         ).toString("base64")}`,
-        grant_type: "client_credentials",
       },
     };
 
     const response = await fetch(
-      "https://api.twitter.com/oauth2/token",
+      "https://api.twitter.com/oauth2/token?grant_type=client_credentials",
       options
     );
 
