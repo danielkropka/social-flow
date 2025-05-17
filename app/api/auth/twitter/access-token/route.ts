@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
 import { db } from "@/lib/prisma";
-import { encryptToken } from "@/lib/utils";
+import { decryptToken, encryptToken } from "@/lib/utils";
 
 export async function POST(request: Request) {
   // Pobierz zalogowanego użytkownika
@@ -17,20 +17,24 @@ export async function POST(request: Request) {
     );
   }
 
-  const { twitterRequestToken, twitterRequestTokenSecret } = session;
-
-  if (!twitterRequestToken || !twitterRequestTokenSecret) {
-    return NextResponse.json(
-      { error: "Brak wymaganych tokenów Twitter" },
-      { status: 400 }
-    );
-  }
-
   const { oauth_token, oauth_verifier } = await request.json();
 
-  if (twitterRequestToken !== oauth_token) {
+  const requestToken = await db.twitterRequestToken.findFirst({
+    where: {
+      userId: session.user.id,
+      token: oauth_token,
+      createdAt: {
+        gte: new Date(Date.now() - 10 * 60 * 1000), // tokeny starsze niż 10 minut są nieważne
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+
+  if (!requestToken || decryptToken(requestToken.token) !== oauth_token) {
     return NextResponse.json(
-      { error: "Nieprawidłowy token żądania" },
+      { error: "Nieprawidłowy lub wygasły token żądania" },
       { status: 400 }
     );
   }
@@ -41,7 +45,7 @@ export async function POST(request: Request) {
       oauth_verifier,
     };
 
-    const requestTokenResponse = await fetch(
+    const accessTokenResponse = await fetch(
       "https://api.x.com/oauth/access_token",
       {
         method: "POST",
@@ -50,8 +54,8 @@ export async function POST(request: Request) {
       }
     );
 
-    if (!requestTokenResponse.ok) {
-      const errorData = await requestTokenResponse.json();
+    if (!accessTokenResponse.ok) {
+      const errorData = await accessTokenResponse.json();
       console.error("Twitter API error:", errorData);
       return NextResponse.json(
         { error: "Nie udało się przydzielić tokenu" },
@@ -59,9 +63,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const requestTokenData = await requestTokenResponse.json();
-    const accessToken = requestTokenData.oauth_token;
-    const accessTokenSecret = requestTokenData.oauth_token_secret;
+    const accessTokenData = await accessTokenResponse.json();
+    const accessToken = accessTokenData.oauth_token;
+    const accessTokenSecret = accessTokenData.oauth_token_secret;
 
     const fields = ["profile_image_url", "username", "name"];
 
@@ -85,6 +89,12 @@ export async function POST(request: Request) {
 
     const userData = await userResponse.json();
     const account = userData.data;
+
+    await db.twitterRequestToken.delete({
+      where: {
+        id: requestToken.id,
+      },
+    });
 
     await db.connectedAccount.create({
       data: {

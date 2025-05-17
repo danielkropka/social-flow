@@ -15,7 +15,5 @@ declare module "next-auth" {
       subscriptionEnd?: Date | null;
       subscriptionInterval?: string | null;
     };
-    twitterRequestToken?: string;
-    twitterRequestTokenSecret?: string;
   }
 }
