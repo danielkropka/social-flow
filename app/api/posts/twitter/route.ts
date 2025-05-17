@@ -37,7 +37,7 @@ export async function POST(req: Request) {
   }
 
   try {
-    const options = {
+    /*     const options = {
       method: "POST",
       headers: {
         "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
 
     if (!tokenType || tokenType !== "bearer") {
       throw new Error("Nieprawidłowy token dostępu");
-    }
+    } */
 
     const mediaIds: string[] = [];
 
@@ -89,14 +89,14 @@ export async function POST(req: Request) {
         initForm.append("total_bytes", mediaData.size.toString());
         initForm.append(
           "media_category",
-          mediaType === "image" ? "tweet_image" : "tweet_video"
+          mediaType.startsWith("image/") ? "tweet_image" : "tweet_video"
         );
 
         // Step 1: INIT
         const initOptions = {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${bearerToken}`,
+            Authorization: `OAuth ${accessToken}`,
           },
           body: initForm,
         };
@@ -145,7 +145,7 @@ export async function POST(req: Request) {
           const appendOptions = {
             method: "POST",
             headers: {
-              Authorization: `Bearer ${bearerToken}`,
+              Authorization: `OAuth ${accessToken}`,
               "Content-Type": "multipart/form-data",
             },
             body: appendForm,
@@ -167,7 +167,7 @@ export async function POST(req: Request) {
         const finalizeOptions = {
           method: "POST",
           headers: {
-            Authorization: `Bearer ${bearerToken}`,
+            Authorization: `OAuth ${accessToken}`,
           },
         };
 
@@ -193,20 +193,15 @@ export async function POST(req: Request) {
               )
             );
 
-            const statusForm = new FormData();
-            statusForm.append("command", "STATUS");
-            statusForm.append("media_id", media_id_string);
-
             const statusOptions = {
               method: "GET",
               headers: {
-                Authorization: `Bearer ${bearerToken}`,
+                Authorization: `OAuth ${accessToken}`,
               },
-              body: statusForm,
             };
 
             const statusResponse = await fetch(
-              `https://api.twitter.com/2/media/upload`,
+              `https://api.twitter.com/2/media/upload/${media_id_string}/status`,
               statusOptions
             );
 
@@ -232,7 +227,7 @@ export async function POST(req: Request) {
     const postResponse = await fetch("https://api.twitter.com/2/tweets", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${bearerToken}`,
+        Authorization: `OAuth ${accessToken}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(postData),
