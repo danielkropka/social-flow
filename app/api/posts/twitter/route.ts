@@ -85,7 +85,19 @@ export async function POST(req: Request) {
         );
 
         if (!initResponse.ok) {
-          throw new Error("Błąd podczas inicjalizacji uploadu mediów");
+          const errorData = await initResponse.json().catch(() => ({}));
+          console.error("Twitter media upload INIT error:", {
+            status: initResponse.status,
+            statusText: initResponse.statusText,
+            errorData,
+            mediaType: media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
+              ? "video/mp4"
+              : "image/jpeg",
+            fileSize: mediaBuffer.length,
+          });
+          throw new Error(
+            `Błąd podczas inicjalizacji uploadu mediów: ${initResponse.status} ${initResponse.statusText}`
+          );
         }
 
         const { media_id_string } = await initResponse.json();
