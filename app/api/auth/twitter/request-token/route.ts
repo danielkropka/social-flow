@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { getAuthSession } from "@/lib/auth";
+import OAuth from "oauth-1.0a";
 
-const TWITTER_CLIENT_ID = process.env.TWITTER_CLIENT_ID;
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
+const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const REDIRECT_URI = process.env.TWITTER_REDIRECT_URI!;
 
 export async function GET() {
@@ -18,7 +19,7 @@ export async function GET() {
     );
   }
 
-  if (!TWITTER_CLIENT_ID) {
+  if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
     console.error("Brak konfiguracji Twitter API");
     return NextResponse.json(
       {
@@ -30,19 +31,30 @@ export async function GET() {
   }
 
   try {
+    const oauth = new OAuth({
+      consumer: {
+        key: TWITTER_API_KEY!,
+        secret: TWITTER_API_SECRET!,
+      },
+      signature_method: "HMAC-SHA1",
+    });
+
     const requestOptions = {
+      url: "https://api.x.com/oauth/request_token",
       method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
+      data: {
         oauth_callback: REDIRECT_URI!,
         oauth_consumer_key: TWITTER_API_KEY!,
       },
     };
 
-    const requestTokenResponse = await fetch(
-      "https://api.x.com/oauth/request_token",
-      requestOptions
-    );
+    const requestTokenResponse = await fetch(requestOptions.url, {
+      method: requestOptions.method,
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        ...oauth.toHeader(oauth.authorize(requestOptions)),
+      },
+    });
 
     if (!requestTokenResponse.ok) {
       const errorData = await requestTokenResponse.json();
