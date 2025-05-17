@@ -11,6 +11,7 @@ export async function POST(req: Request) {
   }
 
   const { content, mediaUrls, accountId } = await req.json();
+  console.log(content, mediaUrls, accountId);
 
   const account = await db.connectedAccount.findFirst({
     where: {
@@ -58,7 +59,6 @@ export async function POST(req: Request) {
   }
 
   console.log(bearerToken);
-  console.log(mediaUrls);
 
   return NextResponse.json({
     success: true,
