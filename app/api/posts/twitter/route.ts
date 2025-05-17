@@ -160,6 +160,14 @@ export async function POST(req: Request) {
             secret: accessTokenSecret,
           });
 
+          console.log("Upload chunka:", {
+            chunkIndex,
+            totalChunks,
+            chunkSize: chunk.size,
+            auth: appendAuthorization,
+            headers: oauth.toHeader(appendAuthorization),
+          });
+
           const appendResponse = await fetch(appendRequestData.url, {
             method: "POST",
             headers: {
@@ -170,6 +178,13 @@ export async function POST(req: Request) {
           });
 
           if (!appendResponse.ok) {
+            const errorData = await appendResponse.text();
+            console.error("Odpowiedź z API podczas uploadu chunka:", {
+              status: appendResponse.status,
+              statusText: appendResponse.statusText,
+              headers: Object.fromEntries(appendResponse.headers.entries()),
+              body: errorData,
+            });
             throw new Error(
               `Błąd podczas uploadu chunka ${chunkIndex + 1} z ${totalChunks}`
             );
