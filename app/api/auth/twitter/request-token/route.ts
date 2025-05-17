@@ -31,19 +31,17 @@ export async function GET() {
 
   try {
     const requestOptions = {
-      oauth_callback: REDIRECT_URI!,
-      oauth_consumer_key: TWITTER_API_KEY!,
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        oauth_callback: REDIRECT_URI!,
+        oauth_consumer_key: TWITTER_API_KEY!,
+      },
     };
 
     const requestTokenResponse = await fetch(
       "https://api.x.com/oauth/request_token",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-        },
-        body: new URLSearchParams(requestOptions),
-      }
+      requestOptions
     );
 
     if (!requestTokenResponse.ok) {
