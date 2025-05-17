@@ -144,11 +144,17 @@ export async function POST(req: Request) {
           const end = Math.min(start + CHUNK_SIZE, mediaData.size);
           const chunk = mediaData.slice(start, end);
 
+          // Konwertuj chunk na ArrayBuffer
+          const chunkBuffer = await chunk.arrayBuffer();
+
           const appendForm = new FormData();
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media", chunk);
+          appendForm.append(
+            "media",
+            new Blob([chunkBuffer], { type: mediaType })
+          );
 
           const appendRequestData = {
             url: "https://upload.twitter.com/1.1/media/upload.json",
@@ -164,15 +170,21 @@ export async function POST(req: Request) {
             chunkIndex,
             totalChunks,
             chunkSize: chunk.size,
+            mediaType,
             auth: appendAuthorization,
             headers: oauth.toHeader(appendAuthorization),
+            formData: {
+              command: "APPEND",
+              media_id: media_id_string,
+              segment_index: chunkIndex.toString(),
+              media: `Blob(${chunk.size} bytes)`,
+            },
           });
 
           const appendResponse = await fetch(appendRequestData.url, {
             method: "POST",
             headers: {
               Authorization: oauth.toHeader(appendAuthorization).Authorization,
-              "Content-Type": "multipart/form-data",
             },
             body: appendForm,
           });
