@@ -71,23 +71,24 @@ export async function POST(req: Request) {
 
         // Określ typ mediów dla Twittera
         const originalMediaType = mediaData.type;
-        let mediaType = "tweet_image";
+        let mediaCategory = "tweet_image";
         if (originalMediaType.startsWith("video/")) {
-          mediaType = "tweet_video";
+          mediaCategory = "tweet_video";
         } else if (originalMediaType.startsWith("image/gif")) {
-          mediaType = "tweet_gif";
+          mediaCategory = "tweet_gif";
         }
 
         console.log("Typ mediów:", {
           originalMediaType,
-          twitterMediaType: mediaType,
+          twitterMediaType: mediaCategory,
           size: mediaData.size,
         });
 
         const initForm = new FormData();
         initForm.append("command", "INIT");
         initForm.append("total_bytes", mediaData.size.toString());
-        initForm.append("media_type", mediaType);
+        initForm.append("media_type", originalMediaType);
+        initForm.append("media_category", mediaCategory);
 
         // Step 1: INIT
         const initRequestData = {
@@ -102,16 +103,21 @@ export async function POST(req: Request) {
 
         console.log("Inicjalizacja uploadu:", {
           size: mediaData.size,
-          type: mediaType,
+          type: originalMediaType,
           auth: initAuthorization,
           headers: oauth.toHeader(initAuthorization),
+          formData: {
+            command: "INIT",
+            total_bytes: mediaData.size.toString(),
+            media_type: originalMediaType,
+            media_category: mediaCategory,
+          },
         });
 
         const initResponse = await fetch(initRequestData.url, {
-          method: "POST",
+          method: initRequestData.method,
           headers: {
             Authorization: oauth.toHeader(initAuthorization).Authorization,
-            "Content-Type": "multipart/form-data",
           },
           body: initForm,
         });
@@ -123,6 +129,19 @@ export async function POST(req: Request) {
             statusText: initResponse.statusText,
             headers: Object.fromEntries(initResponse.headers.entries()),
             body: errorData,
+            requestData: {
+              url: initRequestData.url,
+              method: initRequestData.method,
+              headers: {
+                Authorization: oauth.toHeader(initAuthorization).Authorization,
+              },
+              formData: {
+                command: "INIT",
+                total_bytes: mediaData.size.toString(),
+                media_type: originalMediaType,
+                media_category: mediaCategory,
+              },
+            },
           });
           throw new Error(
             `Błąd podczas inicjalizacji uploadu mediów: ${initResponse.status} ${initResponse.statusText}`
@@ -154,7 +173,7 @@ export async function POST(req: Request) {
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media_type", mediaType);
+          appendForm.append("media_type", originalMediaType);
           appendForm.append(
             "media",
             new Blob([chunkBuffer], { type: originalMediaType })
@@ -174,7 +193,7 @@ export async function POST(req: Request) {
             chunkIndex,
             totalChunks,
             chunkSize: chunk.size,
-            mediaType,
+            mediaType: originalMediaType,
             auth: appendAuthorization,
             headers: oauth.toHeader(appendAuthorization),
           });
@@ -206,7 +225,7 @@ export async function POST(req: Request) {
         const finalizeForm = new FormData();
         finalizeForm.append("command", "FINALIZE");
         finalizeForm.append("media_id", media_id_string);
-        finalizeForm.append("media_type", mediaType);
+        finalizeForm.append("media_type", originalMediaType);
 
         const finalizeRequestData = {
           url: "https://upload.twitter.com/1.1/media/upload.json",
@@ -220,7 +239,7 @@ export async function POST(req: Request) {
 
         console.log("Finalizacja uploadu:", {
           media_id: media_id_string,
-          mediaType,
+          mediaType: originalMediaType,
           auth: finalizeAuthorization,
           headers: oauth.toHeader(finalizeAuthorization),
         });
