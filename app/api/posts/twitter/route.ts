@@ -202,7 +202,6 @@ export async function POST(req: Request) {
             method: "POST",
             headers: {
               Authorization: oauth.toHeader(appendAuthorization).Authorization,
-              "Content-Type": "multipart/form-data",
             },
             body: appendForm,
           });
