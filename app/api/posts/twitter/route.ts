@@ -73,7 +73,10 @@ export async function POST(req: Request) {
         const formData = new FormData();
         formData.append("file", mediaData);
 
-        const uploadResponse = await fetch("/api/media/upload", {
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL ||
+          `http://${req.headers.get("host")}`;
+        const uploadResponse = await fetch(`${baseUrl}/api/media/upload`, {
           method: "POST",
           body: formData,
         });
