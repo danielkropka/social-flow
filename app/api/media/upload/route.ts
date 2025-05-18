@@ -22,7 +22,6 @@ export async function POST(req: Request) {
       Key: fileName,
       Body: buffer,
       ContentType: contentType,
-      ACL: "public-read",
     });
 
     await s3.send(command);
