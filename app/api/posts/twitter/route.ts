@@ -93,6 +93,7 @@ export async function POST(req: Request) {
             "Content-Type": "application/octet-stream",
             "X-File-Name": `${Date.now()}-file`,
             "X-File-Type": mediaData.type,
+            ...(mediaUrl.startsWith("blob:") && { "X-Blob-Url": mediaUrl }),
           },
           body: mediaData,
         });
