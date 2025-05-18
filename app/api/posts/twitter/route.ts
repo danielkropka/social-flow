@@ -60,6 +60,8 @@ export async function POST(req: Request) {
         const mediaUrl = mediaUrls[i].url;
         let mediaData: Blob;
 
+        console.log("mediaUrl", mediaUrl);
+
         if (mediaUrl.startsWith("data:")) {
           const base64Data = mediaUrl.split(",")[1];
           const originalMediaType = mediaUrl.split(";")[0].split(":")[1];
