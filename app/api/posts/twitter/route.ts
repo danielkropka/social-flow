@@ -71,12 +71,7 @@ export async function POST(req: Request) {
           const byteArray = new Uint8Array(byteNumbers);
           mediaData = new Blob([byteArray], { type: originalMediaType });
         } else if (mediaUrl.startsWith("blob:")) {
-          // Dla URL-i blob, najpierw pobieramy dane
-          const response = await fetch(mediaUrl);
-          if (!response.ok) {
-            throw new Error("Nie udało się pobrać pliku z URL blob");
-          }
-          mediaData = await response.blob();
+          mediaData = mediaUrl;
         } else {
           throw new Error(
             "Nieobsługiwany format URL mediów. Wspierane formaty: data: i blob:"
@@ -170,7 +165,7 @@ export async function POST(req: Request) {
           const { media_id_string } = initData;
 
           // Step 2: APPEND - dzielenie na chunki
-          const CHUNK_SIZE = 512 * 1024; // 512KB
+          const CHUNK_SIZE = 1024 * 1024; // 1MB
           const totalChunks = Math.ceil(s3Blob.size / CHUNK_SIZE);
 
           for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
