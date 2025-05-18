@@ -23,7 +23,6 @@ interface PostCreationState {
   scheduledDate: Date | undefined;
   currentStep: number;
   content: string;
-  mediaUrls: string[];
   isTextOnly: boolean;
   thumbnailUrl: string | null;
 }
@@ -35,7 +34,6 @@ type PostCreationAction =
   | { type: "SET_SCHEDULED_DATE"; payload: Date | undefined }
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_CONTENT"; payload: string }
-  | { type: "SET_MEDIA_URLS"; payload: string[] }
   | { type: "SET_IS_TEXT_ONLY"; payload: boolean }
   | { type: "SET_THUMBNAIL_URL"; payload: string | null }
   | { type: "RESET_STATE" };
@@ -49,7 +47,6 @@ const initialState: PostCreationState = {
   scheduledDate: undefined,
   currentStep: 1,
   content: "",
-  mediaUrls: [],
   isTextOnly: false,
   thumbnailUrl: null,
 };
@@ -71,14 +68,23 @@ function postCreationReducer(
       return { ...state, currentStep: action.payload };
     case "SET_CONTENT":
       return { ...state, content: action.payload };
-    case "SET_MEDIA_URLS":
-      return { ...state, mediaUrls: action.payload };
     case "SET_IS_TEXT_ONLY":
       return { ...state, isTextOnly: action.payload };
     case "SET_THUMBNAIL_URL":
       return { ...state, thumbnailUrl: action.payload };
     case "RESET_STATE":
-      return initialState;
+      return {
+        selectedFiles: [],
+        selectedAccounts: [],
+        postText: {
+          default: "",
+        },
+        scheduledDate: undefined,
+        currentStep: 1,
+        content: "",
+        isTextOnly: false,
+        thumbnailUrl: null,
+      };
     default:
       return state;
   }
@@ -92,7 +98,6 @@ interface PostCreationContextType {
   setScheduledDate: (date: Date | undefined) => void;
   setCurrentStep: (step: number) => void;
   setContent: (content: string) => void;
-  setMediaUrls: (urls: string[]) => void;
   setIsTextOnly: (value: boolean) => void;
   setThumbnailUrl: (url: string | null) => void;
   resetState: () => void;
@@ -103,64 +108,43 @@ const PostCreationContext = createContext<PostCreationContextType | undefined>(
 );
 
 export function PostCreationProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(postCreationReducer, initialState);
+  const [state, dispatch] = useReducer(postCreationReducer, {
+    selectedFiles: [],
+    selectedAccounts: [],
+    postText: {
+      default: "",
+    },
+    scheduledDate: undefined,
+    currentStep: 1,
+    content: "",
+    isTextOnly: false,
+    thumbnailUrl: null,
+  });
 
-  const setSelectedFiles = (files: File[]) => {
-    dispatch({ type: "SET_SELECTED_FILES", payload: files });
-  };
-
-  const setSelectedAccounts = (accounts: SocialAccount[]) => {
-    dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts });
-  };
-
-  const setPostText = (text: PostText) => {
-    dispatch({ type: "SET_POST_TEXT", payload: text });
-  };
-
-  const setScheduledDate = (date: Date | undefined) => {
-    dispatch({ type: "SET_SCHEDULED_DATE", payload: date });
-  };
-
-  const setCurrentStep = (step: number) => {
-    dispatch({ type: "SET_CURRENT_STEP", payload: step });
-  };
-
-  const setContent = (content: string) => {
-    dispatch({ type: "SET_CONTENT", payload: content });
-  };
-
-  const setMediaUrls = (urls: string[]) => {
-    dispatch({ type: "SET_MEDIA_URLS", payload: urls });
-  };
-
-  const setIsTextOnly = (value: boolean) => {
-    dispatch({ type: "SET_IS_TEXT_ONLY", payload: value });
-  };
-
-  const setThumbnailUrl = (url: string | null) => {
-    dispatch({ type: "SET_THUMBNAIL_URL", payload: url });
-  };
-
-  const resetState = () => {
-    dispatch({ type: "RESET_STATE" });
+  const value = {
+    state,
+    ...state,
+    setSelectedFiles: (files: File[]) =>
+      dispatch({ type: "SET_SELECTED_FILES", payload: files }),
+    setSelectedAccounts: (accounts: SocialAccount[]) =>
+      dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts }),
+    setPostText: (text: PostText) =>
+      dispatch({ type: "SET_POST_TEXT", payload: text }),
+    setScheduledDate: (date: Date | undefined) =>
+      dispatch({ type: "SET_SCHEDULED_DATE", payload: date }),
+    setCurrentStep: (step: number) =>
+      dispatch({ type: "SET_CURRENT_STEP", payload: step }),
+    setContent: (content: string) =>
+      dispatch({ type: "SET_CONTENT", payload: content }),
+    setIsTextOnly: (isTextOnly: boolean) =>
+      dispatch({ type: "SET_IS_TEXT_ONLY", payload: isTextOnly }),
+    setThumbnailUrl: (url: string | null) =>
+      dispatch({ type: "SET_THUMBNAIL_URL", payload: url }),
+    resetState: () => dispatch({ type: "RESET_STATE" }),
   };
 
   return (
-    <PostCreationContext.Provider
-      value={{
-        state,
-        setSelectedFiles,
-        setSelectedAccounts,
-        setPostText,
-        setScheduledDate,
-        setCurrentStep,
-        setContent,
-        setMediaUrls,
-        setIsTextOnly,
-        setThumbnailUrl,
-        resetState,
-      }}
-    >
+    <PostCreationContext.Provider value={value}>
       {children}
     </PostCreationContext.Provider>
   );
@@ -181,7 +165,6 @@ export function usePostCreation() {
     setScheduledDate: context.setScheduledDate,
     setCurrentStep: context.setCurrentStep,
     setContent: context.setContent,
-    setMediaUrls: context.setMediaUrls,
     setIsTextOnly: context.setIsTextOnly,
     setThumbnailUrl: context.setThumbnailUrl,
     resetState: context.resetState,

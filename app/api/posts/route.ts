@@ -21,6 +21,7 @@ export async function POST(req: Request) {
 
     // Walidacja danych wejściowych
     const body = await req.json();
+    console.log("Otrzymane dane:", body);
     const { content, mediaUrls, accountIds, scheduledDate } = body;
 
     // Walidacja treści
@@ -51,6 +52,18 @@ export async function POST(req: Request) {
       );
     }
 
+    // Walidacja mediów
+    if (mediaUrls && !Array.isArray(mediaUrls)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Nieprawidłowy format mediów",
+          details: "MediaUrls musi być tablicą",
+        },
+        { status: 400 }
+      );
+    }
+
     // Walidacja kont
     if (!Array.isArray(accountIds) || accountIds.length === 0) {
       return NextResponse.json(
@@ -75,15 +88,13 @@ export async function POST(req: Request) {
           userId: session.user.id,
           media: {
             create:
-              mediaUrls?.map(
-                (media: { url: string; thumbnailUrl: string | null }) => ({
-                  url: media.url,
-                  type: media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
-                    ? MediaType.VIDEO
-                    : MediaType.IMAGE,
-                  thumbnailUrl: media.thumbnailUrl,
-                })
-              ) || [],
+              mediaUrls?.map((media: { data: number[]; type: string }) => ({
+                url: "", // URL będzie ustawiony po uploadzie do S3
+                type: media.type.startsWith("video/")
+                  ? MediaType.VIDEO
+                  : MediaType.IMAGE,
+                thumbnailUrl: null,
+              })) || [],
           },
           postConnectedAccounts: {
             create: accountIds.map((accountId: string) => ({
@@ -191,15 +202,13 @@ export async function POST(req: Request) {
         userId: session.user.id,
         media: {
           create:
-            mediaUrls?.map(
-              (media: { url: string; thumbnailUrl: string | null }) => ({
-                url: media.url,
-                type: media.url.match(/\.(mp4|mov|avi|wmv|flv|mkv)$/i)
-                  ? MediaType.VIDEO
-                  : MediaType.IMAGE,
-                thumbnailUrl: media.thumbnailUrl,
-              })
-            ) || [],
+            mediaUrls?.map((media: { data: number[]; type: string }) => ({
+              url: "", // URL będzie ustawiony po uploadzie do S3
+              type: media.type.startsWith("video/")
+                ? MediaType.VIDEO
+                : MediaType.IMAGE,
+              thumbnailUrl: null,
+            })) || [],
         },
         postConnectedAccounts: {
           create: accountIds.map((accountId: string) => ({
