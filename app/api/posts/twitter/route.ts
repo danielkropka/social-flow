@@ -63,7 +63,13 @@ export async function POST(req: Request) {
         if (mediaUrl.startsWith("data:")) {
           const base64Data = mediaUrl.split(",")[1];
           const originalMediaType = mediaUrl.split(";")[0].split(":")[1];
-          mediaData = new Blob([base64Data], { type: originalMediaType });
+          const byteCharacters = atob(base64Data);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          mediaData = new Blob([byteArray], { type: originalMediaType });
         } else {
           const response = await fetch(mediaUrl);
           mediaData = await response.blob();
