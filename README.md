@@ -56,25 +56,6 @@ Social Flow to nowoczesna aplikacja webowa do zarządzania i publikowania treśc
 - Konto AWS (dla S3)
 - Konta deweloperskie na platformach społecznościowych
 
-## 🔧 Konfiguracja platform społecznościowych
-
-### Twitter
-
-1. Utwórz aplikację na [Twitter Developer Portal](https://developer.twitter.com)
-2. Skonfiguruj OAuth 2.0
-3. Dodaj callback URL: `http://localhost:3000/api/auth/twitter/callback`
-
-### Facebook
-
-1. Utwórz aplikację na [Facebook Developers](https://developers.facebook.com)
-2. Skonfiguruj Facebook Login
-3. Dodaj callback URL: `http://localhost:3000/api/auth/facebook/callback`
-
-### Instagram
-
-1. Skonfiguruj Instagram Basic Display w aplikacji Facebook
-2. Dodaj callback URL: `http://localhost:3000/api/auth/instagram/callback`
-
 ## 📝 Użycie
 
 1. Zaloguj się do aplikacji
