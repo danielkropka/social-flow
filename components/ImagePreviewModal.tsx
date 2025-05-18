@@ -8,15 +8,15 @@ import Image from "next/image";
 import { useState } from "react";
 
 interface ImagePreviewModalProps {
-  url: string;
+  file: File;
   children: React.ReactNode;
 }
 
-export function ImagePreviewModal({ url, children }: ImagePreviewModalProps) {
+export function ImagePreviewModal({ file, children }: ImagePreviewModalProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error("Błąd ładowania obrazu:", url);
+    console.error("Błąd ładowania obrazu:", file.name);
     const imgElement = e.target as HTMLImageElement;
     imgElement.src = "/placeholder-image.jpg";
   };
@@ -30,7 +30,7 @@ export function ImagePreviewModal({ url, children }: ImagePreviewModalProps) {
         <DialogTitle className="sr-only">Podgląd obrazu</DialogTitle>
         <div className="relative w-full aspect-square sm:aspect-video flex items-center justify-center bg-black/5 rounded-lg overflow-hidden">
           <Image
-            src={url}
+            src={URL.createObjectURL(file)}
             alt="Podgląd obrazu"
             className="max-w-full max-h-full object-contain"
             fill

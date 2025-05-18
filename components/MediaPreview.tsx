@@ -8,26 +8,13 @@ import { cn } from "@/lib/utils";
 
 interface MediaPreviewProps {
   file: File;
-  previewUrl: string;
   className?: string;
 }
 
-export function MediaPreview({
-  file,
-  previewUrl,
-  className,
-}: MediaPreviewProps) {
+export function MediaPreview({ file, className }: MediaPreviewProps) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const { thumbnailUrl } = usePostCreation();
-
-  if (!previewUrl) {
-    return (
-      <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
-        <p className="text-gray-500 text-sm">Nieprawidłowy URL mediów</p>
-      </div>
-    );
-  }
 
   if (file.type.startsWith("video/")) {
     return (
@@ -40,7 +27,7 @@ export function MediaPreview({
           <>
             <div className="relative w-full h-full flex items-center justify-center">
               <video
-                src={previewUrl}
+                src={URL.createObjectURL(file)}
                 className={cn("max-h-[70vh] h-auto rounded-lg", className)}
                 onError={() => setVideoError(true)}
                 controls
@@ -77,10 +64,10 @@ export function MediaPreview({
   }
 
   return (
-    <ImagePreviewModal url={previewUrl}>
+    <ImagePreviewModal file={file}>
       <div className="relative w-full h-full">
         <img
-          src={previewUrl}
+          src={URL.createObjectURL(file)}
           alt="Podgląd"
           className={cn("w-full h-full object-cover rounded-lg", className)}
         />

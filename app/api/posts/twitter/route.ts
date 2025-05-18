@@ -57,26 +57,18 @@ export async function POST(req: Request) {
     // Upload mediów
     if (mediaUrls && mediaUrls.length > 0) {
       for (let i = 0; i < Math.min(mediaUrls.length, 4); i++) {
-        const mediaUrl = mediaUrls[i].url;
-        let mediaData: Blob;
+        const mediaData = mediaUrls[i];
+        const mediaType = mediaData.type || "application/octet-stream";
 
-        if (mediaUrl.startsWith("data:")) {
-          const base64Data = mediaUrl.split(",")[1];
-          const originalMediaType = mediaUrl.split(";")[0].split(":")[1];
-          const byteCharacters = atob(base64Data);
-          const byteNumbers = new Array(byteCharacters.length);
-          for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-          }
-          const byteArray = new Uint8Array(byteNumbers);
-          mediaData = new Blob([byteArray], { type: originalMediaType });
-        } else if (mediaUrl.startsWith("blob:")) {
-          mediaData = mediaUrl;
-        } else {
-          throw new Error(
-            "Nieobsługiwany format URL mediów. Wspierane formaty: data: i blob:"
-          );
+        // Sprawdź czy dane są poprawne
+        if (!mediaData.data || !Array.isArray(mediaData.data)) {
+          throw new Error(`Nieprawidłowe dane mediów dla pliku ${i + 1}`);
         }
+
+        // Konwersja danych na Uint8Array
+        const binaryData = new Uint8Array(mediaData.data);
+        const base64Data = Buffer.from(binaryData).toString("base64");
+        const mediaBlob = new Blob([binaryData], { type: mediaType });
 
         // Upload do S3
         const baseUrl =
@@ -87,10 +79,9 @@ export async function POST(req: Request) {
           headers: {
             "Content-Type": "application/octet-stream",
             "X-File-Name": `${Date.now()}-file`,
-            "X-File-Type": mediaData.type,
-            ...(mediaUrl.startsWith("blob:") && { "X-Blob-Url": mediaUrl }),
+            "X-File-Type": mediaType,
           },
-          body: mediaData,
+          body: mediaBlob,
         });
 
         if (!uploadResponse.ok) {
@@ -102,15 +93,12 @@ export async function POST(req: Request) {
         const { url: s3Url } = await uploadResponse.json();
 
         // Określ typ mediów dla Twittera
-        const originalMediaType = mediaData.type;
         let mediaCategory = "tweet_image";
-        if (originalMediaType.startsWith("video/")) {
+        if (mediaType.startsWith("video/")) {
           mediaCategory = "tweet_video";
-        } else if (originalMediaType.startsWith("image/gif")) {
+        } else if (mediaType.startsWith("image/gif")) {
           mediaCategory = "tweet_gif";
         }
-
-        console.log("S3 URL:", s3Url);
 
         // Pobierz plik z S3
         const s3Response = await fetch(s3Url);
@@ -130,8 +118,9 @@ export async function POST(req: Request) {
         const initForm = new FormData();
         initForm.append("command", "INIT");
         initForm.append("total_bytes", s3Blob.size.toString());
-        initForm.append("media_type", originalMediaType);
+        initForm.append("media_type", mediaType);
         initForm.append("media_category", mediaCategory);
+        initForm.append("media_data", base64Data);
 
         // Step 1: INIT
         const initRequestData = {

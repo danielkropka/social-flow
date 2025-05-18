@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from "react";
+import React, { useRef } from "react";
 import { MAX_FILE_SIZE, ACCEPTED_FILE_TYPES } from "@/constants";
 import { MediaPreview } from "@/components/MediaPreview";
 import { usePostCreation } from "@/context/PostCreationContext";
@@ -12,10 +12,8 @@ import { useVideoProcessing } from "@/hooks/useVideoProcessing";
 export function FileUploadStep() {
   const {
     selectedFiles,
-    mediaUrls,
     setSelectedFiles,
     setCurrentStep,
-    setMediaUrls,
     setIsTextOnly,
     setThumbnailUrl,
     isTextOnly,
@@ -56,40 +54,6 @@ export function FileUploadStep() {
 
       setSelectedFiles(files);
 
-      // Konwertuj pliki na URLs
-      const urls = await Promise.all(
-        files.map(async (file) => {
-          if (file.type.startsWith("video/")) {
-            // Dla wideo używamy URL.createObjectURL
-            return URL.createObjectURL(file);
-          } else {
-            // Dla obrazów używamy base64
-            return new Promise<string>((resolve, reject) => {
-              const reader = new FileReader();
-              reader.onload = () => {
-                const base64 = reader.result as string;
-                if (!base64) {
-                  reject(
-                    new Error(`Nie udało się przeczytać pliku ${file.name}`)
-                  );
-                  return;
-                }
-                resolve(base64);
-              };
-              reader.onerror = () =>
-                reject(new Error(`Błąd podczas czytania pliku ${file.name}`));
-              reader.readAsDataURL(file);
-            });
-          }
-        })
-      );
-
-      if (urls.some((url) => !url)) {
-        throw new Error("Nie udało się przetworzyć wszystkich plików");
-      }
-
-      setMediaUrls(urls);
-
       // Obsługa wideo
       if (hasVideos) {
         await loadVideo(files[0]);
@@ -111,17 +75,6 @@ export function FileUploadStep() {
     }
   };
 
-  // Czyszczenie URL.createObjectURL przy odmontowaniu komponentu
-  useEffect(() => {
-    return () => {
-      mediaUrls.forEach((url) => {
-        if (url.startsWith("blob:")) {
-          URL.revokeObjectURL(url);
-        }
-      });
-    };
-  }, [mediaUrls]);
-
   const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     const files = Array.from(e.dataTransfer.files);
@@ -137,7 +90,6 @@ export function FileUploadStep() {
     setIsTextOnly(mode);
     if (mode) {
       setSelectedFiles([]);
-      setMediaUrls([]);
       setThumbnailUrl(null);
     }
   };
@@ -243,24 +195,20 @@ export function FileUploadStep() {
           </div>
         ) : (
           <div className="text-center">
-            {mediaUrls.length > 0 ? (
+            {selectedFiles.length > 0 ? (
               <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                {mediaUrls.map((url, index) => (
-                  <div key={url} className="aspect-square relative group">
+                {selectedFiles.map((file, index) => (
+                  <div key={index} className="aspect-square relative group">
                     <MediaPreview
-                      file={selectedFiles[index]}
-                      previewUrl={url}
+                      file={file}
                       className="w-full h-full object-cover rounded-lg shadow-sm group-hover:shadow-md transition-all duration-300"
                     />
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         const newFiles = [...selectedFiles];
-                        const newUrls = [...mediaUrls];
                         newFiles.splice(index, 1);
-                        newUrls.splice(index, 1);
                         setSelectedFiles(newFiles);
-                        setMediaUrls(newUrls);
                       }}
                       className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/70"
                     >

@@ -55,7 +55,6 @@ type PostFormValues = z.infer<typeof postSchema>;
 export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
   const {
     selectedFiles,
-    mediaUrls,
     selectedAccounts,
     postText,
     setPostText,
@@ -116,6 +115,22 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
       setPublishingStatus(initialStatus);
       setIsPublishingModalOpen(true);
 
+      // Logowanie danych przed wysłaniem
+      console.log("Dane do wysłania:", {
+        content: data.text,
+        mediaUrls: await Promise.all(
+          selectedFiles.map(async (file) => {
+            const arrayBuffer = await file.arrayBuffer();
+            return {
+              data: Array.from(new Uint8Array(arrayBuffer)),
+              type: file.type,
+            };
+          })
+        ),
+        accountIds: selectedAccounts.map((account) => account.id),
+        scheduledDate: data.scheduledDate,
+      });
+
       // Wysyłanie posta do API
       const response = await fetch("/api/posts", {
         method: "POST",
@@ -124,10 +139,15 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
         },
         body: JSON.stringify({
           content: data.text,
-          mediaUrls: mediaUrls.map((url) => ({
-            url,
-            thumbnailUrl: null,
-          })),
+          mediaUrls: await Promise.all(
+            selectedFiles.map(async (file) => {
+              const arrayBuffer = await file.arrayBuffer();
+              return {
+                data: Array.from(new Uint8Array(arrayBuffer)),
+                type: file.type,
+              };
+            })
+          ),
           accountIds: selectedAccounts.map((account) => account.id),
           scheduledDate: data.scheduledDate,
         }),
@@ -245,7 +265,7 @@ export function PostDetailsStep({ onPublish }: { onPublish: () => void }) {
               {selectedFiles.length} plików
             </span>
           </div>
-          <MediaCarousel files={selectedFiles} urls={mediaUrls} />
+          <MediaCarousel files={selectedFiles} />
         </div>
       )}
 
