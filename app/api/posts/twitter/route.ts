@@ -70,9 +70,14 @@ export async function POST(req: Request) {
           }
           const byteArray = new Uint8Array(byteNumbers);
           mediaData = new Blob([byteArray], { type: originalMediaType });
+        } else if (mediaUrl.startsWith("blob:")) {
+          mediaData = new Blob([mediaUrl], {
+            type: mediaUrls[i].type || "video/mp4",
+          });
         } else {
-          const response = await fetch(mediaUrl);
-          mediaData = await response.blob();
+          throw new Error(
+            "Nieobsługiwany format URL mediów. Wspierane formaty: data: i blob:"
+          );
         }
 
         // Upload do S3
