@@ -56,64 +56,6 @@ Social Flow to nowoczesna aplikacja webowa do zarządzania i publikowania treśc
 - Konto AWS (dla S3)
 - Konta deweloperskie na platformach społecznościowych
 
-## 🛠️ Instalacja
-
-1. Sklonuj repozytorium:
-
-```bash
-git clone https://github.com/twoje-konto/social-flow.git
-cd social-flow
-```
-
-2. Zainstaluj zależności:
-
-```bash
-npm install
-```
-
-3. Skonfiguruj zmienne środowiskowe:
-
-```bash
-cp .env.example .env.local
-```
-
-4. Uzupełnij wymagane zmienne w pliku `.env.local`:
-
-```env
-# Baza danych
-DATABASE_URL="postgresql://..."
-
-# AWS
-AWS_ACCESS_KEY_ID="..."
-AWS_SECRET_ACCESS_KEY="..."
-AWS_REGION="..."
-AWS_S3_BUCKET_NAME="..."
-
-# API Klucze
-TWITTER_API_KEY="..."
-TWITTER_API_SECRET="..."
-FACEBOOK_APP_ID="..."
-FACEBOOK_APP_SECRET="..."
-INSTAGRAM_APP_ID="..."
-INSTAGRAM_APP_SECRET="..."
-
-# NextAuth
-NEXTAUTH_SECRET="..."
-NEXTAUTH_URL="http://localhost:3000"
-```
-
-5. Wykonaj migracje bazy danych:
-
-```bash
-npx prisma migrate dev
-```
-
-6. Uruchom aplikację w trybie deweloperskim:
-
-```bash
-npm run dev
-```
-
 ## 🔧 Konfiguracja platform społecznościowych
 
 ### Twitter
@@ -160,7 +102,7 @@ Ten projekt jest udostępniany na licencji MIT. Szczegóły znajdziesz w pliku [
 
 ## 📞 Kontakt
 
-Masz pytania lub sugestie? Otwórz issue lub skontaktuj się z nami przez [email](mailto:twoj@email.com).
+Masz pytania lub sugestie? Otwórz issue.
 
 ## 🙏 Podziękowania
 
