@@ -218,14 +218,22 @@ export async function POST(req: Request) {
               `Błąd podczas uploadu chunka ${chunkIndex + 1} z ${totalChunks}`
             );
           }
+
+          const appendResponseText = await appendResponse.text();
+          console.log("Odpowiedź z uploadu chunka:", {
+            chunkIndex,
+            response: appendResponseText,
+            status: appendResponse.status,
+          });
         }
 
         // Step 3: FINALIZE
         const finalizeForm = new FormData();
+        finalizeForm.append("command", "FINALIZE");
         finalizeForm.append("media_id", media_id_string);
 
         const finalizeRequestData = {
-          url: "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE",
+          url: "https://upload.twitter.com/1.1/media/upload.json",
           method: "POST",
         };
 
