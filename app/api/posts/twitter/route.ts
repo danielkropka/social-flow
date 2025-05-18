@@ -223,6 +223,8 @@ export async function POST(req: Request) {
         // Step 3: FINALIZE
         const finalizeForm = new FormData();
         finalizeForm.append("media_id", media_id_string);
+        finalizeForm.append("media_type", originalMediaType);
+        finalizeForm.append("media_category", mediaCategory);
 
         const finalizeRequestData = {
           url: "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE",
@@ -237,6 +239,7 @@ export async function POST(req: Request) {
         console.log("Finalizacja uploadu:", {
           media_id: media_id_string,
           mediaType: originalMediaType,
+          mediaCategory: mediaCategory,
           auth: finalizeAuthorization,
           headers: oauth.toHeader(finalizeAuthorization),
         });
