@@ -110,7 +110,18 @@ export async function POST(req: Request) {
 
         // Pobierz plik z S3
         const s3Response = await fetch(s3Url);
+        if (!s3Response.ok) {
+          throw new Error(
+            `Nie udało się pobrać pliku z S3: ${s3Response.statusText}`
+          );
+        }
         const s3Blob = await s3Response.blob();
+
+        // Sprawdź rozmiar pliku
+        if (s3Blob.size > 512 * 1024 * 1024) {
+          // 512MB limit dla Twittera
+          throw new Error("Plik jest zbyt duży. Maksymalny rozmiar to 512MB.");
+        }
 
         const initForm = new FormData();
         initForm.append("command", "INIT");
@@ -129,133 +140,162 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
-        const initResponse = await fetch(initRequestData.url, {
-          method: initRequestData.method,
-          headers: {
-            Authorization: oauth.toHeader(initAuthorization).Authorization,
-          },
-          body: initForm,
-        });
+        try {
+          const initResponse = await fetch(initRequestData.url, {
+            method: initRequestData.method,
+            headers: {
+              Authorization: oauth.toHeader(initAuthorization).Authorization,
+            },
+            body: initForm,
+          });
 
-        if (!initResponse.ok) {
-          throw new Error("Błąd podczas inicjalizacji uploadu mediów");
-        }
+          if (!initResponse.ok) {
+            const errorText = await initResponse.text();
+            console.error("Błąd INIT:", errorText);
+            throw new Error(
+              `Błąd podczas inicjalizacji uploadu mediów: ${errorText}`
+            );
+          }
 
-        const initData = await initResponse.json();
-        const { media_id_string } = initData;
+          const initData = await initResponse.json();
+          const { media_id_string } = initData;
 
-        // Step 2: APPEND - dzielenie na chunki
-        const CHUNK_SIZE = 1024 * 1024; // 1MB
-        const totalChunks = Math.ceil(s3Blob.size / CHUNK_SIZE);
+          // Step 2: APPEND - dzielenie na chunki
+          const CHUNK_SIZE = 512 * 1024; // 512KB
+          const totalChunks = Math.ceil(s3Blob.size / CHUNK_SIZE);
 
-        for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
-          const start = chunkIndex * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, s3Blob.size);
-          const chunk = s3Blob.slice(start, end);
+          for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
+            try {
+              const start = chunkIndex * CHUNK_SIZE;
+              const end = Math.min(start + CHUNK_SIZE, s3Blob.size);
+              const chunk = s3Blob.slice(start, end);
 
-          const appendForm = new FormData();
-          appendForm.append("command", "APPEND");
-          appendForm.append("media_id", media_id_string);
-          appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media", chunk);
+              const appendForm = new FormData();
+              appendForm.append("command", "APPEND");
+              appendForm.append("media_id", media_id_string);
+              appendForm.append("segment_index", chunkIndex.toString());
+              appendForm.append("media", chunk);
 
-          const appendRequestData = {
+              const appendRequestData = {
+                url: "https://upload.twitter.com/1.1/media/upload.json",
+                method: "POST",
+              };
+
+              const appendAuthorization = oauth.authorize(appendRequestData, {
+                key: accessToken,
+                secret: accessTokenSecret,
+              });
+
+              const appendResponse = await fetch(appendRequestData.url, {
+                method: "POST",
+                headers: {
+                  Authorization:
+                    oauth.toHeader(appendAuthorization).Authorization,
+                },
+                body: appendForm,
+              });
+
+              if (!appendResponse.ok) {
+                const errorText = await appendResponse.text();
+                console.error(
+                  `Błąd podczas uploadu chunka ${chunkIndex + 1}:`,
+                  errorText
+                );
+                throw new Error(
+                  `Błąd podczas uploadu chunka ${
+                    chunkIndex + 1
+                  } z ${totalChunks}: ${errorText}`
+                );
+              }
+
+              // Dodajemy małe opóźnienie między chunkami
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            } catch (error) {
+              console.error(
+                `Błąd podczas przetwarzania chunka ${chunkIndex + 1}:`,
+                error
+              );
+              throw error;
+            }
+          }
+
+          // Step 3: FINALIZE
+          const finalizeForm = new FormData();
+          finalizeForm.append("command", "FINALIZE");
+          finalizeForm.append("media_id", media_id_string);
+
+          const finalizeRequestData = {
             url: "https://upload.twitter.com/1.1/media/upload.json",
             method: "POST",
           };
 
-          const appendAuthorization = oauth.authorize(appendRequestData, {
+          const finalizeAuthorization = oauth.authorize(finalizeRequestData, {
             key: accessToken,
             secret: accessTokenSecret,
           });
 
-          const appendResponse = await fetch(appendRequestData.url, {
+          const finalizeResponse = await fetch(finalizeRequestData.url, {
             method: "POST",
             headers: {
-              Authorization: oauth.toHeader(appendAuthorization).Authorization,
+              Authorization: oauth.toHeader(finalizeAuthorization)
+                .Authorization,
             },
-            body: appendForm,
+            body: finalizeForm,
           });
 
-          if (!appendResponse.ok) {
-            throw new Error(
-              `Błąd podczas uploadu chunka ${chunkIndex + 1} z ${totalChunks}`
-            );
+          if (!finalizeResponse.ok) {
+            throw new Error("Błąd podczas finalizacji uploadu mediów");
           }
-        }
 
-        // Step 3: FINALIZE
-        const finalizeForm = new FormData();
-        finalizeForm.append("command", "FINALIZE");
-        finalizeForm.append("media_id", media_id_string);
+          const finalizeData = await finalizeResponse.json();
 
-        const finalizeRequestData = {
-          url: "https://upload.twitter.com/1.1/media/upload.json",
-          method: "POST",
-        };
+          // Step 4: STATUS (jeśli potrzebne)
+          if (finalizeData.processing_info) {
+            let processingComplete = false;
+            while (!processingComplete) {
+              await new Promise((resolve) =>
+                setTimeout(
+                  resolve,
+                  finalizeData.processing_info.check_after_secs * 1000
+                )
+              );
 
-        const finalizeAuthorization = oauth.authorize(finalizeRequestData, {
-          key: accessToken,
-          secret: accessTokenSecret,
-        });
+              const statusRequestData = {
+                url: `https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=${media_id_string}`,
+                method: "GET",
+              };
 
-        const finalizeResponse = await fetch(finalizeRequestData.url, {
-          method: "POST",
-          headers: {
-            Authorization: oauth.toHeader(finalizeAuthorization).Authorization,
-          },
-          body: finalizeForm,
-        });
+              const statusAuthorization = oauth.authorize(statusRequestData, {
+                key: accessToken,
+                secret: accessTokenSecret,
+              });
 
-        if (!finalizeResponse.ok) {
-          throw new Error("Błąd podczas finalizacji uploadu mediów");
-        }
+              const statusResponse = await fetch(statusRequestData.url, {
+                headers: {
+                  Authorization:
+                    oauth.toHeader(statusAuthorization).Authorization,
+                },
+              });
 
-        const finalizeData = await finalizeResponse.json();
+              if (!statusResponse.ok) {
+                throw new Error("Błąd podczas sprawdzania statusu mediów");
+              }
 
-        // Step 4: STATUS (jeśli potrzebne)
-        if (finalizeData.processing_info) {
-          let processingComplete = false;
-          while (!processingComplete) {
-            await new Promise((resolve) =>
-              setTimeout(
-                resolve,
-                finalizeData.processing_info.check_after_secs * 1000
-              )
-            );
+              const statusData = await statusResponse.json();
 
-            const statusRequestData = {
-              url: `https://upload.twitter.com/1.1/media/upload.json?command=STATUS&media_id=${media_id_string}`,
-              method: "GET",
-            };
-
-            const statusAuthorization = oauth.authorize(statusRequestData, {
-              key: accessToken,
-              secret: accessTokenSecret,
-            });
-
-            const statusResponse = await fetch(statusRequestData.url, {
-              headers: {
-                Authorization:
-                  oauth.toHeader(statusAuthorization).Authorization,
-              },
-            });
-
-            if (!statusResponse.ok) {
-              throw new Error("Błąd podczas sprawdzania statusu mediów");
-            }
-
-            const statusData = await statusResponse.json();
-
-            if (statusData.processing_info.state === "succeeded") {
-              processingComplete = true;
-            } else if (statusData.processing_info.state === "failed") {
-              throw new Error("Przetwarzanie mediów nie powiodło się");
+              if (statusData.processing_info.state === "succeeded") {
+                processingComplete = true;
+              } else if (statusData.processing_info.state === "failed") {
+                throw new Error("Przetwarzanie mediów nie powiodło się");
+              }
             }
           }
-        }
 
-        mediaIds.push(media_id_string);
+          mediaIds.push(media_id_string);
+        } catch (error) {
+          console.error("Error while processing INIT:", error);
+          throw error;
+        }
       }
     }
 
