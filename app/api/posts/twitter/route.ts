@@ -71,9 +71,12 @@ export async function POST(req: Request) {
           const byteArray = new Uint8Array(byteNumbers);
           mediaData = new Blob([byteArray], { type: originalMediaType });
         } else if (mediaUrl.startsWith("blob:")) {
-          mediaData = new Blob([mediaUrl], {
-            type: mediaUrls[i].type || "video/mp4",
-          });
+          // Dla URL-i blob, najpierw pobieramy dane
+          const response = await fetch(mediaUrl);
+          if (!response.ok) {
+            throw new Error("Nie udało się pobrać pliku z URL blob");
+          }
+          mediaData = await response.blob();
         } else {
           throw new Error(
             "Nieobsługiwany format URL mediów. Wspierane formaty: data: i blob:"
