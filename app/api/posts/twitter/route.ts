@@ -222,12 +222,10 @@ export async function POST(req: Request) {
 
         // Step 3: FINALIZE
         const finalizeForm = new FormData();
-        finalizeForm.append("command", "FINALIZE");
         finalizeForm.append("media_id", media_id_string);
-        finalizeForm.append("media_type", originalMediaType);
 
         const finalizeRequestData = {
-          url: "https://upload.twitter.com/1.1/media/upload.json",
+          url: "https://upload.twitter.com/1.1/media/upload.json?command=FINALIZE",
           method: "POST",
         };
 
@@ -247,7 +245,6 @@ export async function POST(req: Request) {
           method: "POST",
           headers: {
             Authorization: oauth.toHeader(finalizeAuthorization).Authorization,
-            "Content-Type": "multipart/form-data",
           },
           body: finalizeForm,
         });
