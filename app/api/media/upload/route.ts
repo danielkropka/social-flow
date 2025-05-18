@@ -11,24 +11,17 @@ const s3 = new S3Client({
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
-    const file = formData.get("file") as File;
-    if (!file) {
-      return NextResponse.json(
-        { error: "Brak pliku w żądaniu" },
-        { status: 400 }
-      );
-    }
+    const fileName = req.headers.get("X-File-Name") || `${Date.now()}-file`;
+    const contentType =
+      req.headers.get("X-File-Type") || "application/octet-stream";
 
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const fileName = `${Date.now()}-${file.name}`;
+    const buffer = Buffer.from(await req.arrayBuffer());
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_S3_BUCKET_NAME!,
       Key: fileName,
       Body: buffer,
-      ContentType: file.type,
+      ContentType: contentType,
       ACL: "public-read",
     });
 
