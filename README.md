@@ -67,20 +67,6 @@ Social Flow to nowoczesna aplikacja webowa do zarządzania i publikowania treśc
    - Zaplanuj publikację (opcjonalnie)
 4. Opublikuj lub zaplanuj post
 
-## 🤝 Współpraca
-
-Zachęcamy do współpracy! Jeśli chcesz przyczynić się do rozwoju projektu:
-
-1. Sforkuj repozytorium
-2. Utwórz branch dla swojej funkcji (`git checkout -b feature/amazing-feature`)
-3. Zatwierdź zmiany (`git commit -m 'Add amazing feature'`)
-4. Wypushuj do brancha (`git push origin feature/amazing-feature`)
-5. Otwórz Pull Request
-
-## 📄 Licencja
-
-Ten projekt jest udostępniany na licencji MIT. Szczegóły znajdziesz w pliku [LICENSE](LICENSE).
-
 ## 📞 Kontakt
 
 Masz pytania lub sugestie? Otwórz issue.
