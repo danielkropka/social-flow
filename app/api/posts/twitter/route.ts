@@ -60,8 +60,6 @@ export async function POST(req: Request) {
         const mediaUrl = mediaUrls[i].url;
         let mediaData: Blob;
 
-        console.log("mediaUrl", mediaUrl);
-
         if (mediaUrl.startsWith("data:")) {
           const base64Data = mediaUrl.split(",")[1];
           const originalMediaType = mediaUrl.split(";")[0].split(":")[1];
@@ -72,9 +70,14 @@ export async function POST(req: Request) {
           }
           const byteArray = new Uint8Array(byteNumbers);
           mediaData = new Blob([byteArray], { type: originalMediaType });
+        } else if (mediaUrl.startsWith("blob:")) {
+          mediaData = new Blob([mediaUrl], {
+            type: mediaUrls[i].type || "video/mp4",
+          });
         } else {
-          const response = await fetch(mediaUrl);
-          mediaData = await response.blob();
+          throw new Error(
+            "Nieobsługiwany format URL mediów. Wspierane formaty: data: i blob:"
+          );
         }
 
         // Upload do S3
