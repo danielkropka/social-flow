@@ -16,7 +16,6 @@ interface ConnectedAccountWithDetails extends ConnectedAccount {
 export function AccountSelectionStep() {
   const {
     selectedFiles,
-    mediaUrls,
     selectedAccounts,
     setSelectedAccounts,
     setCurrentStep,
@@ -162,7 +161,7 @@ export function AccountSelectionStep() {
           <p className="text-sm font-medium text-gray-700 mb-3">
             Wybrane pliki:
           </p>
-          <MediaCarousel files={selectedFiles} urls={mediaUrls} />
+          <MediaCarousel files={selectedFiles} />
         </div>
       )}
 
