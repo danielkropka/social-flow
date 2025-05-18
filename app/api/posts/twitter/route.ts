@@ -70,18 +70,22 @@ export async function POST(req: Request) {
         }
 
         // Upload do S3
-        const formData = new FormData();
-        formData.append("file", mediaData);
-
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL ||
           `http://${req.headers.get("host")}`;
         const uploadResponse = await fetch(`${baseUrl}/api/media/upload`, {
           method: "POST",
-          body: formData,
+          headers: {
+            "Content-Type": "application/octet-stream",
+            "X-File-Name": `${Date.now()}-file`,
+            "X-File-Type": mediaData.type,
+          },
+          body: mediaData,
         });
 
         if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          console.error("Błąd S3:", errorText);
           throw new Error("Błąd podczas uploadu do S3");
         }
 
