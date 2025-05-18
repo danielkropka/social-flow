@@ -69,6 +69,21 @@ export async function POST(req: Request) {
           mediaData = await response.blob();
         }
 
+        // Upload do S3
+        const formData = new FormData();
+        formData.append("file", mediaData);
+
+        const uploadResponse = await fetch("/api/media/upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!uploadResponse.ok) {
+          throw new Error("Błąd podczas uploadu do S3");
+        }
+
+        const { url: s3Url } = await uploadResponse.json();
+
         // Określ typ mediów dla Twittera
         const originalMediaType = mediaData.type;
         let mediaCategory = "tweet_image";
@@ -78,15 +93,15 @@ export async function POST(req: Request) {
           mediaCategory = "tweet_gif";
         }
 
-        console.log("Typ mediów:", {
-          originalMediaType,
-          twitterMediaType: mediaCategory,
-          size: mediaData.size,
-        });
+        console.log("S3 URL:", s3Url);
+
+        // Pobierz plik z S3
+        const s3Response = await fetch(s3Url);
+        const s3Blob = await s3Response.blob();
 
         const initForm = new FormData();
         initForm.append("command", "INIT");
-        initForm.append("total_bytes", mediaData.size.toString());
+        initForm.append("total_bytes", s3Blob.size.toString());
         initForm.append("media_type", originalMediaType);
         initForm.append("media_category", mediaCategory);
 
@@ -101,19 +116,6 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
-        console.log("Inicjalizacja uploadu:", {
-          size: mediaData.size,
-          type: originalMediaType,
-          auth: initAuthorization,
-          headers: oauth.toHeader(initAuthorization),
-          formData: {
-            command: "INIT",
-            total_bytes: mediaData.size.toString(),
-            media_type: originalMediaType,
-            media_category: mediaCategory,
-          },
-        });
-
         const initResponse = await fetch(initRequestData.url, {
           method: initRequestData.method,
           headers: {
@@ -123,61 +125,26 @@ export async function POST(req: Request) {
         });
 
         if (!initResponse.ok) {
-          const errorData = await initResponse.text();
-          console.error("Odpowiedź z API podczas inicjalizacji:", {
-            status: initResponse.status,
-            statusText: initResponse.statusText,
-            headers: Object.fromEntries(initResponse.headers.entries()),
-            body: errorData,
-            requestData: {
-              url: initRequestData.url,
-              method: initRequestData.method,
-              headers: {
-                Authorization: oauth.toHeader(initAuthorization).Authorization,
-              },
-              formData: {
-                command: "INIT",
-                total_bytes: mediaData.size.toString(),
-                media_type: originalMediaType,
-                media_category: mediaCategory,
-              },
-            },
-          });
-          throw new Error(
-            `Błąd podczas inicjalizacji uploadu mediów: ${initResponse.status} ${initResponse.statusText}`
-          );
+          throw new Error("Błąd podczas inicjalizacji uploadu mediów");
         }
 
         const initData = await initResponse.json();
-        console.log("Odpowiedź z INIT:", initData);
-
-        if (!initData.media_id_string) {
-          throw new Error("Brak media_id_string w odpowiedzi z API");
-        }
-
         const { media_id_string } = initData;
 
         // Step 2: APPEND - dzielenie na chunki
         const CHUNK_SIZE = 1024 * 1024; // 1MB
-        const totalChunks = Math.ceil(mediaData.size / CHUNK_SIZE);
+        const totalChunks = Math.ceil(s3Blob.size / CHUNK_SIZE);
 
         for (let chunkIndex = 0; chunkIndex < totalChunks; chunkIndex++) {
           const start = chunkIndex * CHUNK_SIZE;
-          const end = Math.min(start + CHUNK_SIZE, mediaData.size);
-          const chunk = mediaData.slice(start, end);
-
-          // Konwertuj chunk na ArrayBuffer
-          const chunkBuffer = await chunk.arrayBuffer();
+          const end = Math.min(start + CHUNK_SIZE, s3Blob.size);
+          const chunk = s3Blob.slice(start, end);
 
           const appendForm = new FormData();
           appendForm.append("command", "APPEND");
           appendForm.append("media_id", media_id_string);
           appendForm.append("segment_index", chunkIndex.toString());
-          appendForm.append("media_type", originalMediaType);
-          appendForm.append(
-            "media",
-            new Blob([chunkBuffer], { type: originalMediaType })
-          );
+          appendForm.append("media", chunk);
 
           const appendRequestData = {
             url: "https://upload.twitter.com/1.1/media/upload.json",
@@ -189,15 +156,6 @@ export async function POST(req: Request) {
             secret: accessTokenSecret,
           });
 
-          console.log("Upload chunka:", {
-            chunkIndex,
-            totalChunks,
-            chunkSize: chunk.size,
-            mediaType: originalMediaType,
-            auth: appendAuthorization,
-            headers: oauth.toHeader(appendAuthorization),
-          });
-
           const appendResponse = await fetch(appendRequestData.url, {
             method: "POST",
             headers: {
@@ -207,24 +165,10 @@ export async function POST(req: Request) {
           });
 
           if (!appendResponse.ok) {
-            const errorData = await appendResponse.text();
-            console.error("Odpowiedź z API podczas uploadu chunka:", {
-              status: appendResponse.status,
-              statusText: appendResponse.statusText,
-              headers: Object.fromEntries(appendResponse.headers.entries()),
-              body: errorData,
-            });
             throw new Error(
               `Błąd podczas uploadu chunka ${chunkIndex + 1} z ${totalChunks}`
             );
           }
-
-          const appendResponseText = await appendResponse.text();
-          console.log("Odpowiedź z uploadu chunka:", {
-            chunkIndex,
-            response: appendResponseText,
-            status: appendResponse.status,
-          });
         }
 
         // Step 3: FINALIZE
@@ -242,12 +186,6 @@ export async function POST(req: Request) {
           secret: accessTokenSecret,
         });
 
-        console.log("Finalizacja uploadu:", {
-          media_id: media_id_string,
-          auth: finalizeAuthorization,
-          headers: oauth.toHeader(finalizeAuthorization),
-        });
-
         const finalizeResponse = await fetch(finalizeRequestData.url, {
           method: "POST",
           headers: {
@@ -257,18 +195,10 @@ export async function POST(req: Request) {
         });
 
         if (!finalizeResponse.ok) {
-          const errorData = await finalizeResponse.text();
-          console.error("Odpowiedź z API podczas finalizacji:", {
-            status: finalizeResponse.status,
-            statusText: finalizeResponse.statusText,
-            headers: Object.fromEntries(finalizeResponse.headers.entries()),
-            body: errorData,
-          });
           throw new Error("Błąd podczas finalizacji uploadu mediów");
         }
 
         const finalizeData = await finalizeResponse.json();
-        console.log("Odpowiedź z FINALIZE:", finalizeData);
 
         // Step 4: STATUS (jeśli potrzebne)
         if (finalizeData.processing_info) {
@@ -291,12 +221,6 @@ export async function POST(req: Request) {
               secret: accessTokenSecret,
             });
 
-            console.log("Sprawdzanie statusu:", {
-              media_id: media_id_string,
-              auth: statusAuthorization,
-              headers: oauth.toHeader(statusAuthorization),
-            });
-
             const statusResponse = await fetch(statusRequestData.url, {
               headers: {
                 Authorization:
@@ -305,18 +229,10 @@ export async function POST(req: Request) {
             });
 
             if (!statusResponse.ok) {
-              const errorData = await statusResponse.text();
-              console.error("Odpowiedź z API podczas sprawdzania statusu:", {
-                status: statusResponse.status,
-                statusText: statusResponse.statusText,
-                headers: Object.fromEntries(statusResponse.headers.entries()),
-                body: errorData,
-              });
               throw new Error("Błąd podczas sprawdzania statusu mediów");
             }
 
             const statusData = await statusResponse.json();
-            console.log("Odpowiedź ze STATUS:", statusData);
 
             if (statusData.processing_info.state === "succeeded") {
               processingComplete = true;
