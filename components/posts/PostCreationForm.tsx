@@ -31,7 +31,7 @@ import { pl } from "date-fns/locale";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { toast } from "sonner";
 import { PublishingModal } from "@/components/PublishingModal";
 import {
@@ -181,13 +181,16 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
   });
 
   useEffect(() => {
-    if (postText.default) {
-      form.setValue("text", postText.default);
-    }
-    if (scheduledDate) {
-      form.setValue("scheduledDate", scheduledDate);
-    }
-  }, [postText.default, scheduledDate, form]);
+    const subscription = form.watch((value) => {
+      if (value.text !== undefined) {
+        setPostText({ default: value.text });
+      }
+      if (value.scheduledDate !== undefined) {
+        setScheduledDate(value.scheduledDate);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form]);
 
   useEffect(() => {
     const fetchAccounts = async () => {
@@ -219,9 +222,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
   const onSubmit = async (data: PostFormValues) => {
     try {
       setIsPublishing(true);
-      setPostText({ default: data.text });
       setContent(data.text);
-      setScheduledDate(data.scheduledDate);
 
       const initialStatus = selectedAccounts.map((account) => ({
         accountId: account.id,
@@ -233,6 +234,23 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
       setPublishingStatus(initialStatus);
       setIsPublishingModalOpen(true);
 
+      // Bezpieczna konwersja plików
+      const mediaUrls = await Promise.all(
+        selectedFiles.map(async (file) => {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            return {
+              data: Array.from(new Uint8Array(arrayBuffer)),
+              type: file.type,
+              name: file.name,
+            };
+          } catch (error) {
+            console.error("Błąd podczas przetwarzania pliku:", error);
+            throw new Error(`Nie udało się przetworzyć pliku ${file.name}`);
+          }
+        })
+      );
+
       const response = await fetch("/api/posts", {
         method: "POST",
         headers: {
@@ -240,23 +258,14 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         },
         body: JSON.stringify({
           content: data.text,
-          mediaUrls: await Promise.all(
-            selectedFiles.map(async (file) => {
-              const arrayBuffer = await file.arrayBuffer();
-              return {
-                data: Array.from(new Uint8Array(arrayBuffer)),
-                type: file.type,
-              };
-            })
-          ),
+          mediaUrls,
           accountIds: selectedAccounts.map((account) => account.id),
           scheduledDate: data.scheduledDate,
         }),
       });
 
-      const result = await response.json();
-
       if (!response.ok) {
+        const result = await response.json();
         const errorMessage =
           result.details ||
           result.error ||
@@ -273,6 +282,8 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         toast.error(errorMessage);
         return;
       }
+
+      const result = await response.json();
 
       if (result.results) {
         setPublishingStatus((prev) =>
@@ -298,6 +309,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
       resetState();
       onPublish();
     } catch (error) {
+      console.error("Błąd podczas publikacji:", error);
       const errorMessage =
         error instanceof Error ? error.message : "Nieznany błąd";
 
