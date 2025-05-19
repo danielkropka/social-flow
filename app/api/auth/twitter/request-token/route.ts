@@ -11,7 +11,7 @@ const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const REDIRECT_URI = process.env.TWITTER_REDIRECT_URI!;
 
 export async function GET(req: Request) {
-  return withRateLimit(async (req: Request) => {
+  return withRateLimit(async () => {
     const session = await getAuthSession();
 
     if (!session?.user?.id) {

@@ -6,7 +6,7 @@ import { withRateLimit } from "@/middleware/rateLimit";
 const prisma = new PrismaClient();
 
 export async function GET(req: Request) {
-  return withRateLimit(async (req: Request) => {
+  return withRateLimit(async () => {
     try {
       const session = await getAuthSession();
 
