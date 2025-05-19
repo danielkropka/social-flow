@@ -7,7 +7,7 @@ import PlatformsSection from "./PlatformsSection";
 import ReviewsSection from "./ReviewsSection";
 import FaqSection from "./FaqSection";
 import Link from "next/link";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(true);

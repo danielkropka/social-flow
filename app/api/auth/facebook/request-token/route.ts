@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import crypto from "crypto";
-import { getAuthSession } from "@/lib/auth";
+import { getAuthSession } from "@/lib/config/auth";
 
 export async function GET() {
   try {

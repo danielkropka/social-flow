@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
-import { db } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/config/auth";
+import { db } from "@/lib/config/prisma";
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;

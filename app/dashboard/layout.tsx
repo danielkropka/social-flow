@@ -6,7 +6,6 @@ import { DashboardHeader } from "@/components/DashboardHeader";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
 import PostsContent from "@/components/PostsContent";
-import { Card, CardContent } from "@/components/ui/card";
 import AccountsContent from "@/components/AccountsContent";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
@@ -36,10 +35,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
           onTabChange={setActiveTab}
           activeTab={activeTab}
         />
-        <main className="flex-1 overflow-y-auto p-4 bg-gray-50">
-          <Card className="max-w-6xl mx-auto">
-            <CardContent>{renderContent()}</CardContent>
-          </Card>
+        <main className="flex-1 overflow-y-auto p-6 bg-gray-50">
+          <div className="mx-auto">{renderContent()}</div>
         </main>
       </div>
     </div>

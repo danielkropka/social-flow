@@ -1,6 +1,6 @@
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/config/prisma";
 import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
+import { authOptions } from "@/lib/config/auth";
 import { NextResponse } from "next/server";
 import { MediaType } from "@prisma/client";
 

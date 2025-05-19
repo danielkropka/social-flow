@@ -1,4 +1,4 @@
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/config/prisma";
 import { PlanInterval } from "@prisma/client";
 import Stripe from "stripe";
 

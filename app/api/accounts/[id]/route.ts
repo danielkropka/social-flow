@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ConnectedAccount } from "@prisma/client";
-import { getAuthSession } from "@/lib/auth";
-import { db } from "@/lib/prisma";
+import { getAuthSession } from "@/lib/config/auth";
+import { db } from "@/lib/config/prisma";
 
 // Funkcja do odświeżania tokenu Instagram
 async function refreshInstagramToken(accessToken: string) {

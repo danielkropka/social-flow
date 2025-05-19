@@ -1,32 +1,19 @@
 "use client";
 
-import { PostDetailsStep } from "@/components/steps/PostDetailsStep";
 import { usePostCreation } from "@/context/PostCreationContext";
-import { FileUploadStep } from "@/components/steps/FileUploadStep";
-import { StepsProgress } from "@/components/StepsProgress";
-import { AccountSelectionStep } from "@/components/steps/AccountSelectionStep";
+import { PostCreationForm } from "@/components/posts/PostCreationForm";
 import { toast } from "sonner";
+import { PostTypeSelectionStep } from "@/components/posts/PostTypeSelectionStep";
 
 export default function DashboardContent() {
   const { currentStep, scheduledDate } = usePostCreation();
 
-  const steps = [
-    { number: 1, title: "Wybierz plik" },
-    { number: 2, title: "Wybierz konta" },
-    { number: 3, title: "Szczegóły" },
-  ];
-
   return (
     <div>
-      {currentStep !== 1 && (
-        <StepsProgress steps={steps} currentStep={currentStep} />
-      )}
-      {currentStep === 1 && <FileUploadStep />}
+      {currentStep === 1 && <PostTypeSelectionStep />}
 
-      {currentStep === 2 && <AccountSelectionStep />}
-
-      {currentStep === 3 && (
-        <PostDetailsStep
+      {currentStep === 2 && (
+        <PostCreationForm
           onPublish={() => {
             if (scheduledDate) {
               toast.success(

@@ -26,7 +26,7 @@ interface ConnectedAccountWithDetails extends ConnectedAccount {
   isLoading?: boolean;
 }
 
-export default function ConnectAccounts() {
+export default function AccountsContent() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<ConnectedAccountWithDetails[]>([]);
   const [showDeletionModal, setShowDeletionModal] = useState(false);
@@ -149,10 +149,10 @@ export default function ConnectAccounts() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 p-6">
+    <div className="space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Połączone konta</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold text-gray-900">Połączone konta</h1>
+        <p className="text-gray-600">
           Zarządzaj swoimi kontami społecznościowymi i planuj posty
         </p>
       </div>
@@ -161,16 +161,16 @@ export default function ConnectAccounts() {
         {["facebook", "instagram", "twitter", "tiktok"].map((platform) => (
           <div
             key={platform}
-            className="flex flex-col gap-4 p-6 border border-border rounded-xl shadow-sm bg-card hover:shadow-md transition-shadow"
+            className="flex flex-col gap-4 p-6 border border-gray-100 rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow"
           >
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
               <div className="flex items-center gap-3">
                 {getPlatformIcon(platform.toUpperCase() as Provider)}
                 <div className="flex flex-col">
-                  <span className="font-semibold text-lg capitalize">
+                  <span className="font-semibold text-lg capitalize text-gray-900">
                     {platform}
                   </span>
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-gray-500">
                     {getConnectedAccounts(platform).length} połączonych kont
                   </span>
                 </div>
@@ -185,10 +185,10 @@ export default function ConnectAccounts() {
               </Button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
               {getConnectedAccounts(platform).length === 0 ? (
-                <div className="col-span-full flex items-center justify-center p-8 bg-muted/50 rounded-lg border border-dashed">
-                  <p className="text-muted-foreground text-center">
+                <div className="col-span-full flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
+                  <p className="text-gray-500 text-center">
                     Brak połączonych kont. Kliknij &quot;Dodaj konto&quot;, aby
                     rozpocząć.
                   </p>
@@ -197,14 +197,14 @@ export default function ConnectAccounts() {
                 getConnectedAccounts(platform).map((account) => (
                   <div
                     key={account.id}
-                    className="flex items-center justify-between gap-3 bg-muted/30 p-4 rounded-lg border hover:bg-muted/50 transition-colors"
+                    className="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       {account.isLoading && (
-                        <Loader2 className="animate-spin h-4 w-4 text-primary" />
+                        <Loader2 className="animate-spin h-4 w-4 text-blue-500" />
                       )}
                       {account.profileImage && (
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-border">
+                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
                           <Image
                             src={account.profileImage}
                             alt={account.name}
@@ -213,7 +213,7 @@ export default function ConnectAccounts() {
                           />
                         </div>
                       )}
-                      <span className="text-sm font-medium truncate">
+                      <span className="text-sm font-medium text-gray-900 truncate">
                         {account.name}
                       </span>
                     </div>
@@ -222,7 +222,7 @@ export default function ConnectAccounts() {
                         setAccountToRemove(account);
                         setShowDeletionModal(true);
                       }}
-                      className="text-destructive hover:text-destructive/80 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-destructive/10 rounded-full transition-colors"
+                      className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-red-50 rounded-full transition-colors"
                       disabled={account.isLoading}
                       title="Usuń konto"
                     >

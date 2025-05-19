@@ -1,7 +1,7 @@
-import { getAuthSession } from "@/lib/auth";
+import { getAuthSession } from "@/lib/config/auth";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/prisma";
-import { decryptToken } from "@/lib/utils";
+import { db } from "@/lib/config/prisma";
+import { decryptToken } from "@/lib/utils/utils";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 

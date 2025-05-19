@@ -1,10 +1,7 @@
 import { useState } from "react";
 import { ImagePreviewModal } from "./ImagePreviewModal";
-import { VideoThumbnailModal } from "./VideoThumbnailModal";
-import { usePostCreation } from "@/context/PostCreationContext";
-import { Button } from "./ui/button";
-import { ImageIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
+import Image from "next/image";
 
 interface MediaPreviewProps {
   file: File;
@@ -12,9 +9,7 @@ interface MediaPreviewProps {
 }
 
 export function MediaPreview({ file, className }: MediaPreviewProps) {
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [videoError, setVideoError] = useState(false);
-  const { thumbnailUrl } = usePostCreation();
 
   if (file.type.startsWith("video/")) {
     return (
@@ -24,40 +19,18 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
             <p className="text-gray-500 text-sm">Błąd odtwarzania wideo</p>
           </div>
         ) : (
-          <>
-            <div className="relative w-full h-full flex items-center justify-center">
-              <video
-                src={URL.createObjectURL(file)}
-                className={cn("max-h-[70vh] h-auto rounded-lg", className)}
-                onError={() => setVideoError(true)}
-                controls
-                loop
-                muted
-                playsInline
-                style={{ width: "fit-content" }}
-              />
-              {thumbnailUrl && (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  className="absolute bottom-2 right-2 bg-white/90 hover:bg-white"
-                  onClick={() => setIsModalOpen(true)}
-                >
-                  <ImageIcon className="h-4 w-4 mr-2" />
-                  Zmień miniaturkę
-                </Button>
-              )}
-            </div>
-            {isModalOpen && (
-              <VideoThumbnailModal
-                isOpen={isModalOpen}
-                videoFile={file}
-                currentThumbnail={thumbnailUrl || ""}
-                onClose={() => setIsModalOpen(false)}
-              />
-            )}
-          </>
+          <div className="relative w-full h-full flex items-center justify-center">
+            <video
+              src={URL.createObjectURL(file)}
+              className={cn("max-h-[70vh] h-auto rounded-lg", className)}
+              onError={() => setVideoError(true)}
+              controls
+              loop
+              muted
+              playsInline
+              style={{ width: "fit-content" }}
+            />
+          </div>
         )}
       </div>
     );
@@ -66,9 +39,11 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
   return (
     <ImagePreviewModal file={file}>
       <div className="relative w-full h-full">
-        <img
+        <Image
           src={URL.createObjectURL(file)}
           alt="Podgląd"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className={cn("w-full h-full object-cover rounded-lg", className)}
         />
       </div>

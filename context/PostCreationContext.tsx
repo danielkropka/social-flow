@@ -1,6 +1,13 @@
 "use client";
 
-import { createContext, useContext, useReducer, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useReducer,
+  ReactNode,
+  useCallback,
+  useMemo,
+} from "react";
 
 interface PostText {
   default: string;
@@ -24,7 +31,6 @@ interface PostCreationState {
   currentStep: number;
   content: string;
   isTextOnly: boolean;
-  thumbnailUrl: string | null;
 }
 
 type PostCreationAction =
@@ -35,7 +41,6 @@ type PostCreationAction =
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_CONTENT"; payload: string }
   | { type: "SET_IS_TEXT_ONLY"; payload: boolean }
-  | { type: "SET_THUMBNAIL_URL"; payload: string | null }
   | { type: "RESET_STATE" };
 
 const initialState: PostCreationState = {
@@ -48,7 +53,6 @@ const initialState: PostCreationState = {
   currentStep: 1,
   content: "",
   isTextOnly: false,
-  thumbnailUrl: null,
 };
 
 function postCreationReducer(
@@ -70,8 +74,6 @@ function postCreationReducer(
       return { ...state, content: action.payload };
     case "SET_IS_TEXT_ONLY":
       return { ...state, isTextOnly: action.payload };
-    case "SET_THUMBNAIL_URL":
-      return { ...state, thumbnailUrl: action.payload };
     case "RESET_STATE":
       return {
         selectedFiles: [],
@@ -83,7 +85,6 @@ function postCreationReducer(
         currentStep: 1,
         content: "",
         isTextOnly: false,
-        thumbnailUrl: null,
       };
     default:
       return state;
@@ -99,7 +100,6 @@ interface PostCreationContextType {
   setCurrentStep: (step: number) => void;
   setContent: (content: string) => void;
   setIsTextOnly: (value: boolean) => void;
-  setThumbnailUrl: (url: string | null) => void;
   resetState: () => void;
 }
 
@@ -108,40 +108,64 @@ const PostCreationContext = createContext<PostCreationContextType | undefined>(
 );
 
 export function PostCreationProvider({ children }: { children: ReactNode }) {
-  const [state, dispatch] = useReducer(postCreationReducer, {
-    selectedFiles: [],
-    selectedAccounts: [],
-    postText: {
-      default: "",
-    },
-    scheduledDate: undefined,
-    currentStep: 1,
-    content: "",
-    isTextOnly: false,
-    thumbnailUrl: null,
-  });
+  const [state, dispatch] = useReducer(postCreationReducer, initialState);
 
-  const value = {
-    state,
-    ...state,
-    setSelectedFiles: (files: File[]) =>
-      dispatch({ type: "SET_SELECTED_FILES", payload: files }),
-    setSelectedAccounts: (accounts: SocialAccount[]) =>
-      dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts }),
-    setPostText: (text: PostText) =>
-      dispatch({ type: "SET_POST_TEXT", payload: text }),
-    setScheduledDate: (date: Date | undefined) =>
-      dispatch({ type: "SET_SCHEDULED_DATE", payload: date }),
-    setCurrentStep: (step: number) =>
-      dispatch({ type: "SET_CURRENT_STEP", payload: step }),
-    setContent: (content: string) =>
-      dispatch({ type: "SET_CONTENT", payload: content }),
-    setIsTextOnly: (isTextOnly: boolean) =>
-      dispatch({ type: "SET_IS_TEXT_ONLY", payload: isTextOnly }),
-    setThumbnailUrl: (url: string | null) =>
-      dispatch({ type: "SET_THUMBNAIL_URL", payload: url }),
-    resetState: () => dispatch({ type: "RESET_STATE" }),
-  };
+  const setSelectedFiles = useCallback((files: File[]) => {
+    dispatch({ type: "SET_SELECTED_FILES", payload: files });
+  }, []);
+
+  const setSelectedAccounts = useCallback((accounts: SocialAccount[]) => {
+    dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts });
+  }, []);
+
+  const setPostText = useCallback((text: PostText) => {
+    dispatch({ type: "SET_POST_TEXT", payload: text });
+  }, []);
+
+  const setScheduledDate = useCallback((date: Date | undefined) => {
+    dispatch({ type: "SET_SCHEDULED_DATE", payload: date });
+  }, []);
+
+  const setCurrentStep = useCallback((step: number) => {
+    dispatch({ type: "SET_CURRENT_STEP", payload: step });
+  }, []);
+
+  const setContent = useCallback((content: string) => {
+    dispatch({ type: "SET_CONTENT", payload: content });
+  }, []);
+
+  const setIsTextOnly = useCallback((value: boolean) => {
+    dispatch({ type: "SET_IS_TEXT_ONLY", payload: value });
+  }, []);
+
+  const resetState = useCallback(() => {
+    dispatch({ type: "RESET_STATE" });
+  }, []);
+
+  const value = useMemo(
+    () => ({
+      state,
+      setSelectedFiles,
+      setSelectedAccounts,
+      setPostText,
+      setScheduledDate,
+      setCurrentStep,
+      setContent,
+      setIsTextOnly,
+      resetState,
+    }),
+    [
+      state,
+      setSelectedFiles,
+      setSelectedAccounts,
+      setPostText,
+      setScheduledDate,
+      setCurrentStep,
+      setContent,
+      setIsTextOnly,
+      resetState,
+    ]
+  );
 
   return (
     <PostCreationContext.Provider value={value}>
@@ -166,7 +190,6 @@ export function usePostCreation() {
     setCurrentStep: context.setCurrentStep,
     setContent: context.setContent,
     setIsTextOnly: context.setIsTextOnly,
-    setThumbnailUrl: context.setThumbnailUrl,
     resetState: context.resetState,
   };
 }
