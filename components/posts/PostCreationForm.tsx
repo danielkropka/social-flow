@@ -18,10 +18,13 @@ import {
   X,
   RotateCcw,
   Info,
-  Users,
   CheckCircle2,
   Upload,
   Image as ImageIcon,
+  Send,
+  Search,
+  AlertTriangle,
+  Trash,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { pl } from "date-fns/locale";
@@ -46,9 +49,16 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { ConnectedAccount } from "@prisma/client";
-import { MediaPreview } from "@/components/MediaPreview";
 import { useVideoProcessing } from "@/hooks/useVideoProcessing";
 import { MAX_FILE_SIZE } from "@/constants";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import Image from "next/image";
+import {
+  DragDropContext,
+  Droppable,
+  Draggable,
+  DropResult,
+} from "@hello-pangea/dnd";
 
 interface ConnectedAccountWithDetails extends ConnectedAccount {
   accountType?: string;
@@ -82,21 +92,25 @@ const AVAILABLE_PLATFORMS = [
     id: "facebook",
     name: "Facebook",
     icon: <FaFacebook className="h-5 w-5 text-blue-600" />,
+    maxChars: 60000,
   },
   {
     id: "instagram",
     name: "Instagram",
     icon: <FaInstagram className="h-5 w-5 text-pink-600" />,
+    maxChars: 2200,
   },
   {
     id: "twitter",
     name: "Twitter",
     icon: <FaTwitter className="h-5 w-5 text-blue-400" />,
+    maxChars: 280,
   },
   {
     id: "tiktok",
     name: "TikTok",
     icon: <FaTiktok className="h-5 w-5 text-black" />,
+    maxChars: 2200,
   },
 ];
 
@@ -115,6 +129,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
     isTextOnly,
     content,
     resetState,
+    postType,
   } = usePostCreation();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -142,6 +157,19 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
   const [error, setError] = useState<string | null>(null);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [dragActive, setDragActive] = useState(false);
+  const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
+
+  const getSupportedFormats = () => {
+    if (isTextOnly) return [];
+
+    if (postType === "video") {
+      return ["MP4", "MOV"];
+    } else if (postType === "images") {
+      return ["JPG", "PNG"];
+    }
+
+    return ["JPG", "PNG", "MP4", "MOV"];
+  };
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -181,6 +209,12 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
 
     fetchAccounts();
   }, []);
+
+  useEffect(() => {
+    if (selectedFiles.length === 0) setSelectedPreviewIndex(0);
+    else if (selectedPreviewIndex >= selectedFiles.length)
+      setSelectedPreviewIndex(0);
+  }, [selectedFiles]);
 
   const onSubmit = async (data: PostFormValues) => {
     try {
@@ -295,12 +329,24 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
 
       const hasVideos = files.some((file) => file.type.startsWith("video/"));
       const hasImages = files.some((file) => file.type.startsWith("image/"));
+      const currentHasVideos = selectedFiles.some((file) =>
+        file.type.startsWith("video/")
+      );
+      const currentHasImages = selectedFiles.some((file) =>
+        file.type.startsWith("image/")
+      );
 
-      if (!isTextOnly && hasVideos && hasImages) {
+      if (
+        !isTextOnly &&
+        ((hasVideos && currentHasImages) || (hasImages && currentHasVideos))
+      ) {
         throw new Error("Nie można dodać jednocześnie zdjęć i filmów");
       }
 
-      if (hasVideos && files.length > 1) {
+      if (
+        (hasVideos && files.length > 1) ||
+        (currentHasVideos && files.length > 0)
+      ) {
         throw new Error("Można dodać tylko jeden film");
       }
 
@@ -313,10 +359,14 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         );
       }
 
-      setSelectedFiles(files);
+      const processedFiles = files.map(
+        (file) => new File([file], file.name, { type: file.type })
+      );
+
+      setSelectedFiles([...selectedFiles, ...processedFiles]);
 
       if (hasVideos) {
-        await loadVideo(files[0]);
+        await loadVideo(processedFiles[0]);
       }
 
       toast.success("Pliki zostały dodane pomyślnie");
@@ -400,6 +450,51 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
     acc[platform].push(account);
     return acc;
   }, {} as Record<string, ConnectedAccountWithDetails[]>);
+
+  const getAcceptedFileTypes = () => {
+    if (isTextOnly) return "";
+
+    if (postType === "video") {
+      return ".mp4,.mov";
+    } else if (postType === "images") {
+      return ".jpg,.jpeg,.png";
+    }
+
+    return ".jpg,.jpeg,.png,.mp4,.mov";
+  };
+
+  // Limity platform
+  const PLATFORM_IMAGE_LIMITS: Record<string, { name: string; limit: number }> =
+    {
+      twitter: { name: "Twitter", limit: 4 },
+      facebook: { name: "Facebook", limit: 20 },
+      instagram: { name: "Instagram", limit: 10 },
+      tiktok: { name: "TikTok", limit: 35 },
+    };
+
+  // Zbierz limity dla wybranych platform
+  const imageLimitWarnings = Object.entries(PLATFORM_IMAGE_LIMITS)
+    .filter(([platform, { limit }]) =>
+      selectedAccounts.some(
+        (acc) =>
+          acc.provider.toLowerCase() === platform.toLowerCase() &&
+          selectedFiles.length > limit
+      )
+    )
+    .map(([platform, { name, limit }]) => ({
+      name,
+      limit,
+      platform,
+    }));
+
+  // Funkcja do obsługi zmiany kolejności zdjęć
+  const onDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+    const newFiles = Array.from(selectedFiles);
+    const [removed] = newFiles.splice(result.source.index, 1);
+    newFiles.splice(result.destination.index, 0, removed);
+    setSelectedFiles(newFiles);
+  };
 
   if (isLoading) {
     return (
@@ -491,68 +586,145 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
           {!isTextOnly && (
             <div
               className={cn(
-                "border-2 border-dashed rounded-xl p-8 transition-all duration-300",
-                "border-gray-200 bg-gray-50 hover:border-blue-500 hover:bg-blue-50/50",
-                "cursor-pointer",
-                dragActive && "border-blue-500 bg-blue-50/50 scale-[1.02]"
+                "border-2 border-dashed rounded-xl bg-gray-50 w-full mx-auto p-4 flex flex-col items-center transition-all duration-300 min-h-[200px]",
+                dragActive
+                  ? "border-blue-500 bg-blue-50/50 scale-[1.02]"
+                  : "border-gray-200",
+                "hover:border-blue-500 hover:bg-blue-50/50"
               )}
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
-              onClick={() => fileInputRef.current?.click()}
+              onClick={() => {
+                if (selectedFiles.length === 0) fileInputRef.current?.click();
+              }}
+              style={{ cursor: "pointer" }}
             >
               {selectedFiles.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-                  {selectedFiles.map((file, index) => (
-                    <div key={index} className="aspect-square relative group">
-                      <MediaPreview
-                        file={file}
-                        className="w-full h-full object-cover rounded-lg shadow-sm group-hover:shadow-md transition-all duration-300"
-                      />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          const newFiles = [...selectedFiles];
-                          newFiles.splice(index, 1);
-                          setSelectedFiles(newFiles);
-                          toast.success("Plik został usunięty");
-                        }}
-                        className="absolute top-2 right-2 p-1.5 bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-black/70"
-                      >
-                        <X className="w-4 h-4 text-white" />
-                      </button>
-                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300 rounded-lg flex items-center justify-center">
-                        <Upload className="w-8 h-8 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="space-y-8">
-                  <div className="flex flex-col items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-blue-50 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110">
-                      <ImageIcon className="w-10 h-10 text-blue-500" />
-                    </div>
-                    <p className="text-2xl font-medium text-gray-900 mb-2">
-                      Przeciągnij i upuść pliki
-                    </p>
-                    <p className="text-base text-gray-600">
-                      lub kliknij, aby wybrać pliki
-                    </p>
+                <>
+                  <DragDropContext onDragEnd={onDragEnd}>
+                    <Droppable
+                      droppableId="images-droppable"
+                      direction="horizontal"
+                    >
+                      {(provided) => (
+                        <div
+                          className="flex items-center gap-3 overflow-x-auto w-full mb-4 pb-2 px-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
+                          ref={provided.innerRef}
+                          {...provided.droppableProps}
+                        >
+                          {selectedFiles.map((file, idx) => (
+                            <Draggable
+                              key={file.name + idx}
+                              draggableId={file.name + idx}
+                              index={idx}
+                            >
+                              {(provided, snapshot) => (
+                                <div
+                                  ref={provided.innerRef}
+                                  {...provided.draggableProps}
+                                  {...provided.dragHandleProps}
+                                  className={cn(
+                                    "w-24 h-24 flex-shrink-0 rounded-lg cursor-pointer relative group transition-all duration-200 mx-0.5 my-1",
+                                    selectedPreviewIndex === idx
+                                      ? "ring-2 ring-blue-400 scale-105"
+                                      : "hover:scale-105",
+                                    snapshot.isDragging &&
+                                      "z-50 shadow-lg scale-110"
+                                  )}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedPreviewIndex(idx);
+                                  }}
+                                >
+                                  <div className="w-full h-full rounded-lg overflow-hidden">
+                                    <img
+                                      src={URL.createObjectURL(file)}
+                                      alt={`Podgląd ${idx + 1}`}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-lg">
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="text-red-600 hover:text-white hover:bg-red-600 absolute left-1 bottom-1 m-0 p-1"
+                                      style={{
+                                        position: "absolute",
+                                        left: 4,
+                                        bottom: 4,
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setSelectedFiles(
+                                          selectedFiles.filter(
+                                            (_, i) => i !== idx
+                                          )
+                                        );
+                                      }}
+                                    >
+                                      <Trash className="h-5 w-5" />
+                                    </Button>
+                                  </div>
+                                </div>
+                              )}
+                            </Draggable>
+                          ))}
+                          {provided.placeholder}
+                        </div>
+                      )}
+                    </Droppable>
+                  </DragDropContext>
+                  <div className="flex w-full justify-center gap-3">
+                    <Button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        fileInputRef.current?.click();
+                      }}
+                      className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
+                    >
+                      <Upload className="h-4 w-4 mr-2" />
+                      Dodaj więcej plików
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedFiles([]);
+                      }}
+                      className="px-6"
+                    >
+                      <X className="h-4 w-4 mr-2" />
+                      Wyczyść wszystkie
+                    </Button>
                   </div>
+                </>
+              ) : (
+                <div className="flex flex-col items-center justify-center w-full h-full">
+                  <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110">
+                    <ImageIcon className="w-12 h-12 text-blue-500" />
+                  </div>
+                  <p className="text-2xl font-medium text-gray-900 mb-2">
+                    Przeciągnij i upuść pliki
+                  </p>
+                  <p className="text-base text-gray-600 mb-4">
+                    lub kliknij, aby wybrać pliki
+                  </p>
                   <div className="text-sm text-gray-500 space-y-3 bg-gray-50 p-6 rounded-lg max-w-md mx-auto">
-                    <p className="flex items-center justify-center gap-2">
+                    <div className="flex items-center justify-center gap-2">
                       <span>Obsługiwane formaty:</span>
                       <span className="font-medium text-gray-700">
-                        JPG, PNG, MP4
+                        {getSupportedFormats().join(", ")}
                       </span>
-                    </p>
-                    <p className="flex items-center justify-center gap-2">
+                    </div>
+                    <div className="flex items-center justify-center gap-2">
                       <span>Maksymalny rozmiar pliku:</span>
                       <span className="font-medium text-gray-700">
                         {(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB
                       </span>
-                    </p>
+                    </div>
                   </div>
                 </div>
               )}
@@ -592,20 +764,71 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                   >
                     Tekst posta
                   </Label>
-                  <span className="text-sm text-gray-500">
-                    {form.watch("text")?.length || 0} znaków
-                  </span>
-                </div>
-                <Textarea
-                  {...form.register("text")}
-                  placeholder="Wpisz tekst posta..."
-                  className={cn(
-                    "min-h-[120px] text-base resize-none transition-all duration-200 bg-gray-50 border-gray-200",
-                    form.formState.errors.text
-                      ? "border-red-500 focus-visible:ring-red-500"
-                      : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500"
+                  {selectedAccounts.length > 0 && (
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 text-sm text-gray-500">
+                        <span
+                          className={cn(
+                            "font-medium",
+                            form.watch("text")?.length >
+                              Math.min(
+                                ...selectedAccounts.map((account) => {
+                                  const platform = AVAILABLE_PLATFORMS.find(
+                                    (p) =>
+                                      p.id === account.provider.toLowerCase()
+                                  );
+                                  return platform?.maxChars || Infinity;
+                                })
+                              )
+                              ? "text-red-500"
+                              : "text-gray-700"
+                          )}
+                        >
+                          {form.watch("text")?.length || 0}
+                        </span>
+                        <span>/</span>
+                        <span className="font-medium text-gray-700">
+                          {Math.min(
+                            ...selectedAccounts.map((account) => {
+                              const platform = AVAILABLE_PLATFORMS.find(
+                                (p) => p.id === account.provider.toLowerCase()
+                              );
+                              return platform?.maxChars || Infinity;
+                            })
+                          )}
+                        </span>
+                      </div>
+                      <span className="text-sm text-gray-500">znaków</span>
+                    </div>
                   )}
-                />
+                </div>
+                <div className="relative">
+                  <Textarea
+                    {...form.register("text")}
+                    placeholder={
+                      selectedAccounts.length === 0
+                        ? "Najpierw wybierz konto, aby dodać tekst..."
+                        : "Wpisz tekst posta..."
+                    }
+                    disabled={selectedAccounts.length === 0}
+                    className={cn(
+                      "min-h-[120px] text-base resize-none transition-all duration-200 bg-gray-50 border-gray-200",
+                      form.formState.errors.text
+                        ? "border-red-500 focus-visible:ring-red-500"
+                        : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500",
+                      selectedAccounts.length === 0 &&
+                        "cursor-not-allowed opacity-75"
+                    )}
+                  />
+                  {selectedAccounts.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 rounded-lg">
+                      <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-full shadow-sm">
+                        <Info className="h-4 w-4" />
+                        <span>Wybierz konto, aby dodać tekst</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
                 {form.formState.errors.text && (
                   <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded-md animate-fade-in mt-2">
                     <AlertCircle className="h-4 w-4 flex-shrink-0" />
@@ -618,16 +841,128 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         </div>
 
         <div className="lg:col-span-1 space-y-6">
+          {!isTextOnly && selectedFiles.length > 0 && (
+            <div className="mb-4">
+              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-medium text-gray-900">
+                    Podgląd obrazu
+                  </h3>
+                  <span className="text-sm text-gray-500">
+                    {selectedPreviewIndex + 1} z {selectedFiles.length}
+                  </span>
+                </div>
+                {imageLimitWarnings.length > 0 && (
+                  <div className="space-y-2 mb-4">
+                    {imageLimitWarnings.map((warning) => (
+                      <div
+                        key={warning.platform}
+                        className="flex items-center gap-2 bg-yellow-100 text-yellow-800 rounded-md px-3 py-2 text-sm"
+                      >
+                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
+                        <span>
+                          Tylko pierwsze <b>{warning.limit}</b> zdjęć zostanie
+                          opublikowanych na platformie <b>{warning.name}</b>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="relative">
+                  <div className="flex items-center justify-center bg-gray-50 rounded-lg w-full aspect-[4/3] overflow-hidden">
+                    {selectedFiles[selectedPreviewIndex] && (
+                      <img
+                        src={URL.createObjectURL(
+                          selectedFiles[selectedPreviewIndex]
+                        )}
+                        alt="Pełny obraz"
+                        className="w-full h-full object-contain"
+                      />
+                    )}
+                  </div>
+                  {selectedFiles.length > 1 && (
+                    <div className="flex justify-between items-center gap-4 mt-4">
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedPreviewIndex((prev) =>
+                            prev === 0 ? selectedFiles.length - 1 : prev - 1
+                          )
+                        }
+                        className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-6 h-6 text-blue-600"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M15.75 19.5L8.25 12l7.5-7.5"
+                          />
+                        </svg>
+                      </button>
+
+                      <div className="flex items-center gap-2">
+                        {selectedFiles.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => setSelectedPreviewIndex(index)}
+                            className={`h-2 rounded-full transition-all duration-500 ease-in-out transform ${
+                              selectedPreviewIndex === index
+                                ? "bg-blue-600 w-8 scale-110"
+                                : "bg-gray-300 hover:bg-gray-400 w-2 hover:scale-110"
+                            }`}
+                          />
+                        ))}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setSelectedPreviewIndex((prev) =>
+                            prev === selectedFiles.length - 1 ? 0 : prev + 1
+                          )
+                        }
+                        className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-6 h-6 text-blue-600"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-shadow duration-200 sticky top-6">
             <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1">
+              <div className="flex-1 relative">
                 <Input
                   type="text"
                   placeholder="Szukaj kont..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full"
+                  className="w-full pl-9"
                 />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
               <div className="flex items-center gap-2">
                 {AVAILABLE_PLATFORMS.map((platform) => (
@@ -639,9 +974,9 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                           size="icon"
                           onClick={() => handlePlatformToggle(platform.id)}
                           className={cn(
-                            "text-gray-500 hover:text-gray-700",
+                            "text-gray-500 hover:text-gray-700 transition-colors duration-200",
                             selectedPlatforms.includes(platform.id) &&
-                              "bg-gray-100"
+                              "bg-gray-100 text-gray-900"
                           )}
                         >
                           {platform.icon}
@@ -656,12 +991,15 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
               </div>
             </div>
 
-            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
+            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
               {Object.entries(groupedAccounts).map(([platform, accounts]) => (
                 <div key={platform} className="space-y-2">
-                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
                     {AVAILABLE_PLATFORMS.find((p) => p.id === platform)?.icon}
                     {AVAILABLE_PLATFORMS.find((p) => p.id === platform)?.name}
+                    <span className="text-xs text-gray-500">
+                      ({accounts.length})
+                    </span>
                   </h3>
                   <div className="grid gap-2">
                     {accounts.map((account) => (
@@ -678,7 +1016,21 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                         )}
                       >
                         <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-gray-500" />
+                          <Avatar className="w-10 h-10">
+                            {account.profileImage ? (
+                              <Image
+                                src={account.profileImage}
+                                alt={account.name}
+                                fill
+                                className="object-cover"
+                                sizes="40px"
+                              />
+                            ) : (
+                              <AvatarFallback className="text-sm font-medium">
+                                {account.name.substring(0, 2).toUpperCase()}
+                              </AvatarFallback>
+                            )}
+                          </Avatar>
                         </div>
                         <div className="flex-1 text-left">
                           <p className="font-medium text-gray-900">
@@ -690,7 +1042,14 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                         </div>
                         {selectedAccounts.some(
                           (selected) => selected.id === account.id
-                        ) && <CheckCircle2 className="w-5 h-5 text-blue-500" />}
+                        ) && (
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                            <span className="text-sm text-blue-500 font-medium">
+                              Wybrane
+                            </span>
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
@@ -828,52 +1187,63 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
               </div>
 
               <div className="mt-6 pt-6 border-t border-gray-100">
-                <div className="flex flex-col gap-3">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setCurrentStep(1)}
-                    className="w-full hover:bg-gray-50 transition-colors duration-200"
-                  >
-                    Wstecz
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => setShowResetConfirm(true)}
-                    className="w-full hover:bg-red-50 hover:text-red-600 transition-colors duration-200"
-                  >
-                    Resetuj
-                  </Button>
-                  <Button
-                    type="submit"
-                    disabled={isPublishing}
-                    className={cn(
-                      "w-full transition-all duration-200",
-                      isPublishing
-                        ? "opacity-75 cursor-not-allowed"
-                        : "hover:shadow-md"
-                    )}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      if (!form.formState.isValid) {
-                        form.trigger();
-                        return;
-                      }
-                      form.handleSubmit(onSubmit)(e);
-                    }}
-                  >
-                    {isPublishing ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        {scheduledDate ? "Planowanie..." : "Publikowanie..."}
-                      </>
-                    ) : scheduledDate ? (
-                      "Zaplanuj post"
-                    ) : (
-                      "Opublikuj post"
-                    )}
-                  </Button>
+                <Button
+                  type="submit"
+                  disabled={
+                    isPublishing ||
+                    selectedFiles.length === 0 ||
+                    form.watch("text")?.length === 0 ||
+                    selectedAccounts.length === 0
+                  }
+                  className={cn(
+                    "w-full transition-all duration-200",
+                    isPublishing ||
+                      selectedFiles.length === 0 ||
+                      form.watch("text")?.length === 0 ||
+                      selectedAccounts.length === 0
+                      ? "opacity-75 cursor-not-allowed"
+                      : "hover:shadow-md bg-blue-600 hover:bg-blue-700 text-white"
+                  )}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    if (!form.formState.isValid) {
+                      form.trigger();
+                      return;
+                    }
+                    form.handleSubmit(onSubmit)(e);
+                  }}
+                >
+                  {isPublishing ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      {scheduledDate ? "Planowanie..." : "Publikowanie..."}
+                    </>
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" />
+                      {scheduledDate ? "Zaplanuj post" : "Opublikuj post"}
+                    </>
+                  )}
+                </Button>
+                <div className="mt-3 space-y-2">
+                  {selectedFiles.length === 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Info className="h-4 w-4" />
+                      <span>Dodaj plik, aby opublikować post</span>
+                    </div>
+                  )}
+                  {form.watch("text")?.length === 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Info className="h-4 w-4" />
+                      <span>Dodaj tekst posta</span>
+                    </div>
+                  )}
+                  {selectedAccounts.length === 0 && (
+                    <div className="flex items-center gap-2 text-sm text-gray-500">
+                      <Info className="h-4 w-4" />
+                      <span>Wybierz przynajmniej jedno konto</span>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -884,8 +1254,11 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
       <input
         ref={fileInputRef}
         type="file"
-        multiple={!isTextOnly}
-        accept={isTextOnly ? "" : "image/*,video/*"}
+        multiple={
+          !isTextOnly &&
+          !selectedFiles.some((file) => file.type.startsWith("video/"))
+        }
+        accept={getAcceptedFileTypes()}
         className="hidden"
         onChange={(e) => processFiles(Array.from(e.target.files || []))}
       />
@@ -924,42 +1297,121 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
       </Dialog>
 
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-gray-900">
+        <DialogContent className="sm:max-w-3xl">
+          <DialogHeader className="space-y-3">
+            <DialogTitle className="text-2xl font-bold tracking-tight text-gray-900">
               Pomoc i wskazówki
             </DialogTitle>
-            <DialogDescription className="text-gray-600">
-              Oto kilka przydatnych informacji o publikacji postów:
+            <DialogDescription className="text-base text-gray-600">
+              Dowiedz się więcej o tworzeniu i publikacji postów
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 mt-4">
-            <div className="p-4 bg-blue-50 rounded-lg">
-              <h4 className="font-medium text-blue-900 mb-2">
-                Planowanie postów
-              </h4>
-              <p className="text-sm text-blue-700">
-                Możesz zaplanować post na dowolną datę i godzinę w przyszłości.
-                Minimalny czas planowania to 5 minut od teraz.
-              </p>
+
+          <div className="mt-6 space-y-6">
+            <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-blue-50 p-3">
+                  <CalendarIcon className="h-6 w-6 text-blue-500" />
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Planowanie postów
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Możesz zaplanować post na dowolną datę i godzinę w
+                      przyszłości. Minimalny czas planowania to 5 minut od
+                      teraz.
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 p-4">
+                    <h4 className="mb-3 text-sm font-medium flex items-center gap-2 text-gray-700">
+                      <Info className="h-4 w-4 text-blue-500" />
+                      Wskazówki dotyczące planowania
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                        <div className="p-2 rounded-lg bg-blue-50">
+                          <Clock className="h-5 w-5 text-blue-500" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          Minimalny czas planowania to 5 minut od teraz
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                        <div className="p-2 rounded-lg bg-green-50">
+                          <CalendarIcon className="h-5 w-5 text-green-500" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          Możesz zaplanować post na dowolną datę w przyszłości
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="p-4 bg-green-50 rounded-lg">
-              <h4 className="font-medium text-green-900 mb-2">
-                Natychmiastowa publikacja
-              </h4>
-              <p className="text-sm text-green-700">
-                Jeśli nie wybierzesz daty, post zostanie opublikowany
-                natychmiast po zatwierdzeniu.
-              </p>
+
+            <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-green-50 p-3">
+                  <Send className="h-6 w-6 text-green-500" />
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Natychmiastowa publikacja
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      Jeśli nie wybierzesz daty, post zostanie opublikowany
+                      natychmiast po zatwierdzeniu.
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="p-4 bg-purple-50 rounded-lg">
-              <h4 className="font-medium text-purple-900 mb-2">
-                Obsługa błędów
-              </h4>
-              <p className="text-sm text-purple-700">
-                W przypadku problemów z publikacją, otrzymasz szczegółowe
-                informacje o błędzie dla każdego konta.
-              </p>
+
+            <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6">
+              <div className="flex items-start gap-4">
+                <div className="rounded-lg bg-purple-50 p-3">
+                  <AlertCircle className="h-6 w-6 text-purple-500" />
+                </div>
+                <div className="flex-1 space-y-4">
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">
+                      Obsługa błędów
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-600">
+                      W przypadku problemów z publikacją, otrzymasz szczegółowe
+                      informacje o błędzie dla każdego konta.
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-gray-50 p-4">
+                    <h4 className="mb-3 text-sm font-medium flex items-center gap-2 text-gray-700">
+                      <Info className="h-4 w-4 text-purple-500" />
+                      Co robić w przypadku błędu?
+                    </h4>
+                    <div className="grid grid-cols-1 gap-3">
+                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                        <div className="p-2 rounded-lg bg-red-50">
+                          <AlertCircle className="h-5 w-5 text-red-500" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          Sprawdź komunikat błędu dla każdego konta
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
+                        <div className="p-2 rounded-lg bg-yellow-50">
+                          <RotateCcw className="h-5 w-5 text-yellow-500" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-700">
+                          Spróbuj ponownie po rozwiązaniu problemu
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
         </DialogContent>

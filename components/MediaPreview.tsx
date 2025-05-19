@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { ImagePreviewModal } from "./ImagePreviewModal";
 import { cn } from "@/lib/utils/utils";
-import Image from "next/image";
 
 interface MediaPreviewProps {
   file: File;
@@ -10,6 +9,7 @@ interface MediaPreviewProps {
 
 export function MediaPreview({ file, className }: MediaPreviewProps) {
   const [videoError, setVideoError] = useState(false);
+  const [imageError, setImageError] = useState(false);
 
   if (file.type.startsWith("video/")) {
     return (
@@ -36,15 +36,23 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
     );
   }
 
+  if (imageError) {
+    return (
+      <div className="w-full h-full bg-gray-100 flex items-center justify-center rounded-lg">
+        <p className="text-gray-500 text-sm">Błąd ładowania obrazu</p>
+      </div>
+    );
+  }
+
   return (
     <ImagePreviewModal file={file}>
       <div className="relative w-full h-full">
-        <Image
+        <img
           src={URL.createObjectURL(file)}
           alt="Podgląd"
-          fill
-          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className={cn("w-full h-full object-cover rounded-lg", className)}
+          onError={() => setImageError(true)}
+          style={{ objectFit: "cover", width: "100%", height: "100%" }}
         />
       </div>
     </ImagePreviewModal>
