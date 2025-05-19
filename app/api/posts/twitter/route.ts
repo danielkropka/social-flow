@@ -5,6 +5,11 @@ import { decryptToken } from "@/lib/utils";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 
+interface MediaData {
+  type: string;
+  data: number[] | string;
+}
+
 export async function POST(req: Request) {
   const session = await getAuthSession();
 
@@ -16,7 +21,7 @@ export async function POST(req: Request) {
 
   console.log("Otrzymane dane:", {
     content,
-    mediaUrls: mediaUrls?.map((m: { type: string; data: any }) => ({
+    mediaUrls: mediaUrls?.map((m: MediaData) => ({
       type: m.type,
       dataLength: m.data?.length,
     })),
