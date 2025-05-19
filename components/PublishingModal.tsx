@@ -3,9 +3,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, CheckCircle2, XCircle } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { cn } from "@/lib/utils/utils";
 
 interface PublishingStatus {
   accountId: string;
@@ -41,40 +45,139 @@ export function PublishingModal({
     }
   };
 
+  const getStatusColor = (status: PublishingStatus["status"]) => {
+    switch (status) {
+      case "success":
+        return "bg-green-50 border-green-200";
+      case "error":
+        return "bg-red-50 border-red-200";
+      default:
+        return "bg-blue-50 border-blue-200";
+    }
+  };
+
+  const getStatusIcon = (status: PublishingStatus["status"]) => {
+    switch (status) {
+      case "success":
+        return <CheckCircle2 className="h-5 w-5 text-green-500" />;
+      case "error":
+        return <XCircle className="h-5 w-5 text-red-500" />;
+      default:
+        return <Loader2 className="h-5 w-5 animate-spin text-blue-500" />;
+    }
+  };
+
+  const getStatusText = (status: PublishingStatus["status"]) => {
+    switch (status) {
+      case "success":
+        return "Opublikowano pomyślnie";
+      case "error":
+        return "Wystąpił błąd";
+      default:
+        return "Publikowanie...";
+    }
+  };
+
+  const totalAccounts = publishingStatus.length;
+  const completedAccounts = publishingStatus.filter(
+    (status) => status.status !== "pending"
+  ).length;
+  const progress = (completedAccounts / totalAccounts) * 100;
+
+  const allCompleted = publishingStatus.every(
+    (status) => status.status !== "pending"
+  );
+  const hasErrors = publishingStatus.some(
+    (status) => status.status === "error"
+  );
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Status publikacji</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-gray-900">
+            Status publikacji
+          </DialogTitle>
+          <DialogDescription className="text-gray-600">
+            {allCompleted
+              ? hasErrors
+                ? "Publikacja zakończona z błędami"
+                : "Wszystkie posty zostały opublikowane pomyślnie"
+              : "Publikowanie postów w toku..."}
+          </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
-          {publishingStatus.map((status) => (
-            <div
-              key={status.accountId}
-              className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
-            >
-              <div className="flex items-center space-x-3">
-                {getPlatformIcon(status.provider)}
-                <div className="flex flex-col">
-                  <span className="font-medium">{status.accountName}</span>
-                  <span className="text-sm text-gray-500 capitalize">
-                    {status.provider}
-                  </span>
+
+        <div className="mt-4 space-y-4">
+          <div className="space-y-2">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-gray-600">
+                Postęp: {completedAccounts} z {totalAccounts}
+              </span>
+              <span className="font-medium text-gray-900">
+                {Math.round(progress)}%
+              </span>
+            </div>
+            <Progress value={progress} className="h-2" />
+          </div>
+
+          <div className="space-y-3">
+            {publishingStatus.map((status) => (
+              <div
+                key={status.accountId}
+                className={cn(
+                  "flex items-start gap-4 p-4 rounded-lg border transition-all duration-200",
+                  getStatusColor(status.status)
+                )}
+              >
+                <div className="flex-shrink-0">
+                  {getPlatformIcon(status.provider)}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="font-medium text-gray-900">
+                        {status.accountName}
+                      </h4>
+                      <p className="text-sm text-gray-500 capitalize">
+                        {status.provider}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {getStatusIcon(status.status)}
+                      <span
+                        className={cn(
+                          "text-sm font-medium",
+                          status.status === "success" && "text-green-600",
+                          status.status === "error" && "text-red-600",
+                          status.status === "pending" && "text-blue-600"
+                        )}
+                      >
+                        {getStatusText(status.status)}
+                      </span>
+                    </div>
+                  </div>
+                  {status.error && (
+                    <div className="mt-2 flex items-start gap-2 text-sm text-red-600 bg-red-50/50 p-2 rounded">
+                      <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                      <p>{status.error}</p>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="flex items-center">
-                {status.status === "pending" && (
-                  <Loader2 className="h-5 w-5 animate-spin text-blue-500" />
-                )}
-                {status.status === "success" && (
-                  <CheckCircle2 className="h-5 w-5 text-green-500" />
-                )}
-                {status.status === "error" && (
-                  <XCircle className="h-5 w-5 text-red-500" />
-                )}
-              </div>
+            ))}
+          </div>
+
+          {allCompleted && (
+            <div className="pt-4 border-t border-gray-100">
+              <Button
+                onClick={onClose}
+                className="w-full"
+                variant={hasErrors ? "destructive" : "default"}
+              >
+                {hasErrors ? "Spróbuj ponownie" : "Zamknij"}
+              </Button>
             </div>
-          ))}
+          )}
         </div>
       </DialogContent>
     </Dialog>
