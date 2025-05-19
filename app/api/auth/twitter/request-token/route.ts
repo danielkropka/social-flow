@@ -1,9 +1,9 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
+import { getAuthSession } from "@/lib/config/auth";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
-import { db } from "@/lib/prisma";
-import { encryptToken } from "@/lib/utils";
+import { db } from "@/lib/config/prisma";
+import { encryptToken } from "@/lib/utils/utils";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;

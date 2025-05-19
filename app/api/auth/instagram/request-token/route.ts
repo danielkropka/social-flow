@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/auth";
+import { getAuthSession } from "@/lib/config/auth";
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const REDIRECT_URI = "https://social-flow.pl/instagram-callback";

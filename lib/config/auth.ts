@@ -3,7 +3,7 @@ import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/config/prisma";
 import { User } from "next-auth";
 import { PlanType, PlanStatus, PlanInterval } from "@prisma/client";
 

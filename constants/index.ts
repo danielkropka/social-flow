@@ -1,4 +1,4 @@
-export const MAX_FILE_SIZE = 100 * 1024 * 1024; // 100MB
+export const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB
 
 export const ACCEPTED_FILE_TYPES = {
   "image/jpeg": [".jpg", ".jpeg"],
@@ -28,7 +28,6 @@ export const MAX_VIDEO_DURATION = 600; // maksymalny czas trwania wideo w sekund
 export const MAX_VIDEO_SIZE = 500 * 1024 * 1024; // maksymalny rozmiar wideo (500MB)
 
 export const DEFAULT_IMAGE_QUALITY = 85;
-export const DEFAULT_THUMBNAIL_QUALITY = 75;
 
 export const SUPPORTED_PLATFORMS = {
   FACEBOOK: "facebook",

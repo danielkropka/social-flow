@@ -2,7 +2,7 @@ import { STRIPE_PLANS } from "@/config/stripe";
 import { PlanInterval } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/config/prisma";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",

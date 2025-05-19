@@ -1,6 +1,6 @@
 import { compare } from "bcryptjs";
 import { NextResponse } from "next/server";
-import { db } from "@/lib/prisma";
+import { db } from "@/lib/config/prisma";
 import { loginSchema } from "@/lib/validations/auth";
 
 export async function POST(req: Request) {

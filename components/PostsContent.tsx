@@ -12,7 +12,7 @@ import { pl } from "date-fns/locale";
 import { Search, Calendar, Clock, Loader2, Filter } from "lucide-react";
 import Image from "next/image";
 import { MediaType } from "@prisma/client";
-import { cn } from "@/lib/utils";
+import { cn } from "@/lib/utils/utils";
 
 interface Post {
   id: string;
@@ -142,29 +142,29 @@ export default function PostsContent() {
   }
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 p-6">
+    <div className="space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold">Posty</h1>
-        <p className="text-muted-foreground">
+        <h1 className="text-2xl font-bold text-gray-900">Posty</h1>
+        <p className="text-gray-600">
           Zarządzaj swoimi postami i ich statusami
         </p>
       </div>
 
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
         <div className="flex flex-col space-y-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <Input
               placeholder="Szukaj postów..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 text-base"
+              className="pl-10 h-11 text-base bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
             />
           </div>
 
           <button
             onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-            className="flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
           >
             <Filter className="h-4 w-4" />
             {isFiltersVisible ? "Ukryj filtry" : "Pokaż filtry"}
@@ -174,7 +174,7 @@ export default function PostsContent() {
             {isFiltersVisible && (
               <>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full h-11">
+                  <SelectTrigger className="w-full h-11 bg-gray-50 border-gray-200">
                     <SelectValue placeholder="Status" />
                   </SelectTrigger>
                   <SelectContent>
@@ -188,7 +188,7 @@ export default function PostsContent() {
                   value={platformFilter}
                   onValueChange={setPlatformFilter}
                 >
-                  <SelectTrigger className="w-full h-11">
+                  <SelectTrigger className="w-full h-11 bg-gray-50 border-gray-200">
                     <SelectValue placeholder="Platforma" />
                   </SelectTrigger>
                   <SelectContent>
@@ -205,14 +205,14 @@ export default function PostsContent() {
       </div>
 
       {filteredPosts.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-200">
-          <p className="text-gray-500 text-lg">Nie znaleziono postów</p>
-          <p className="text-gray-400 text-sm mt-2">
+        <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
+          <p className="text-gray-700 text-lg">Nie znaleziono postów</p>
+          <p className="text-gray-500 text-sm mt-2">
             Spróbuj zmienić kryteria wyszukiwania lub filtry
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {filteredPosts.map((post) => {
             const status = getStatus(post);
             const platform =
@@ -227,10 +227,10 @@ export default function PostsContent() {
             return (
               <div
                 key={post.id}
-                className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-all duration-300 transform"
+                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
               >
                 {post.media[0] && (
-                  <div className="relative h-48 bg-gray-100">
+                  <div className="relative h-48 bg-gray-50">
                     {isBase64 ? (
                       <Image
                         src={mediaUrl}
@@ -252,7 +252,7 @@ export default function PostsContent() {
                     )}
                   </div>
                 )}
-                <div className="p-5 space-y-4">
+                <div className="p-6 space-y-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span
                       className={cn(
@@ -274,7 +274,7 @@ export default function PostsContent() {
                   <p className="text-gray-700 line-clamp-3 text-base leading-relaxed">
                     {post.content}
                   </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 pt-2 border-t border-gray-100">
+                  <div className="flex items-center gap-4 text-sm text-gray-500 pt-3 border-t border-gray-100">
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-4 w-4" />
                       <span>

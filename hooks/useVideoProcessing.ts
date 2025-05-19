@@ -24,62 +24,6 @@ export function useVideoProcessing({
     [onError, error?.message]
   );
 
-  const createThumbnail = useCallback(
-    async (currentTime = 0): Promise<string> => {
-      if (!videoRef.current) {
-        throw new Error("Nie znaleziono wideo");
-      }
-
-      const video = videoRef.current;
-
-      if (video.readyState < 2) {
-        throw new Error("Wideo nie jest jeszcze gotowe");
-      }
-
-      try {
-        // Ustawiamy czas wideo
-        video.currentTime = currentTime;
-
-        // Czekamy na zaktualizowanie klatki
-        await new Promise<void>((resolve, reject) => {
-          const timeoutId = setTimeout(() => {
-            reject(new Error("Przekroczono czas oczekiwania na klatkę wideo"));
-          }, timeout);
-
-          video.onseeked = () => {
-            clearTimeout(timeoutId);
-            resolve();
-          };
-        });
-
-        // Tworzymy miniaturkę
-        const canvas = document.createElement("canvas");
-        canvas.width = video.videoWidth;
-        canvas.height = video.videoHeight;
-
-        const context = canvas.getContext("2d");
-        if (!context) {
-          throw new Error("Nie udało się utworzyć kontekstu canvas");
-        }
-
-        context.drawImage(video, 0, 0, canvas.width, canvas.height);
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.8);
-
-        if (!dataUrl) {
-          throw new Error("Nie udało się utworzyć miniaturki");
-        }
-
-        return dataUrl;
-      } catch (error) {
-        if (error instanceof Error) {
-          throw error;
-        }
-        throw new Error("Wystąpił nieznany błąd podczas tworzenia miniaturki");
-      }
-    },
-    [timeout]
-  );
-
   const loadVideo = useCallback(
     async (file: File) => {
       try {
@@ -150,7 +94,6 @@ export function useVideoProcessing({
     error,
     duration,
     loadVideo,
-    createThumbnail,
     reset,
   };
 }
