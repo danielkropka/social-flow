@@ -4,6 +4,7 @@ import "./globals.css";
 import { cn } from "@/lib/utils/utils";
 import { Toaster } from "sonner";
 import Providers from "@/components/Providers";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -37,6 +38,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
+      <SpeedInsights />
       <body className={cn("bg-white relative", inter.className)}>
         <Providers>
           {children}
