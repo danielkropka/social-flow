@@ -14,6 +14,15 @@ export async function POST(req: Request) {
 
   const { content, mediaUrls, accountId } = await req.json();
 
+  console.log("Otrzymane dane:", {
+    content,
+    mediaUrls: mediaUrls?.map((m: { type: string; data: any }) => ({
+      type: m.type,
+      dataLength: m.data?.length,
+    })),
+    accountId,
+  });
+
   const account = await db.connectedAccount.findFirst({
     where: {
       id: accountId,
@@ -61,12 +70,31 @@ export async function POST(req: Request) {
         const mediaType = mediaData.type || "application/octet-stream";
 
         // Sprawdź czy dane są poprawne
-        if (!mediaData.data || !Array.isArray(mediaData.data)) {
-          throw new Error(`Nieprawidłowe dane mediów dla pliku ${i + 1}`);
+        if (!mediaData.data) {
+          console.error("Brak danych mediów:", mediaData);
+          throw new Error(
+            `Nieprawidłowe dane mediów dla pliku ${i + 1}: brak danych`
+          );
         }
 
         // Konwersja danych na Uint8Array
-        const binaryData = new Uint8Array(mediaData.data);
+        let binaryData;
+        try {
+          if (Array.isArray(mediaData.data)) {
+            binaryData = new Uint8Array(mediaData.data);
+          } else if (typeof mediaData.data === "string") {
+            // Jeśli dane są w formacie base64
+            binaryData = new Uint8Array(Buffer.from(mediaData.data, "base64"));
+          } else {
+            throw new Error(`Nieprawidłowy format danych dla pliku ${i + 1}`);
+          }
+        } catch (error) {
+          console.error("Błąd konwersji danych:", error);
+          throw new Error(
+            `Nie udało się przetworzyć danych mediów dla pliku ${i + 1}`
+          );
+        }
+
         const base64Data = Buffer.from(binaryData).toString("base64");
         const mediaBlob = new Blob([binaryData], { type: mediaType });
 
