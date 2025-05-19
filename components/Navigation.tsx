@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Button } from "./ui/button";
 import { Menu, X, User } from "lucide-react";
 import { useSession } from "next-auth/react";
+import Image from "next/image";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
@@ -43,9 +44,11 @@ export default function Navbar() {
             aria-label="Przejdź do panelu użytkownika"
           >
             {session.user.image ? (
-              <img
+              <Image
                 src={session.user.image}
                 alt="Avatar użytkownika"
+                width={24}
+                height={24}
                 className="h-6 w-6 rounded-full"
               />
             ) : (

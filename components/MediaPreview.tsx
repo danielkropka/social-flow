@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { ImagePreviewModal } from "./ImagePreviewModal";
 import { cn } from "@/lib/utils/utils";
+import Image from "next/image";
 
 interface MediaPreviewProps {
   file: File;
@@ -38,9 +39,11 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
   return (
     <ImagePreviewModal file={file}>
       <div className="relative w-full h-full">
-        <img
+        <Image
           src={URL.createObjectURL(file)}
           alt="Podgląd"
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
           className={cn("w-full h-full object-cover rounded-lg", className)}
         />
       </div>

@@ -26,7 +26,7 @@ interface ConnectedAccountWithDetails extends ConnectedAccount {
   isLoading?: boolean;
 }
 
-export default function ConnectAccounts() {
+export default function AccountsContent() {
   const router = useRouter();
   const [accounts, setAccounts] = useState<ConnectedAccountWithDetails[]>([]);
   const [showDeletionModal, setShowDeletionModal] = useState(false);
