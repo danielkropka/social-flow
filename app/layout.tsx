@@ -38,10 +38,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pl">
-      <SpeedInsights />
       <body className={cn("bg-white relative", inter.className)}>
         <Providers>
           {children}
+          <SpeedInsights />
           <Toaster position="top-center" />
         </Providers>
       </body>
