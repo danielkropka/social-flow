@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -21,14 +21,35 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ConnectedAccount, Provider } from "@prisma/client";
 import { toast } from "sonner";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 interface ConnectedAccountWithDetails extends ConnectedAccount {
   isLoading?: boolean;
 }
 
+const fetchAccounts = async () => {
+  const response = await fetch("/api/accounts");
+  if (!response.ok) {
+    throw new Error("Błąd podczas pobierania kont");
+  }
+  const data = await response.json();
+  return data.accounts;
+};
+
+const removeAccount = async (accountId: string) => {
+  const response = await fetch(`/api/accounts/${accountId}`, {
+    method: "DELETE",
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || "Błąd podczas usuwania konta");
+  }
+  return accountId;
+};
+
 export default function AccountsContent() {
   const router = useRouter();
-  const [accounts, setAccounts] = useState<ConnectedAccountWithDetails[]>([]);
+  const queryClient = useQueryClient();
   const [showDeletionModal, setShowDeletionModal] = useState(false);
   const [showInstagramModal, setShowInstagramModal] = useState(false);
   const [showTwitterModal, setShowTwitterModal] = useState(false);
@@ -36,26 +57,57 @@ export default function AccountsContent() {
   const [showTikTokModal, setShowTikTokModal] = useState(false);
   const [accountToRemove, setAccountToRemove] =
     useState<ConnectedAccountWithDetails | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    fetchConnectedAccounts();
-  }, []);
+  const { data: accounts = [], isLoading } = useQuery({
+    queryKey: ["accounts"],
+    queryFn: fetchAccounts,
+    staleTime: 1000 * 60 * 5, // Dane są "świeże" przez 5 minut
+    refetchInterval: 1000 * 60 * 5, // Automatyczne odświeżanie co 5 minut
+  });
 
-  const fetchConnectedAccounts = async () => {
-    try {
-      const response = await fetch("/api/accounts");
-      if (!response.ok) {
-        throw new Error("Błąd podczas pobierania kont");
+  const removeAccountMutation = useMutation({
+    mutationFn: removeAccount,
+    onMutate: async (accountId) => {
+      // Anuluj wszystkie trwające odświeżenia
+      await queryClient.cancelQueries({ queryKey: ["accounts"] });
+
+      // Zachowaj poprzedni stan
+      const previousAccounts = queryClient.getQueryData(["accounts"]);
+
+      // Optymistycznie zaktualizuj UI
+      queryClient.setQueryData(
+        ["accounts"],
+        (old: ConnectedAccountWithDetails[]) =>
+          old.filter(
+            (account: ConnectedAccountWithDetails) => account.id !== accountId
+          )
+      );
+
+      return { previousAccounts };
+    },
+    onError: (err, _, context) => {
+      // W przypadku błędu, przywróć poprzedni stan
+      if (context?.previousAccounts) {
+        queryClient.setQueryData(["accounts"], context.previousAccounts);
       }
-      const data = await response.json();
-      setAccounts(data.accounts);
-    } catch (error) {
-      console.error("Błąd:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+      toast.error("Nie udało się usunąć konta", {
+        description:
+          err instanceof Error ? err.message : "Spróbuj ponownie później",
+      });
+    },
+    onSuccess: (accountId) => {
+      const removedAccount = accounts.find(
+        (acc: ConnectedAccountWithDetails) => acc.id === accountId
+      );
+      toast.success("Konto zostało pomyślnie usunięte", {
+        description: `Konto ${removedAccount?.name} zostało odłączone.`,
+      });
+    },
+    onSettled: () => {
+      // Odśwież dane po zakończeniu mutacji
+      queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    },
+  });
 
   const handleAddAccount = async (platform: string) => {
     if (platform === "instagram") {
@@ -71,48 +123,9 @@ export default function AccountsContent() {
 
   const handleRemoveAccount = async () => {
     if (accountToRemove) {
-      try {
-        setShowDeletionModal(false);
-
-        setAccounts(
-          accounts.map((account) =>
-            account.id === accountToRemove.id
-              ? { ...account, isLoading: true }
-              : account
-          )
-        );
-
-        const response = await fetch(`/api/accounts/${accountToRemove.id}`, {
-          method: "DELETE",
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || "Błąd podczas usuwania konta");
-        }
-
-        setAccounts(
-          accounts.filter((account) => account.id !== accountToRemove.id)
-        );
-        toast.success("Konto zostało pomyślnie usunięte", {
-          description: `Konto ${accountToRemove.name} zostało odłączone.`,
-        });
-      } catch (error) {
-        console.error("Błąd:", error);
-        toast.error("Nie udało się usunąć konta", {
-          description:
-            error instanceof Error ? error.message : "Spróbuj ponownie później",
-        });
-        setAccounts(
-          accounts.map((account) =>
-            account.id === accountToRemove.id
-              ? { ...account, isLoading: false }
-              : account
-          )
-        );
-      } finally {
-        setAccountToRemove(null);
-      }
+      setShowDeletionModal(false);
+      removeAccountMutation.mutate(accountToRemove.id);
+      setAccountToRemove(null);
     }
   };
 
@@ -133,7 +146,8 @@ export default function AccountsContent() {
 
   const getConnectedAccounts = (platform: string) => {
     return accounts.filter(
-      (account) => account.provider === (platform.toUpperCase() as Provider)
+      (account: ConnectedAccountWithDetails) =>
+        account.provider === (platform.toUpperCase() as Provider)
     );
   };
 
@@ -194,42 +208,44 @@ export default function AccountsContent() {
                   </p>
                 </div>
               ) : (
-                getConnectedAccounts(platform).map((account) => (
-                  <div
-                    key={account.id}
-                    className="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      {account.isLoading && (
-                        <Loader2 className="animate-spin h-4 w-4 text-blue-500" />
-                      )}
-                      {account.profileImage && (
-                        <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
-                          <Image
-                            src={account.profileImage}
-                            alt={account.name}
-                            fill
-                            className="object-cover"
-                          />
-                        </div>
-                      )}
-                      <span className="text-sm font-medium text-gray-900 truncate">
-                        {account.name}
-                      </span>
-                    </div>
-                    <button
-                      onClick={() => {
-                        setAccountToRemove(account);
-                        setShowDeletionModal(true);
-                      }}
-                      className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-red-50 rounded-full transition-colors"
-                      disabled={account.isLoading}
-                      title="Usuń konto"
+                getConnectedAccounts(platform).map(
+                  (account: ConnectedAccountWithDetails) => (
+                    <div
+                      key={account.id}
+                      className="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
                     >
-                      <X className="h-4 w-4" />
-                    </button>
-                  </div>
-                ))
+                      <div className="flex items-center gap-3 min-w-0">
+                        {account.isLoading && (
+                          <Loader2 className="animate-spin h-4 w-4 text-blue-500" />
+                        )}
+                        {account.profileImage && (
+                          <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
+                            <Image
+                              src={account.profileImage}
+                              alt={account.name}
+                              fill
+                              className="object-cover"
+                            />
+                          </div>
+                        )}
+                        <span className="text-sm font-medium text-gray-900 truncate">
+                          {account.name}
+                        </span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setAccountToRemove(account);
+                          setShowDeletionModal(true);
+                        }}
+                        className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-red-50 rounded-full transition-colors"
+                        disabled={account.isLoading}
+                        title="Usuń konto"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )
+                )
               )}
             </div>
           </div>

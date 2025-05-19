@@ -13,6 +13,8 @@ import { Search, Calendar, Clock, Loader2, Filter } from "lucide-react";
 import Image from "next/image";
 import { MediaType } from "@prisma/client";
 import { cn } from "@/lib/utils/utils";
+import { useInfiniteQuery } from "@tanstack/react-query";
+import { useInView } from "react-intersection-observer";
 
 interface Post {
   id: string;
@@ -36,37 +38,64 @@ interface Post {
   }[];
 }
 
+interface PostsResponse {
+  success: boolean;
+  posts: Post[];
+  nextCursor?: string;
+  error?: string;
+}
+
+const POSTS_PER_PAGE = 10;
+
 export default function PostsContent() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [platformFilter, setPlatformFilter] = useState("all");
   const [isFiltersVisible, setIsFiltersVisible] = useState(false);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const { ref, inView } = useInView();
+
+  const fetchPosts = async ({
+    pageParam = null,
+  }: {
+    pageParam: string | null;
+  }) => {
+    const params = new URLSearchParams({
+      limit: POSTS_PER_PAGE.toString(),
+      ...(pageParam && { cursor: pageParam }),
+      ...(searchQuery && { search: searchQuery }),
+      ...(statusFilter !== "all" && { status: statusFilter }),
+      ...(platformFilter !== "all" && { platform: platformFilter }),
+    });
+
+    const response = await fetch(`/api/posts?${params}`);
+    const data: PostsResponse = await response.json();
+
+    if (!data.success) {
+      throw new Error(data.error || "Nie udało się pobrać postów");
+    }
+
+    return data;
+  };
+
+  const {
+    data,
+    error,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    status,
+  } = useInfiniteQuery({
+    queryKey: ["posts", searchQuery, statusFilter, platformFilter],
+    queryFn: fetchPosts,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    initialPageParam: null,
+  });
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch("/api/posts");
-        const data = await response.json();
-
-        if (!data.success) {
-          throw new Error(data.error || "Nie udało się pobrać postów");
-        }
-
-        setPosts(data.posts);
-      } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Wystąpił nieoczekiwany błąd"
-        );
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchPosts();
-  }, []);
+    if (inView && hasNextPage && !isFetchingNextPage) {
+      fetchNextPage();
+    }
+  }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const getStatus = (post: Post) => {
     if (post.published) return "published";
@@ -109,22 +138,7 @@ export default function PostsContent() {
     }
   };
 
-  const filteredPosts = posts.filter((post) => {
-    const matchesSearch = post.content
-      .toLowerCase()
-      .includes(searchQuery.toLowerCase());
-    const status = getStatus(post);
-    const matchesStatus = statusFilter === "all" || status === statusFilter;
-    const platform =
-      post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
-      "";
-    const matchesPlatform =
-      platformFilter === "all" || platform === platformFilter;
-
-    return matchesSearch && matchesStatus && matchesPlatform;
-  });
-
-  if (isLoading) {
+  if (status === "pending") {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -133,13 +147,18 @@ export default function PostsContent() {
     );
   }
 
-  if (error) {
+  if (status === "error") {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">Wystąpił błąd: {error}</p>
+        <p className="text-red-500">
+          Wystąpił błąd:{" "}
+          {error instanceof Error ? error.message : "Nieznany błąd"}
+        </p>
       </div>
     );
   }
+
+  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
 
   return (
     <div className="space-y-8">
@@ -204,7 +223,7 @@ export default function PostsContent() {
         </div>
       </div>
 
-      {filteredPosts.length === 0 ? (
+      {posts.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
           <p className="text-gray-700 text-lg">Nie znaleziono postów</p>
           <p className="text-gray-500 text-sm mt-2">
@@ -213,7 +232,7 @@ export default function PostsContent() {
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {filteredPosts.map((post) => {
+          {posts.map((post) => {
             const status = getStatus(post);
             const platform =
               post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
@@ -296,6 +315,21 @@ export default function PostsContent() {
               </div>
             );
           })}
+        </div>
+      )}
+
+      {hasNextPage && (
+        <div ref={ref} className="flex justify-center py-4">
+          {isFetchingNextPage ? (
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          ) : (
+            <button
+              onClick={() => fetchNextPage()}
+              className="text-sm text-gray-500 hover:text-gray-700"
+            >
+              Załaduj więcej
+            </button>
+          )}
         </div>
       )}
     </div>

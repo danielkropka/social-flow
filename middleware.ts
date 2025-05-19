@@ -12,15 +12,40 @@ export async function middleware(request: NextRequest) {
 
   // Przekieruj zalogowanych użytkowników z auth routes do dashboardu
   if (token && (pathname === "/sign-in" || pathname === "/sign-up")) {
-    return NextResponse.redirect(new URL("/dashboard", request.url));
+    const response = NextResponse.redirect(new URL("/dashboard", request.url));
+    addSecurityHeaders(response);
+    return response;
   }
 
   // Przekieruj niezalogowanych użytkowników do strony logowania
   if (!token && pathname.startsWith("/dashboard")) {
-    return NextResponse.redirect(new URL("/sign-in", request.url));
+    const response = NextResponse.redirect(new URL("/sign-in", request.url));
+    addSecurityHeaders(response);
+    return response;
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  addSecurityHeaders(response);
+  return response;
+}
+
+// Funkcja pomocnicza do dodawania nagłówków bezpieczeństwa
+function addSecurityHeaders(response: NextResponse) {
+  response.headers.set(
+    "Content-Security-Policy",
+    "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self';"
+  );
+  response.headers.set(
+    "Strict-Transport-Security",
+    "max-age=63072000; includeSubDomains; preload"
+  );
+  response.headers.set("X-Frame-Options", "SAMEORIGIN");
+  response.headers.set("X-Content-Type-Options", "nosniff");
+  response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  response.headers.set(
+    "Permissions-Policy",
+    "geolocation=(), microphone=(), camera=()"
+  );
 }
 
 export const config = {
