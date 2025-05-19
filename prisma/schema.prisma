@@ -42,24 +42,49 @@ enum Provider {
     GOOGLE
 }
 
+enum AccountStatus {
+    ACTIVE
+    EXPIRED
+    REVOKED
+    PENDING
+}
+
+enum PostStatus {
+    DRAFT
+    SCHEDULED
+    PUBLISHED
+    FAILED
+    DELETED
+}
+
+enum PublishingStatus {
+    PENDING
+    PUBLISHED
+    FAILED
+    DELETED
+}
+
 model Account {
-    id                String  @id @default(auto()) @map("_id") @db.ObjectId
-    userId            String  @db.ObjectId
+    id                String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId            String   @db.ObjectId
     type              String
     provider          String
     providerAccountId String
-    refresh_token     String? @db.String
-    access_token      String? @db.String
+    refresh_token     String?  @db.String
+    access_token      String?  @db.String
     expires_at        Int?
     token_type        String?
     scope             String?
-    id_token          String? @db.String
+    id_token          String?  @db.String
     session_state     String?
+    createdAt         DateTime @default(now())
+    updatedAt         DateTime @updatedAt
 
     user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
     @@unique([provider, providerAccountId])
     @@index([userId])
+    @@index([provider])
 }
 
 model User {
@@ -67,11 +92,14 @@ model User {
     name              String?
     email             String?            @unique
     emailVerified     DateTime?
-    password          String?
+    password          String?            @db.String
     image             String?
     connectedAccounts ConnectedAccount[]
     accounts          Account[]
     gotFreeTrial      Boolean            @default(false)
+    lastLoginAt       DateTime?
+    isActive          Boolean            @default(true)
+    deletedAt         DateTime?
 
     stripeCustomerId     String?
     stripeSubscriptionId String?
@@ -81,32 +109,43 @@ model User {
     subscriptionStart    DateTime?
     subscriptionEnd      DateTime?
 
-    posts               Post[]
-    OAuthState          OAuthState[]
-    TwitterRequestToken TwitterRequestToken[]
+    posts Post[]
+
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    @@index([isActive])
+    @@index([deletedAt])
 }
 
 model Media {
     id           String    @id @default(auto()) @map("_id") @db.ObjectId
-    url          String
+    url          String    @db.String
     type         MediaType
-    thumbnailUrl String?
+    thumbnailUrl String?   @db.String
+    size         Int?
+    mimeType     String?
     postId       String    @db.ObjectId
     post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
     createdAt    DateTime  @default(now())
     updatedAt    DateTime  @updatedAt
+    deletedAt    DateTime?
 
     @@index([postId])
     @@index([type])
+    @@index([deletedAt])
 }
 
 model Post {
-    id          String    @id @default(auto()) @map("_id") @db.ObjectId
-    content     String
-    published   Boolean   @default(false)
-    publishedAt DateTime?
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
+    id           String     @id @default(auto()) @map("_id") @db.ObjectId
+    content      String     @db.String
+    status       PostStatus @default(DRAFT)
+    published    Boolean    @default(false)
+    publishedAt  DateTime?
+    scheduledFor DateTime?
+    createdAt    DateTime   @default(now())
+    updatedAt    DateTime   @updatedAt
+    deletedAt    DateTime?
 
     // Relacje
     userId                String                 @db.ObjectId
@@ -117,66 +156,61 @@ model Post {
     @@index([userId])
     @@index([published])
     @@index([publishedAt])
+    @@index([status])
+    @@index([scheduledFor])
+    @@index([deletedAt])
 }
 
 model ConnectedAccount {
-    id                String    @id @default(auto()) @map("_id") @db.ObjectId
-    provider          Provider
-    providerAccountId String
-    accessToken       String
-    accessTokenSecret String?
-    refreshToken      String?
-    expiresAt         DateTime?
-    name              String
-    username          String
-    profileImage      String?
+    id                    String        @id @default(auto()) @map("_id") @db.ObjectId
+    provider              Provider
+    providerAccountId     String
+    accessToken           String        @db.String
+    accessTokenSecret     String?       @db.String
+    refreshToken          String?       @db.String
+    expiresAt             DateTime?
+    name                  String
+    username              String
+    profileImage          String?       @db.String
+    status                AccountStatus @default(ACTIVE)
+    lastUsedAt            DateTime?
+    requestToken          String?       @db.String
+    requestTokenSecret    String?       @db.String
+    requestTokenExpiresAt DateTime?
 
     // Relacje
     userId                String                 @db.ObjectId
     user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
     postConnectedAccounts PostConnectedAccount[]
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt DateTime  @default(now())
+    updatedAt DateTime  @updatedAt
+    deletedAt DateTime?
 
     @@unique([provider, providerAccountId])
     @@index([userId])
+    @@index([provider])
+    @@index([status])
+    @@index([deletedAt])
+    @@index([requestTokenExpiresAt])
 }
 
 model PostConnectedAccount {
     id                 String           @id @default(auto()) @map("_id") @db.ObjectId
     postId             String           @db.ObjectId
     connectedAccountId String           @db.ObjectId
+    status             PublishingStatus @default(PENDING)
+    publishedAt        DateTime?
+    errorMessage       String?          @db.String
     post               Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
     connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+    createdAt          DateTime         @default(now())
+    updatedAt          DateTime         @updatedAt
+    deletedAt          DateTime?
 
     @@unique([postId, connectedAccountId])
     @@index([postId])
     @@index([connectedAccountId])
-}
-
-model OAuthState {
-    id           String   @id @default(cuid()) @map("_id")
-    userId       String
-    provider     String
-    state        String
-    codeVerifier String
-    expiresAt    DateTime
-    createdAt    DateTime @default(now())
-    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@index([userId])
-    @@index([state])
-    @@index([provider])
-}
-
-model TwitterRequestToken {
-    id        String   @id @default(auto()) @map("_id") @db.ObjectId
-    userId    String   @db.ObjectId
-    token     String
-    secret    String
-    createdAt DateTime @default(now())
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-    @@index([userId])
+    @@index([status])
+    @@index([deletedAt])
 }

@@ -122,6 +122,59 @@ export async function POST(req: Request) {
         );
       }
       break;
+
+    case "customer.subscription.updated":
+      const updatedSubscription = event.data.object as Stripe.Subscription;
+      const updatedCustomerId = updatedSubscription.customer as string;
+
+      try {
+        const user = await db.user.findFirst({
+          where: { stripeCustomerId: updatedCustomerId },
+        });
+
+        if (!user) {
+          console.error(
+            `User with stripeCustomerId ${updatedCustomerId} not found. Subscription: ${updatedSubscription.id}`
+          );
+          return NextResponse.json(
+            { error: "User not found" },
+            { status: 404 }
+          );
+        }
+
+        const planItem = updatedSubscription.items.data[0];
+
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            stripeSubscriptionId: updatedSubscription.id,
+            subscriptionStatus:
+              updatedSubscription.status.toUpperCase() as PlanStatus,
+            subscriptionType:
+              planItem.plan.product === "prod_RMUAeeAnYcfXEI"
+                ? "CREATOR"
+                : "BASIC",
+            subscriptionInterval:
+              planItem.plan.interval.toUpperCase() as PlanInterval,
+            subscriptionStart: new Date(updatedSubscription.start_date * 1000),
+            subscriptionEnd: new Date(
+              updatedSubscription.current_period_end * 1000
+            ),
+          },
+        });
+
+        console.log(
+          `Subscription for user ${user.id} (${user.email}) updated successfully.`
+        );
+      } catch (error) {
+        console.error("Error updating subscription:", error);
+        return NextResponse.json(
+          { error: "Failed to update subscription" },
+          { status: 500 }
+        );
+      }
+      break;
+
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
