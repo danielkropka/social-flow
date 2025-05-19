@@ -31,6 +31,7 @@ interface PostCreationState {
   currentStep: number;
   content: string;
   isTextOnly: boolean;
+  postType: "images" | "video" | "text" | null;
 }
 
 type PostCreationAction =
@@ -41,6 +42,7 @@ type PostCreationAction =
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_CONTENT"; payload: string }
   | { type: "SET_IS_TEXT_ONLY"; payload: boolean }
+  | { type: "SET_POST_TYPE"; payload: "images" | "video" | "text" | null }
   | { type: "RESET_STATE" };
 
 const initialState: PostCreationState = {
@@ -53,6 +55,7 @@ const initialState: PostCreationState = {
   currentStep: 1,
   content: "",
   isTextOnly: false,
+  postType: null,
 };
 
 function postCreationReducer(
@@ -74,6 +77,8 @@ function postCreationReducer(
       return { ...state, content: action.payload };
     case "SET_IS_TEXT_ONLY":
       return { ...state, isTextOnly: action.payload };
+    case "SET_POST_TYPE":
+      return { ...state, postType: action.payload };
     case "RESET_STATE":
       return {
         selectedFiles: [],
@@ -85,6 +90,7 @@ function postCreationReducer(
         currentStep: 1,
         content: "",
         isTextOnly: false,
+        postType: null,
       };
     default:
       return state;
@@ -100,6 +106,7 @@ interface PostCreationContextType {
   setCurrentStep: (step: number) => void;
   setContent: (content: string) => void;
   setIsTextOnly: (value: boolean) => void;
+  setPostType: (type: "images" | "video" | "text" | null) => void;
   resetState: () => void;
 }
 
@@ -138,6 +145,13 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_IS_TEXT_ONLY", payload: value });
   }, []);
 
+  const setPostType = useCallback(
+    (type: "images" | "video" | "text" | null) => {
+      dispatch({ type: "SET_POST_TYPE", payload: type });
+    },
+    []
+  );
+
   const resetState = useCallback(() => {
     dispatch({ type: "RESET_STATE" });
   }, []);
@@ -152,6 +166,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
       setCurrentStep,
       setContent,
       setIsTextOnly,
+      setPostType,
       resetState,
     }),
     [
@@ -163,6 +178,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
       setCurrentStep,
       setContent,
       setIsTextOnly,
+      setPostType,
       resetState,
     ]
   );
@@ -190,6 +206,7 @@ export function usePostCreation() {
     setCurrentStep: context.setCurrentStep,
     setContent: context.setContent,
     setIsTextOnly: context.setIsTextOnly,
+    setPostType: context.setPostType,
     resetState: context.resetState,
   };
 }

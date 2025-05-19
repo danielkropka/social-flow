@@ -162,11 +162,12 @@ const POST_TYPES: PostTypeConfig[] = [
 ];
 
 export function PostTypeSelectionStep() {
-  const { setCurrentStep, setIsTextOnly } = usePostCreation();
+  const { setCurrentStep, setIsTextOnly, setPostType } = usePostCreation();
   const [showHelp, setShowHelp] = useState(false);
 
   const handleTypeSelect = (type: PostType) => {
     setIsTextOnly(type === "text");
+    setPostType(type);
     setCurrentStep(2);
   };
 
