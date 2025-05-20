@@ -1216,14 +1216,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                       ? "opacity-75 cursor-not-allowed"
                       : "hover:shadow-md bg-blue-600 hover:bg-blue-700 text-white"
                   )}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (!form.formState.isValid) {
-                      form.trigger();
-                      return;
-                    }
-                    form.handleSubmit(onSubmit)(e);
-                  }}
                 >
                   {isPublishing ? (
                     <>
