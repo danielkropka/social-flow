@@ -27,8 +27,15 @@ export function SessionExpiredModal({ isOpen }: SessionExpiredModalProps) {
     router.push("/sign-in");
   };
 
+  const handleOpenChange = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open) {
+      router.push("/sign-in");
+    }
+  };
+
   return (
-    <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+    <Dialog open={isModalOpen} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-md z-[101]">
         <DialogHeader>
           <DialogTitle>Sesja wygasła</DialogTitle>
