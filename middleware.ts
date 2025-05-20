@@ -24,6 +24,26 @@ export async function middleware(request: NextRequest) {
     return response;
   }
 
+  // Zabezpieczenie strony sukcesu
+  if (pathname === "/success") {
+    // Sprawdź czy użytkownik jest zalogowany
+    if (!token) {
+      const response = NextResponse.redirect(new URL("/sign-in", request.url));
+      addSecurityHeaders(response);
+      return response;
+    }
+
+    // Sprawdź czy pochodzi z przekierowania Stripe
+    const referer = request.headers.get("referer");
+    if (!referer || !referer.includes("stripe.com")) {
+      const response = NextResponse.redirect(
+        new URL("/dashboard", request.url)
+      );
+      addSecurityHeaders(response);
+      return response;
+    }
+  }
+
   const response = NextResponse.next();
   addSecurityHeaders(response);
   return response;
@@ -49,5 +69,5 @@ function addSecurityHeaders(response: NextResponse) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/sign-in", "/sign-up"],
+  matcher: ["/dashboard/:path*", "/sign-in", "/sign-up", "/success"],
 };
