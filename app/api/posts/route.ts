@@ -8,7 +8,6 @@ import { withRateLimit } from "@/middleware/rateLimit";
 export async function POST(req: Request) {
   return withRateLimit(async (req: Request) => {
     try {
-      // Sprawdzenie autoryzacji
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) {
         return NextResponse.json(
@@ -21,9 +20,7 @@ export async function POST(req: Request) {
         );
       }
 
-      // Walidacja danych wejściowych
       const body = await req.json();
-      console.log("Otrzymane dane:", body);
       const { content, mediaUrls, accountIds, scheduledDate } = body;
 
       // Walidacja treści
@@ -78,8 +75,6 @@ export async function POST(req: Request) {
         );
       }
 
-      console.log(mediaUrls);
-
       // Jeśli post jest zaplanowany, zapisz go w bazie i zwróć sukces
       if (scheduledDate) {
         const post = await db.post.create({
@@ -91,7 +86,7 @@ export async function POST(req: Request) {
             media: {
               create:
                 mediaUrls?.map((media: { type: string }) => ({
-                  url: "", // URL będzie ustawiony po publikacji
+                  url: "",
                   type: media.type.startsWith("video/")
                     ? MediaType.VIDEO
                     : MediaType.IMAGE,
@@ -154,33 +149,28 @@ export async function POST(req: Request) {
                 }
               );
 
+              const result = await response.json();
+
               if (response.ok) {
-                const result = await response.json();
-                // Zapisujemy URL-e z S3 z odpowiedzi Twittera
                 if (result.data?.mediaUrls) {
                   uploadedMediaUrls.push(...result.data.mediaUrls);
                 }
+
+                results.push({
+                  accountId: account.id,
+                  provider: account.provider,
+                  success: true,
+                  data: result.data,
+                });
+              } else {
+                throw new Error(
+                  result.details || result.error || "Nieznany błąd"
+                );
               }
               break;
-            // Tutaj dodamy kolejne platformy
             default:
               throw new Error(`Nieobsługiwana platforma: ${account.provider}`);
           }
-
-          if (!response.ok) {
-            const errorData = await response.json();
-            throw new Error(
-              errorData.details || errorData.error || "Nieznany błąd"
-            );
-          }
-
-          const result = await response.json();
-          results.push({
-            accountId: account.id,
-            provider: account.provider,
-            success: true,
-            data: result.data,
-          });
         } catch (error) {
           results.push({
             accountId: account.id,
@@ -206,7 +196,7 @@ export async function POST(req: Request) {
         );
       }
 
-      // Jeśli wszystkie publikacje się powiodły, zapisz post w bazie
+      // Zapisz post w bazie
       const post = await db.post.create({
         data: {
           content,
@@ -216,7 +206,7 @@ export async function POST(req: Request) {
           media: {
             create:
               uploadedMediaUrls?.map((media) => ({
-                url: media.url,
+                url: media.url || "",
                 type: media.type.startsWith("video/")
                   ? MediaType.VIDEO
                   : MediaType.IMAGE,
@@ -239,6 +229,23 @@ export async function POST(req: Request) {
         },
       });
 
+      // Aktualizuj postUrl dla każdego konta
+      for (const result of results) {
+        if (result.success && result.data?.postUrl) {
+          await db.postConnectedAccount.update({
+            where: {
+              postId_connectedAccountId: {
+                postId: post.id,
+                connectedAccountId: result.accountId,
+              },
+            },
+            data: {
+              postUrl: result.data.postUrl,
+            },
+          });
+        }
+      }
+
       return NextResponse.json({
         success: true,
         data: post,
@@ -247,7 +254,6 @@ export async function POST(req: Request) {
     } catch (error) {
       console.error("[POSTS_POST]", error);
 
-      // Obsługa specyficznych błędów bazy danych
       if (error instanceof Error) {
         if (error.message.includes("Unique constraint")) {
           return NextResponse.json(
@@ -272,12 +278,11 @@ export async function POST(req: Request) {
         }
       }
 
-      // Ogólny błąd serwera
       return NextResponse.json(
         {
           success: false,
           error: "Wystąpił błąd wewnętrzny serwera",
-          details: "Spróbuj ponownie później",
+          details: error instanceof Error ? error.message : "Nieznany błąd",
         },
         { status: 500 }
       );
@@ -381,7 +386,7 @@ export async function GET(req: Request) {
         nextCursor,
       });
     } catch (error) {
-      console.error("Błąd podczas pobierania postów:", error);
+      console.error("[POSTS_GET]", error);
       return NextResponse.json(
         {
           success: false,

@@ -245,7 +245,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
               name: file.name,
             };
           } catch (error) {
-            console.error("Błąd podczas przetwarzania pliku:", error);
             throw new Error(`Nie udało się przetworzyć pliku ${file.name}`);
           }
         })
@@ -264,65 +263,67 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         }),
       });
 
+      const responseData = await response.json();
+
       if (!response.ok) {
-        const result = await response.json();
-        const errorMessage =
-          result.details ||
-          result.error ||
-          "Wystąpił błąd podczas publikacji posta";
+        if (responseData.results) {
+          // Aktualizuj status dla każdego konta
+          setPublishingStatus((prev) =>
+            prev.map((status) => {
+              const result = responseData.results.find(
+                (r: { accountId: string; success: boolean; error?: string }) =>
+                  r.accountId === status.accountId
+              );
+              return {
+                ...status,
+                status: result?.success ? "success" : "error",
+                error: result?.error,
+              };
+            })
+          );
 
-        setPublishingStatus((prev) =>
-          prev.map((status) => ({
-            ...status,
-            status: "error",
-            error: errorMessage,
-          }))
-        );
-
-        toast.error(errorMessage);
+          // Jeśli wszystkie konta mają błąd, zamknij modal po 3 sekundach
+          if (
+            responseData.results.every((r: { success: boolean }) => !r.success)
+          ) {
+            setTimeout(() => {
+              setIsPublishingModalOpen(false);
+              setIsPublishing(false);
+            }, 3000);
+          } else if (
+            responseData.results.every((r: { success: boolean }) => r.success)
+          ) {
+            // Jeśli wszystkie konta zostały pomyślnie opublikowane
+            toast.success("Post został opublikowany!");
+            setIsPublishingModalOpen(false);
+            setIsPublishing(false);
+            resetState();
+            onPublish();
+          }
+        } else {
+          // Błąd ogólny
+          toast.error(
+            responseData.details ||
+              responseData.error ||
+              "Wystąpił błąd podczas publikacji"
+          );
+          setIsPublishingModalOpen(false);
+          setIsPublishing(false);
+        }
         return;
       }
 
-      const result = await response.json();
-
-      if (result.results) {
-        setPublishingStatus((prev) =>
-          prev.map((status) => {
-            const platformResult = result.results.find(
-              (r: { accountId: string; success: boolean; error?: string }) =>
-                r.accountId === status.accountId
-            );
-            return {
-              ...status,
-              status: platformResult?.success ? "success" : "error",
-              error: platformResult?.error,
-            };
-          })
-        );
-      }
-
-      const successMessage = data.scheduledDate
-        ? "Post został zaplanowany pomyślnie"
-        : "Post został opublikowany pomyślnie";
-
-      toast.success(successMessage);
+      // Sukces dla pojedynczego konta
+      toast.success("Post został opublikowany!");
+      setIsPublishingModalOpen(false);
+      setIsPublishing(false);
       resetState();
       onPublish();
     } catch (error) {
-      console.error("Błąd podczas publikacji:", error);
-      const errorMessage =
-        error instanceof Error ? error.message : "Nieznany błąd";
-
-      setPublishingStatus((prev) =>
-        prev.map((status) => ({
-          ...status,
-          status: "error",
-          error: errorMessage,
-        }))
+      toast.error(
+        error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd"
       );
-
-      toast.error("Wystąpił błąd podczas publikacji posta");
-    } finally {
+      setIsPublishingModalOpen(false);
       setIsPublishing(false);
     }
   };

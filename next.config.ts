@@ -28,10 +28,8 @@ const nextConfig: NextConfig = {
         hostname: "lh3.googleusercontent.com",
       },
       {
-        protocol: "http",
-        hostname: "localhost",
-        port: "3000",
-        pathname: "/uploads/**",
+        protocol: "https",
+        hostname: "social-flow-media.s3.eu-north-1.amazonaws.com",
       },
     ],
     dangerouslyAllowSVG: true, // delete this after testing
