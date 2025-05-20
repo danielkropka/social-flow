@@ -245,6 +245,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
               name: file.name,
             };
           } catch (error) {
+            console.error("Błąd podczas przetwarzania pliku:", error);
             throw new Error(`Nie udało się przetworzyć pliku ${file.name}`);
           }
         })
