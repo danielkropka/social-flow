@@ -33,10 +33,12 @@ export default function UserButton({
       } hover:bg-gray-100 transition-colors`}
     >
       <Avatar className="h-8 w-8">
-        <AvatarImage
-          src={session.user?.image ?? ""}
-          alt={session.user?.name ?? ""}
-        />
+        {session.user?.image ? (
+          <AvatarImage
+            src={session.user.image}
+            alt={session.user?.name ?? undefined}
+          />
+        ) : null}
         <AvatarFallback>{session.user?.name?.charAt(0) ?? "U"}</AvatarFallback>
       </Avatar>
       <span className="text-sm font-medium text-gray-700">

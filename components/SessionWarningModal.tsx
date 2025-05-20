@@ -1,0 +1,31 @@
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
+interface SessionWarningModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export function SessionWarningModal({
+  isOpen,
+  onClose,
+}: SessionWarningModalProps) {
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="sm:max-w-md z-[100]">
+        <DialogHeader>
+          <DialogTitle>Uwaga - sesja wkrótce wygaśnie</DialogTitle>
+          <DialogDescription>
+            Twoja sesja wygaśnie za 5 minut. Sesja zostanie automatycznie
+            przedłużona, gdy wykryjemy Twoją aktywność.
+          </DialogDescription>
+        </DialogHeader>
+      </DialogContent>
+    </Dialog>
+  );
+}

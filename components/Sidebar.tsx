@@ -192,10 +192,12 @@ export function Sidebar({
             className="w-full px-3 py-2.5 flex items-center gap-3 rounded-xl hover:bg-white hover:shadow-sm transition-all duration-200"
           >
             <Avatar className="h-9 w-9 ring-2 ring-white shadow-sm">
-              <AvatarImage
-                src={session?.user?.image ?? ""}
-                alt={session?.user?.name ?? ""}
-              />
+              {session?.user?.image ? (
+                <AvatarImage
+                  src={session.user.image}
+                  alt={session?.user?.name ?? ""}
+                />
+              ) : null}
               <AvatarFallback className="bg-blue-100 text-blue-700">
                 {session?.user?.name?.charAt(0) ?? "U"}
               </AvatarFallback>
