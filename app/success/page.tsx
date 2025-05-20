@@ -1,74 +1,86 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useSession } from "next-auth/react";
+import React from "react";
 import Link from "next/link";
+import { motion } from "framer-motion";
+import { CheckCircle2 } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
 
+const fadeInUp = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  transition: { duration: 0.5 },
+};
+
 export default function SuccessPage() {
-  const { data: session, update } = useSession();
-  const [sessionUpdated, setSessionUpdated] = useState(false);
-
-  useEffect(() => {
-    if (session && !sessionUpdated) {
-      update().then(() => setSessionUpdated(true));
-    }
-  }, [session, sessionUpdated, update]);
-
   return (
-    <div className="relative flex flex-col items-center justify-center h-screen bg-gradient-to-b from-white via-gray-50/50 to-white text-gray-800 overflow-hidden">
+    <div className="min-h-screen bg-[#f9fafb] py-12 px-4 sm:px-6 lg:px-8 relative">
       <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
-      <div className="relative z-10 flex flex-col items-center justify-center p-8 bg-white rounded-lg shadow-lg max-w-lg">
-        <svg
-          className="w-16 h-16 text-blue-600 mb-4 animate-pulse"
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
+      <div className="max-w-2xl mx-auto relative">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          style={{ textAlign: "center", marginBottom: "3rem" }}
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M5 13l4 4L19 7"
-          />
-        </svg>
-        <h1 className="text-3xl font-semibold mt-4">Sukces!</h1>
-        <p className="text-md mt-2 max-w-sm text-center text-gray-600">
-          Twoja subskrypcja została pomyślnie zaktualizowana.
-        </p>
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-500">
-            Dziękujemy za zaufanie! Twoja subskrypcja jest teraz aktywna i
-            możesz cieszyć się wszystkimi korzyściami.
-          </p>
-          <p className="text-sm text-gray-500 mt-2">
-            Jeśli masz jakiekolwiek pytania, skontaktuj się z naszym zespołem
-            wsparcia.
-          </p>
-        </div>
-        <Link
-          href="/dashboard"
-          className={`inline-block px-5 py-2 my-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition duration-200 ${buttonVariants(
-            { variant: "default" }
-          )}`}
-        >
-          Przejdź do Panelu
-        </Link>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
+            style={{ display: "inline-block", marginBottom: "1.5rem" }}
+          >
+            <CheckCircle2 className="w-20 h-20 text-[#3b82f6] mx-auto" />
+          </motion.div>
 
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-500">
-            Chcesz dowiedzieć się więcej? Odwiedź nasz{" "}
-            <a href="/faq" className="text-blue-600 hover:underline">
-              FAQ
-            </a>{" "}
-            lub{" "}
-            <a href="/contact" className="text-blue-600 hover:underline">
-              skontaktuj się z nami
-            </a>
-            .
-          </p>
-        </div>
+          <motion.h1
+            {...fadeInUp}
+            style={{
+              fontSize: "2.25rem",
+              fontWeight: "bold",
+              color: "#111827",
+              marginBottom: "1rem",
+            }}
+          >
+            Dziękujemy za zakup!
+          </motion.h1>
+
+          <motion.p
+            {...fadeInUp}
+            transition={{ delay: 0.1 }}
+            style={{
+              fontSize: "1.25rem",
+              color: "#4B5563",
+              marginBottom: "1rem",
+            }}
+          >
+            Twoja subskrypcja została aktywowana i jest już gotowa do użycia.
+          </motion.p>
+
+          <motion.p
+            {...fadeInUp}
+            transition={{ delay: 0.2 }}
+            style={{ fontSize: "1rem", color: "#6B7280", marginBottom: "3rem" }}
+          >
+            Cieszymy się, że jesteś z nami. Od teraz możesz w pełni korzystać z
+            możliwości naszej platformy bez żadnych ograniczeń.
+          </motion.p>
+        </motion.div>
+
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+          style={{ textAlign: "center" }}
+        >
+          <Link
+            href="/dashboard"
+            className={`px-8 py-3 bg-[#3b82f6] text-white font-medium hover:bg-[#3b82f6]/90 transition-colors duration-200 ${buttonVariants(
+              { variant: "default" }
+            )}`}
+          >
+            Przejdź do panelu
+          </Link>
+        </motion.div>
       </div>
     </div>
   );
