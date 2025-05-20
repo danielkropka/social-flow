@@ -1,5 +1,3 @@
-import { STRIPE_PLANS } from "@/config/stripe";
-import { PlanInterval } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/config/prisma";
@@ -8,68 +6,71 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
 });
 
+type CreateCheckoutSessionBody = {
+  priceId: string;
+  email: string;
+  customerId: string | undefined;
+  isFreeTrial: boolean;
+};
+
+async function hasUsedTrialBefore(customerId: string): Promise<boolean> {
+  const subscriptions = await stripe.subscriptions.list({
+    customer: customerId,
+    status: "all",
+  });
+
+  return subscriptions.data.some(
+    (subscription) =>
+      subscription.trial_start &&
+      subscription.trial_end &&
+      subscription.trial_end < Date.now() / 1000
+  );
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { priceId, email, customerId, planKey, interval, isFreeTrial } =
-      body as {
-        priceId: string;
-        email: string;
-        customerId: string | undefined;
-        planKey: keyof typeof STRIPE_PLANS;
-        interval: PlanInterval;
-        isFreeTrial: boolean;
-      };
+    const { priceId, email, customerId, isFreeTrial } =
+      body as CreateCheckoutSessionBody;
 
-    if (isFreeTrial && customerId) {
-      const user = await db.user.findFirst({
-        where: { stripeCustomerId: customerId },
-      });
-
-      if (user?.gotFreeTrial) {
-        return NextResponse.json(
-          { error: "Już korzystałeś z bezpłatnego okresu próbnego." },
-          { status: 400 }
-        );
-      }
-    }
-
-    const plan = STRIPE_PLANS[planKey as keyof typeof STRIPE_PLANS];
-
-    const session = await stripe.checkout.sessions.create({
-      ...(customerId ? { customer: customerId } : { customer_email: email }),
+    const sessionOptions: Stripe.Checkout.SessionCreateParams = {
       payment_method_types: ["card"],
-      line_items: [
-        {
-          price: priceId,
-          quantity: 1,
-        },
-      ],
-      metadata: {
-        subscriptionType: plan.key.toUpperCase(),
-        subscriptionInterval: interval,
-        gotFreeTrial: isFreeTrial ? "true" : "false",
-      },
+      line_items: [{ price: priceId, quantity: 1 }],
       allow_promotion_codes: true,
       tax_id_collection: {
         enabled: true,
       },
-      ...(customerId && {
-        customer_update: {
-          name: "auto",
-        },
-      }),
       mode: "subscription",
-      ...(isFreeTrial && {
-        subscription_data: {
-          trial_period_days: 7,
-        },
-      }),
       success_url: `${req.headers.get(
         "origin"
       )}/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.get("origin")}/?cancel`,
-    });
+    };
+
+    if (isFreeTrial) {
+      if (customerId) {
+        const user = await db.user.findFirst({
+          where: { stripeCustomerId: customerId },
+        });
+
+        if (user && (await hasUsedTrialBefore(customerId))) {
+          throw new Error("Już korzystałeś z bezpłatnego okresu próbnego.");
+        }
+
+        sessionOptions.customer = customerId;
+        sessionOptions.customer_update = { name: "auto" };
+      } else {
+        sessionOptions.customer_email = email;
+      }
+
+      sessionOptions.subscription_data = {
+        trial_period_days: 7,
+      };
+    } else {
+      sessionOptions.customer_email = email;
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionOptions);
 
     return NextResponse.json({ id: session.id });
   } catch (error) {
