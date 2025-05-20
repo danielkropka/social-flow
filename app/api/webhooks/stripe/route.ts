@@ -99,7 +99,7 @@ export async function POST(req: Request) {
             subscriptionStatus:
               stripeSubscription.status.toUpperCase() as PlanStatus,
             subscriptionType:
-              planItem.plan.product === "prod_RMUAeeAnYcfXEI"
+              planItem.plan.product === process.env.STRIPE_CREATOR_PRODUCT_ID
                 ? "CREATOR"
                 : "BASIC",
             subscriptionInterval:
