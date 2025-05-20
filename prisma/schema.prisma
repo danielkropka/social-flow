@@ -215,13 +215,3 @@ model PostConnectedAccount {
     @@index([status])
     @@index([deletedAt])
 }
-
-/**
- * model CardTrial {
- * id          String   @id @default(auto()) @map("_id") @db.ObjectId
- * fingerprint String   @unique
- * customerId  String
- * createdAt   DateTime @default(now())
- * @@index([customerId])
- * }
- */
