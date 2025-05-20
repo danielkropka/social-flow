@@ -172,7 +172,6 @@ export const authOptions: NextAuthOptions = {
         session.user.subscriptionEnd = token.subscriptionEnd as Date;
         session.user.subscriptionInterval =
           token.subscriptionInterval as PlanInterval;
-        token.subscriptionInterval as PlanInterval;
       }
       return session;
     },
