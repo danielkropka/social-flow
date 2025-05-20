@@ -202,6 +202,7 @@ model PostConnectedAccount {
     status             PublishingStatus @default(PENDING)
     publishedAt        DateTime?
     errorMessage       String?          @db.String
+    postUrl            String?          @db.String
     post               Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
     connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
     createdAt          DateTime         @default(now())

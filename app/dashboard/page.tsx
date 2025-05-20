@@ -2,11 +2,14 @@
 
 import { usePostCreation } from "@/context/PostCreationContext";
 import { PostCreationForm } from "@/components/posts/PostCreationForm";
-import { toast } from "sonner";
 import { PostTypeSelectionStep } from "@/components/posts/PostTypeSelectionStep";
+import { useTab } from "@/context/TabContext";
+import { useRouter } from "next/navigation";
 
 export default function DashboardContent() {
-  const { currentStep, scheduledDate } = usePostCreation();
+  const { currentStep } = usePostCreation();
+  const router = useRouter();
+  const { setActiveTab } = useTab();
 
   return (
     <div>
@@ -15,13 +18,9 @@ export default function DashboardContent() {
       {currentStep === 2 && (
         <PostCreationForm
           onPublish={() => {
-            if (scheduledDate) {
-              toast.success(
-                `Post został zaplanowany na ${scheduledDate.toLocaleString()}`
-              );
-            } else {
-              toast.success("Post został opublikowany!");
-            }
+            // Przekieruj do zakładki z listą postów
+            router.push("/dashboard");
+            setActiveTab("posts");
           }}
         />
       )}

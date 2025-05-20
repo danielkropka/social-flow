@@ -20,16 +20,6 @@ export async function POST(req: Request) {
 
   const { content, mediaUrls, accountId } = await req.json();
 
-  console.log("Otrzymane dane:", {
-    content,
-    mediaUrls: mediaUrls?.map((m: MediaData) => ({
-      data: m.data,
-      type: m.type,
-      dataLength: m.data?.length,
-    })),
-    accountId,
-  });
-
   const account = await db.connectedAccount.findFirst({
     where: {
       id: accountId,
@@ -329,8 +319,6 @@ export async function POST(req: Request) {
                 }
               }
             }
-
-            mediaIds.push(media_id_string);
           } catch (error) {
             console.error("Error while processing INIT:", error);
             throw error;
@@ -364,16 +352,29 @@ export async function POST(req: Request) {
       });
 
       if (!postResponse.ok) {
-        throw new Error("Nie udało się opublikować posta na Twitter");
+        const errorText = await postResponse.text();
+        console.error("Błąd odpowiedzi Twitter:", {
+          status: postResponse.status,
+          statusText: postResponse.statusText,
+          errorText,
+          postData,
+        });
+        throw new Error(
+          `Nie udało się opublikować posta na Twitter: ${errorText}`
+        );
       }
 
       const responseData = await postResponse.json();
+
+      const postUrl = `https://twitter.com/${account.username}/status/${responseData.data.id}`;
+
       return NextResponse.json({
         success: true,
         data: {
           tweetId: responseData.data.id,
           mediaIds: mediaIds.map((m) => m.mediaId),
           mediaUrls: mediaIds.map((m) => ({ url: m.url, type: m.type })),
+          postUrl: postUrl,
         },
       });
     } catch (error) {

@@ -18,12 +18,20 @@ import {
   Twitter,
   BarChart3,
   Share2,
+  ExternalLink,
+  AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
 import { MediaType } from "@prisma/client";
 import { cn } from "@/lib/utils/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Post {
   id: string;
@@ -40,6 +48,7 @@ interface Post {
     thumbnailUrl: string | null;
   }[];
   postConnectedAccounts: {
+    postUrl?: string;
     connectedAccount: {
       provider: string;
       name: string;
@@ -55,6 +64,209 @@ interface PostsResponse {
 }
 
 const POSTS_PER_PAGE = 10;
+
+const PostCard = ({ post }: { post: Post }) => {
+  const [imageError, setImageError] = useState(false);
+
+  const getStatus = (post: Post) => {
+    if (post.published) return "published";
+    if (post.publishedAt) return "scheduled";
+    return "draft";
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "published":
+        return "bg-green-100 text-green-800";
+      case "scheduled":
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const getStatusText = (status: string) => {
+    switch (status) {
+      case "published":
+        return "Opublikowany";
+      case "scheduled":
+        return "Zaplanowany";
+      default:
+        return "Roboczy";
+    }
+  };
+
+  const getPlatformColor = (platform: string) => {
+    switch (platform.toLowerCase()) {
+      case "facebook":
+        return "bg-blue-100 text-blue-800";
+      case "instagram":
+        return "bg-pink-100 text-pink-800";
+      case "twitter":
+        return "bg-sky-100 text-sky-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const status = getStatus(post);
+  const platform =
+    post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
+    "";
+  const publishDate = post.publishedAt || post.createdAt;
+  const mediaUrl = post.media[0]?.thumbnailUrl || post.media[0]?.url;
+
+  return (
+    <div className="group bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 transform hover:-translate-y-1">
+      {post.media[0] && (
+        <div className="relative h-56 bg-gray-50">
+          {mediaUrl && !imageError ? (
+            <Image
+              src={mediaUrl}
+              alt="Post media"
+              fill
+              className="object-cover transition-transform duration-300 group-hover:scale-105"
+              onError={() => setImageError(true)}
+              loading="lazy"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center bg-gray-50">
+              <div className="text-center p-4">
+                <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500 text-sm">Brak dostępnego obrazu</p>
+              </div>
+            </div>
+          )}
+          <div className="absolute top-3 right-3 flex gap-2">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium shadow-sm cursor-help",
+                      getStatusColor(status)
+                    )}
+                  >
+                    {getStatusText(status)}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Status postu: {getStatusText(status)}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span
+                    className={cn(
+                      "px-3 py-1 rounded-full text-xs font-medium shadow-sm cursor-help",
+                      getPlatformColor(platform)
+                    )}
+                  >
+                    {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                  </span>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Platforma: {platform}</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+        </div>
+      )}
+      <div className="p-6 space-y-4">
+        <p className="text-gray-700 line-clamp-3 text-base leading-relaxed">
+          {post.content}
+        </p>
+        <div className="flex items-center justify-between text-sm text-gray-500 pt-3 border-t border-gray-100">
+          <div className="flex items-center gap-4">
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Calendar className="h-4 w-4" />
+                    <span>
+                      {format(new Date(publishDate), "d MMM yyyy", {
+                        locale: pl,
+                      })}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Data publikacji</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center gap-1.5">
+                    <Clock className="h-4 w-4" />
+                    <span>
+                      {format(new Date(publishDate), "HH:mm", {
+                        locale: pl,
+                      })}
+                    </span>
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Godzina publikacji</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          </div>
+          <div className="flex items-center gap-2">
+            {post.postConnectedAccounts[0]?.postUrl && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <a
+                      href={post.postConnectedAccounts[0].postUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "inline-flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200",
+                        platform === "twitter" &&
+                          "bg-[#1DA1F2]/10 text-[#1DA1F2] hover:bg-[#1DA1F2]/20",
+                        platform === "facebook" &&
+                          "bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20",
+                        platform === "instagram" &&
+                          "bg-gradient-to-r from-[#833AB4]/10 via-[#FD1D1D]/10 to-[#F77737]/10 text-[#E4405F] hover:from-[#833AB4]/20 hover:via-[#FD1D1D]/20 hover:to-[#F77737]/20",
+                        !["twitter", "facebook", "instagram"].includes(
+                          platform
+                        ) && "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                      )}
+                    >
+                      {platform === "twitter" && (
+                        <Twitter className="h-4 w-4" />
+                      )}
+                      {platform === "facebook" && (
+                        <Facebook className="h-4 w-4" />
+                      )}
+                      {platform === "instagram" && (
+                        <Instagram className="h-4 w-4" />
+                      )}
+                      {!["twitter", "facebook", "instagram"].includes(
+                        platform
+                      ) && <Globe className="h-4 w-4" />}
+                    </a>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>
+                      Otwórz post na{" "}
+                      {post.postConnectedAccounts[0].connectedAccount.provider}
+                    </p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PostsContent() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,47 +318,6 @@ export default function PostsContent() {
     }
   }, [inView, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const getStatus = (post: Post) => {
-    if (post.published) return "published";
-    if (post.publishedAt) return "scheduled";
-    return "draft";
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "published":
-        return "bg-green-100 text-green-800";
-      case "scheduled":
-        return "bg-blue-100 text-blue-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case "published":
-        return "Opublikowany";
-      case "scheduled":
-        return "Zaplanowany";
-      default:
-        return "Roboczy";
-    }
-  };
-
-  const getPlatformColor = (platform: string) => {
-    switch (platform.toLowerCase()) {
-      case "facebook":
-        return "bg-blue-100 text-blue-800";
-      case "instagram":
-        return "bg-pink-100 text-pink-800";
-      case "twitter":
-        return "bg-sky-100 text-sky-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
-
   const getActiveFiltersCount = () => {
     let count = 0;
     if (statusFilter !== "all") count++;
@@ -166,9 +337,9 @@ export default function PostsContent() {
           {Array.from({ length: 10 }).map((_, index) => (
             <div
               key={index}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden animate-pulse"
             >
-              <Skeleton className="h-48 w-full" />
+              <Skeleton className="h-56 w-full" />
               <div className="p-6 space-y-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <Skeleton className="h-6 w-20 rounded-full" />
@@ -193,10 +364,21 @@ export default function PostsContent() {
     if (status === "error") {
       return (
         <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-          <p className="text-red-500">
-            Wystąpił błąd:{" "}
-            {error instanceof Error ? error.message : "Nieznany błąd"}
-          </p>
+          <div className="max-w-md mx-auto">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <p className="text-red-500 text-lg font-medium mb-2">
+              Wystąpił błąd podczas ładowania postów
+            </p>
+            <p className="text-gray-500">
+              {error instanceof Error ? error.message : "Nieznany błąd"}
+            </p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Odśwież stronę
+            </button>
+          </div>
         </div>
       );
     }
@@ -206,10 +388,15 @@ export default function PostsContent() {
     if (posts.length === 0) {
       return (
         <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
-          <p className="text-gray-700 text-lg">Nie znaleziono postów</p>
-          <p className="text-gray-500 text-sm mt-2">
-            Spróbuj zmienić kryteria wyszukiwania lub filtry
-          </p>
+          <div className="max-w-md mx-auto">
+            <FileText className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-700 text-lg font-medium mb-2">
+              Nie znaleziono postów
+            </p>
+            <p className="text-gray-500 text-sm">
+              Spróbuj zmienić kryteria wyszukiwania lub filtry
+            </p>
+          </div>
         </div>
       );
     }
@@ -217,99 +404,22 @@ export default function PostsContent() {
     return (
       <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-          {posts.map((post) => {
-            const status = getStatus(post);
-            const platform =
-              post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
-              "";
-            const publishDate = post.publishedAt || post.createdAt;
-            const mediaUrl = post.media[0]?.thumbnailUrl || post.media[0]?.url;
-            const isBase64 =
-              mediaUrl?.startsWith("data:image") ||
-              mediaUrl?.startsWith("data:video");
-
-            return (
-              <div
-                key={post.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md transition-all duration-300 transform hover:-translate-y-1"
-              >
-                {post.media[0] && (
-                  <div className="relative h-48 bg-gray-50">
-                    {isBase64 ? (
-                      <Image
-                        src={mediaUrl}
-                        alt="Post media"
-                        fill
-                        className="object-cover"
-                        onError={(e) => {
-                          console.error("Błąd ładowania obrazu:", mediaUrl);
-                          const imgElement = e.target as HTMLImageElement;
-                          imgElement.src = "/placeholder-image.jpg";
-                        }}
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <p className="text-gray-500 text-sm">
-                          Nieprawidłowy format obrazu
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="p-6 space-y-4">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium",
-                        getStatusColor(status)
-                      )}
-                    >
-                      {getStatusText(status)}
-                    </span>
-                    <span
-                      className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium",
-                        getPlatformColor(platform)
-                      )}
-                    >
-                      {platform}
-                    </span>
-                  </div>
-                  <p className="text-gray-700 line-clamp-3 text-base leading-relaxed">
-                    {post.content}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-gray-500 pt-3 border-t border-gray-100">
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4" />
-                      <span>
-                        {format(new Date(publishDate), "d MMM yyyy", {
-                          locale: pl,
-                        })}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4" />
-                      <span>
-                        {format(new Date(publishDate), "HH:mm", {
-                          locale: pl,
-                        })}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
+          {posts.map((post) => (
+            <PostCard key={post.id} post={post} />
+          ))}
         </div>
 
         {hasNextPage && (
-          <div ref={ref} className="flex justify-center py-4">
+          <div ref={ref} className="flex justify-center py-8">
             {isFetchingNextPage ? (
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <div className="flex items-center gap-2 text-gray-500">
+                <Loader2 className="h-5 w-5 animate-spin" />
+                <span>Ładowanie kolejnych postów...</span>
+              </div>
             ) : (
               <button
                 onClick={() => fetchNextPage()}
-                className="text-sm text-gray-500 hover:text-gray-700"
+                className="px-6 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
               >
                 Załaduj więcej
               </button>
