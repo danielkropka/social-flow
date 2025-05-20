@@ -1,11 +1,33 @@
 import { db } from "@/lib/config/prisma";
-import { PlanInterval, PlanStatus } from "@prisma/client";
+import { PlanInterval, PlanStatus, PlanType } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
 });
+
+const STRIPE_PRODUCTS = {
+  CREATOR: process.env.STRIPE_CREATOR_PRODUCT_ID,
+  BASIC: process.env.STRIPE_BASIC_PRODUCT_ID,
+} as const;
+
+const getSubscriptionType = (
+  product: string | Stripe.Product | Stripe.DeletedProduct | null
+): PlanType => {
+  if (!product) return "FREE";
+
+  const productId = typeof product === "string" ? product : product.id;
+
+  switch (productId) {
+    case STRIPE_PRODUCTS.CREATOR:
+      return "CREATOR";
+    case STRIPE_PRODUCTS.BASIC:
+      return "BASIC";
+    default:
+      return "FREE";
+  }
+};
 
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature")!;
@@ -43,17 +65,13 @@ export async function POST(req: Request) {
         });
 
         if (!user) {
-          console.error(`User with email ${customerEmail} not found`);
-          return;
+          throw new Error(`User with email ${customerEmail} not found`);
         }
 
         await db.user.update({
           where: { id: user.id },
           data: {
             stripeCustomerId: customer,
-            ...(session.metadata?.gotFreeTrial === "true" && {
-              gotFreeTrial: true,
-            }),
           },
         });
 
@@ -86,24 +104,16 @@ export async function POST(req: Request) {
           console.error(
             `User with stripeCustomerId ${customerId} not found. Customer ID: ${customerId}, Subscription: ${subscription}`
           );
-          return NextResponse.json(
-            { error: "User not found" },
-            { status: 404 }
-          );
+          throw new Error("User not found");
         }
 
         await db.user.update({
           where: { id: user.id },
           data: {
             stripeSubscriptionId: stripeSubscription.id,
-            subscriptionStatus:
-              stripeSubscription.status.toUpperCase() as PlanStatus,
-            subscriptionType:
-              planItem.plan.product === process.env.STRIPE_CREATOR_PRODUCT_ID
-                ? "CREATOR"
-                : "BASIC",
-            subscriptionInterval:
-              planItem.plan.interval.toUpperCase() as PlanInterval,
+            subscriptionStatus: stripeSubscription.status as PlanStatus,
+            subscriptionType: getSubscriptionType(planItem.plan.product),
+            subscriptionInterval: planItem.plan.interval as PlanInterval,
             subscriptionStart: new Date(stripeSubscription.start_date * 1000),
             subscriptionEnd: new Date(
               stripeSubscription.current_period_end * 1000
@@ -148,18 +158,16 @@ export async function POST(req: Request) {
           where: { id: user.id },
           data: {
             stripeSubscriptionId: updatedSubscription.id,
-            subscriptionStatus:
-              updatedSubscription.status.toUpperCase() as PlanStatus,
-            subscriptionType:
-              planItem.plan.product === process.env.STRIPE_CREATOR_PRODUCT_ID
-                ? "CREATOR"
-                : "BASIC",
-            subscriptionInterval:
-              planItem.plan.interval.toUpperCase() as PlanInterval,
+            subscriptionStatus: updatedSubscription.status as PlanStatus,
+            subscriptionType: getSubscriptionType(planItem.plan.product),
+            subscriptionInterval: planItem.plan.interval as PlanInterval,
             subscriptionStart: new Date(updatedSubscription.start_date * 1000),
             subscriptionEnd: new Date(
               updatedSubscription.current_period_end * 1000
             ),
+            gotFreeTrial: updatedSubscription.trial_start
+              ? true
+              : user.gotFreeTrial,
           },
         });
 
@@ -188,10 +196,7 @@ export async function POST(req: Request) {
           console.error(
             `User with stripeCustomerId ${deletedCustomerId} not found. Subscription: ${deletedSubscription.id}`
           );
-          return NextResponse.json(
-            { error: "User not found" },
-            { status: 404 }
-          );
+          throw new Error("User not found");
         }
 
         await db.user.update({
@@ -226,5 +231,8 @@ export async function POST(req: Request) {
       );
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({
+    message: "Event processed successfully",
+    eventType: event.type,
+  });
 }

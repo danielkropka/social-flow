@@ -14,10 +14,10 @@ export default function PricingSection() {
   const { data: session } = useSession();
   const [isAnnual, setIsAnnual] = useState(true);
   const [isLoading, startTransition] = useTransition();
-  const [isFreeTrial, setIsFreeTrial] = useState(true);
+  const [isFreeTrial, setIsFreeTrial] = useState(false);
   const router = useRouter();
 
-  const handleSubscribe = (priceId: string, key: string) => {
+  const handleSubscribe = (priceId: string) => {
     startTransition(async () => {
       if (!session?.user) {
         router.push("/sign-in");
@@ -31,34 +31,7 @@ export default function PricingSection() {
 
         if (!stripe) throw new Error("Wystąpił błąd podczas ładowania Stripe.");
 
-        let response: Response;
-
-        if (
-          session?.user.subscriptionType &&
-          session?.user.subscriptionType !== "FREE"
-        ) {
-          response = await fetch("/api/create-billing-portal-session", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              customerId: session?.user.stripeCustomerId,
-            }),
-          });
-
-          const billingPortalSession = await response.json();
-
-          if (billingPortalSession.error)
-            throw new Error(billingPortalSession.error);
-
-          if (billingPortalSession.url)
-            window.location.href = billingPortalSession.url;
-
-          return;
-        }
-
-        response = await fetch("/api/create-checkout-session", {
+        const response = await fetch("/api/create-checkout-session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -67,8 +40,6 @@ export default function PricingSection() {
             priceId,
             email: session?.user?.email,
             customerId: session?.user?.stripeCustomerId,
-            planKey: key,
-            interval: isAnnual ? "YEAR" : "MONTH",
             isFreeTrial,
           }),
         });
@@ -188,8 +159,7 @@ export default function PricingSection() {
                 className="mt-auto w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors h-12 flex items-center justify-center"
                 onClick={() =>
                   handleSubscribe(
-                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!,
-                    plan.key
+                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!
                   )
                 }
                 disabled={isLoading}
