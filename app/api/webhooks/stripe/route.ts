@@ -220,6 +220,10 @@ export async function POST(req: Request) {
 
     default:
       console.log(`Unhandled event type ${event.type}`);
+      return NextResponse.json(
+        { error: `Unhandled event type: ${event.type}` },
+        { status: 400 }
+      );
   }
 
   return NextResponse.json({ received: true });
