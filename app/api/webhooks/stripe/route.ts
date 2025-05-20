@@ -111,9 +111,11 @@ export async function POST(req: Request) {
           where: { id: user.id },
           data: {
             stripeSubscriptionId: stripeSubscription.id,
-            subscriptionStatus: stripeSubscription.status as PlanStatus,
+            subscriptionStatus:
+              stripeSubscription.status.toUpperCase() as PlanStatus,
             subscriptionType: getSubscriptionType(planItem.plan.product),
-            subscriptionInterval: planItem.plan.interval as PlanInterval,
+            subscriptionInterval:
+              planItem.plan.interval.toUpperCase() as PlanInterval,
             subscriptionStart: new Date(stripeSubscription.start_date * 1000),
             subscriptionEnd: new Date(
               stripeSubscription.current_period_end * 1000
@@ -158,9 +160,11 @@ export async function POST(req: Request) {
           where: { id: user.id },
           data: {
             stripeSubscriptionId: updatedSubscription.id,
-            subscriptionStatus: updatedSubscription.status as PlanStatus,
+            subscriptionStatus:
+              updatedSubscription.status.toUpperCase() as PlanStatus,
             subscriptionType: getSubscriptionType(planItem.plan.product),
-            subscriptionInterval: planItem.plan.interval as PlanInterval,
+            subscriptionInterval:
+              planItem.plan.interval.toUpperCase() as PlanInterval,
             subscriptionStart: new Date(updatedSubscription.start_date * 1000),
             subscriptionEnd: new Date(
               updatedSubscription.current_period_end * 1000
