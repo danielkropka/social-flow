@@ -106,7 +106,6 @@ export async function POST(req: Request) {
           }
 
           // Konwertuj dane na base64
-          const base64Data = Buffer.from(binaryData).toString("base64");
           const mediaBlob = new Blob([binaryData], { type: mediaType });
 
           // Upload do S3
