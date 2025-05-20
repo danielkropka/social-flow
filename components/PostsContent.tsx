@@ -7,9 +7,25 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
-import { Search, Calendar, Clock, Loader2, Filter } from "lucide-react";
+import {
+  Search,
+  Calendar,
+  Clock,
+  Loader2,
+  Filter,
+  Globe,
+  CheckCircle2,
+  CalendarClock,
+  FileText,
+  Facebook,
+  Instagram,
+  Twitter,
+  BarChart3,
+  Share2,
+} from "lucide-react";
 import Image from "next/image";
 import { MediaType } from "@prisma/client";
 import { cn } from "@/lib/utils/utils";
@@ -46,6 +62,29 @@ interface PostsResponse {
 }
 
 const POSTS_PER_PAGE = 10;
+
+const PostSkeleton = () => {
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+      <Skeleton className="h-48 w-full" />
+      <div className="p-6 space-y-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <Skeleton className="h-6 w-20 rounded-full" />
+          <Skeleton className="h-6 w-24 rounded-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
+        </div>
+        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-4 w-16" />
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function PostsContent() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -138,99 +177,75 @@ export default function PostsContent() {
     }
   };
 
-  if (status === "pending") {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <p className="text-gray-500">Ładowanie postów...</p>
-      </div>
-    );
-  }
+  const getActiveFiltersCount = () => {
+    let count = 0;
+    if (statusFilter !== "all") count++;
+    if (platformFilter !== "all") count++;
+    return count;
+  };
 
-  if (status === "error") {
-    return (
-      <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-red-500">
-          Wystąpił błąd:{" "}
-          {error instanceof Error ? error.message : "Nieznany błąd"}
-        </p>
-      </div>
-    );
-  }
+  const clearFilters = () => {
+    setStatusFilter("all");
+    setPlatformFilter("all");
+  };
 
-  const posts = data?.pages.flatMap((page) => page.posts) ?? [];
-
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">Posty</h1>
-        <p className="text-gray-600">
-          Zarządzaj swoimi postami i ich statusami
-        </p>
-      </div>
-
-      <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-        <div className="flex flex-col space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Szukaj postów..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 h-11 text-base bg-gray-50 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-
-          <button
-            onClick={() => setIsFiltersVisible(!isFiltersVisible)}
-            className="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700 transition-colors"
-          >
-            <Filter className="h-4 w-4" />
-            {isFiltersVisible ? "Ukryj filtry" : "Pokaż filtry"}
-          </button>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 overflow-hidden">
-            {isFiltersVisible && (
-              <>
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-full h-11 bg-gray-50 border-gray-200">
-                    <SelectValue placeholder="Status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Wszystkie</SelectItem>
-                    <SelectItem value="published">Opublikowane</SelectItem>
-                    <SelectItem value="scheduled">Zaplanowane</SelectItem>
-                    <SelectItem value="draft">Szkice</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Select
-                  value={platformFilter}
-                  onValueChange={setPlatformFilter}
-                >
-                  <SelectTrigger className="w-full h-11 bg-gray-50 border-gray-200">
-                    <SelectValue placeholder="Platforma" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Wszystkie</SelectItem>
-                    <SelectItem value="facebook">Facebook</SelectItem>
-                    <SelectItem value="instagram">Instagram</SelectItem>
-                    <SelectItem value="twitter">Twitter</SelectItem>
-                  </SelectContent>
-                </Select>
-              </>
-            )}
-          </div>
+  const renderPosts = () => {
+    if (status === "pending") {
+      return (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+          {Array.from({ length: 10 }).map((_, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden"
+            >
+              <Skeleton className="h-48 w-full" />
+              <div className="p-6 space-y-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                </div>
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+                <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-4 w-16" />
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
-      </div>
+      );
+    }
 
-      {posts.length === 0 ? (
+    if (status === "error") {
+      return (
+        <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
+          <p className="text-red-500">
+            Wystąpił błąd:{" "}
+            {error instanceof Error ? error.message : "Nieznany błąd"}
+          </p>
+        </div>
+      );
+    }
+
+    const posts = data?.pages.flatMap((page) => page.posts) ?? [];
+
+    if (posts.length === 0) {
+      return (
         <div className="text-center py-16 bg-white rounded-xl shadow-sm border border-gray-100">
           <p className="text-gray-700 text-lg">Nie znaleziono postów</p>
           <p className="text-gray-500 text-sm mt-2">
             Spróbuj zmienić kryteria wyszukiwania lub filtry
           </p>
         </div>
-      ) : (
+      );
+    }
+
+    return (
+      <>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
           {posts.map((post) => {
             const status = getStatus(post);
@@ -316,22 +331,232 @@ export default function PostsContent() {
             );
           })}
         </div>
-      )}
 
-      {hasNextPage && (
-        <div ref={ref} className="flex justify-center py-4">
-          {isFetchingNextPage ? (
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          ) : (
-            <button
-              onClick={() => fetchNextPage()}
-              className="text-sm text-gray-500 hover:text-gray-700"
-            >
-              Załaduj więcej
-            </button>
-          )}
+        {hasNextPage && (
+          <div ref={ref} className="flex justify-center py-4">
+            {isFetchingNextPage ? (
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            ) : (
+              <button
+                onClick={() => fetchNextPage()}
+                className="text-sm text-gray-500 hover:text-gray-700"
+              >
+                Załaduj więcej
+              </button>
+            )}
+          </div>
+        )}
+      </>
+    );
+  };
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-2xl font-bold text-gray-900">Posty</h1>
+        <p className="text-gray-600">
+          Zarządzaj swoimi postami i ich statusami
+        </p>
+      </div>
+
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="relative">
+          <div className="absolute inset-0S opacity-50" />
+          <div className="relative p-6">
+            <div className="flex flex-col md:flex-row md:items-center gap-4">
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Szukaj postów..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-11 text-base bg-white/80 backdrop-blur-sm border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setIsFiltersVisible(!isFiltersVisible)}
+                  className={cn(
+                    "px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-2",
+                    isFiltersVisible
+                      ? "bg-blue-600 text-white shadow-lg shadow-blue-200"
+                      : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
+                  )}
+                >
+                  <Filter className="h-4 w-4" />
+                  Filtry
+                  {getActiveFiltersCount() > 0 && (
+                    <span className="px-2 py-0.5 text-xs font-medium bg-white/20 rounded-full">
+                      {getActiveFiltersCount()}
+                    </span>
+                  )}
+                </button>
+                {getActiveFiltersCount() > 0 && (
+                  <button
+                    onClick={clearFilters}
+                    className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50 transition-colors border border-gray-200"
+                  >
+                    Wyczyść
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
         </div>
-      )}
+
+        <div
+          className={cn(
+            "transition-all duration-300 ease-in-out",
+            isFiltersVisible ? "max-h-[500px] opacity-100" : "max-h-0 opacity-0"
+          )}
+        >
+          <div className="p-6 border-t border-gray-100">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <BarChart3 className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Status
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      value: "all",
+                      label: "Wszystkie",
+                      icon: Globe,
+                      color: "text-blue-600",
+                    },
+                    {
+                      value: "published",
+                      label: "Opublikowane",
+                      icon: CheckCircle2,
+                      color: "text-green-600",
+                    },
+                    {
+                      value: "scheduled",
+                      label: "Zaplanowane",
+                      icon: CalendarClock,
+                      color: "text-orange-600",
+                    },
+                    {
+                      value: "draft",
+                      label: "Szkice",
+                      icon: FileText,
+                      color: "text-gray-600",
+                    },
+                  ].map((status) => {
+                    const Icon = status.icon;
+                    return (
+                      <button
+                        key={status.value}
+                        onClick={() => setStatusFilter(status.value)}
+                        className={cn(
+                          "group relative px-4 py-3 rounded-xl border transition-all duration-200",
+                          statusFilter === status.value
+                            ? "bg-blue-50 border-blue-200"
+                            : "border-gray-200 hover:border-blue-200 hover:bg-blue-50/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={cn("h-5 w-5", status.color)} />
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              statusFilter === status.value
+                                ? "text-blue-700"
+                                : "text-gray-700 group-hover:text-blue-700"
+                            )}
+                          >
+                            {status.label}
+                          </span>
+                        </div>
+                        {statusFilter === status.value && (
+                          <div className="absolute inset-0 rounded-xl border-2 border-blue-500 pointer-events-none" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Share2 className="h-4 w-4 text-purple-600" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">
+                    Platforma
+                  </h3>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  {[
+                    {
+                      value: "all",
+                      label: "Wszystkie",
+                      icon: Globe,
+                      color: "text-gray-600",
+                    },
+                    {
+                      value: "facebook",
+                      label: "Facebook",
+                      icon: Facebook,
+                      color: "text-[#1877F2]",
+                    },
+                    {
+                      value: "instagram",
+                      label: "Instagram",
+                      icon: Instagram,
+                      color: "text-[#E4405F]",
+                    },
+                    {
+                      value: "twitter",
+                      label: "Twitter",
+                      icon: Twitter,
+                      color: "text-[#1DA1F2]",
+                    },
+                  ].map((platform) => {
+                    const Icon = platform.icon;
+                    return (
+                      <button
+                        key={platform.value}
+                        onClick={() => setPlatformFilter(platform.value)}
+                        className={cn(
+                          "group relative px-4 py-3 rounded-xl border transition-all duration-200",
+                          platformFilter === platform.value
+                            ? "bg-purple-50 border-purple-200"
+                            : "border-gray-200 hover:border-purple-200 hover:bg-purple-50/50"
+                        )}
+                      >
+                        <div className="flex items-center gap-3">
+                          <Icon className={cn("h-5 w-5", platform.color)} />
+                          <span
+                            className={cn(
+                              "text-sm font-medium",
+                              platformFilter === platform.value
+                                ? "text-purple-700"
+                                : "text-gray-700 group-hover:text-purple-700"
+                            )}
+                          >
+                            {platform.label}
+                          </span>
+                        </div>
+                        {platformFilter === platform.value && (
+                          <div className="absolute inset-0 rounded-xl border-2 border-purple-500 pointer-events-none" />
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {renderPosts()}
     </div>
   );
 }

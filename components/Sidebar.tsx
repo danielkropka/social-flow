@@ -12,6 +12,7 @@ import {
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
+import { Skeleton } from "./ui/skeleton";
 
 const contentCreationItems = [
   { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
@@ -35,7 +36,7 @@ export function Sidebar({
   onTabChange,
   activeTab,
 }: SidebarProps) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -191,34 +192,47 @@ export function Sidebar({
             onClick={() => setIsProfileOpen(!isProfileOpen)}
             className="w-full px-3 py-2.5 flex items-center gap-3 rounded-xl hover:bg-white hover:shadow-sm transition-all duration-200"
           >
-            <Avatar className="h-9 w-9 ring-2 ring-white shadow-sm">
-              {session?.user?.image ? (
-                <AvatarImage
-                  src={session.user.image}
-                  alt={session?.user?.name ?? ""}
+            {status === "loading" ? (
+              <>
+                <Skeleton className="h-9 w-9 rounded-full" />
+                <div className="flex-1 flex flex-col items-start gap-2">
+                  <Skeleton className="h-4 w-24" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+                <Skeleton className="h-5 w-5" />
+              </>
+            ) : (
+              <>
+                <Avatar className="h-9 w-9 ring-2 ring-white shadow-sm">
+                  {session?.user?.image ? (
+                    <AvatarImage
+                      src={session.user.image}
+                      alt={session?.user?.name ?? ""}
+                    />
+                  ) : null}
+                  <AvatarFallback className="bg-blue-100 text-blue-700">
+                    {session?.user?.name?.charAt(0) ?? "U"}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 flex flex-col items-start min-w-0">
+                  <span className="text-sm font-medium text-gray-900 truncate w-full">
+                    {session?.user?.name ?? "Użytkownik"}
+                  </span>
+                  <span className="text-xs text-gray-600 truncate w-full">
+                    {session?.user?.subscriptionType === "BASIC"
+                      ? "Plan Podstawowy"
+                      : session?.user?.subscriptionType === "CREATOR"
+                      ? "Plan Twórca"
+                      : "Plan darmowy"}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
+                    isProfileOpen ? "rotate-180" : ""
+                  }`}
                 />
-              ) : null}
-              <AvatarFallback className="bg-blue-100 text-blue-700">
-                {session?.user?.name?.charAt(0) ?? "U"}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 flex flex-col items-start min-w-0">
-              <span className="text-sm font-medium text-gray-900 truncate w-full">
-                {session?.user?.name ?? "Użytkownik"}
-              </span>
-              <span className="text-xs text-gray-600 truncate w-full">
-                {session?.user?.subscriptionType === "BASIC"
-                  ? "Plan Podstawowy"
-                  : session?.user?.subscriptionType === "CREATOR"
-                  ? "Plan Twórca"
-                  : "Plan darmowy"}
-              </span>
-            </div>
-            <ChevronDown
-              className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
-                isProfileOpen ? "rotate-180" : ""
-              }`}
-            />
+              </>
+            )}
           </button>
 
           {/* Profile dropdown */}
