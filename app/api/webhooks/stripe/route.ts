@@ -120,6 +120,9 @@ export async function POST(req: Request) {
             subscriptionEnd: new Date(
               stripeSubscription.current_period_end * 1000
             ),
+            gotFreeTrial: stripeSubscription.trial_start
+              ? true
+              : user.gotFreeTrial,
           },
         });
 
