@@ -6,11 +6,6 @@ import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import { withRateLimit } from "@/middleware/rateLimit";
 
-interface MediaData {
-  type: string;
-  data: number[] | string;
-}
-
 export async function POST(req: Request) {
   const session = await getAuthSession();
 

@@ -18,7 +18,6 @@ import {
   Twitter,
   BarChart3,
   Share2,
-  ExternalLink,
   AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
