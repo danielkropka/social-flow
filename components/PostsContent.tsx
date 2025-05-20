@@ -1,12 +1,5 @@
 import { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from "date-fns";
 import { pl } from "date-fns/locale";
@@ -62,29 +55,6 @@ interface PostsResponse {
 }
 
 const POSTS_PER_PAGE = 10;
-
-const PostSkeleton = () => {
-  return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      <Skeleton className="h-48 w-full" />
-      <div className="p-6 space-y-4">
-        <div className="flex flex-wrap items-center gap-2">
-          <Skeleton className="h-6 w-20 rounded-full" />
-          <Skeleton className="h-6 w-24 rounded-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-4 w-full" />
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-        <div className="flex items-center gap-4 pt-3 border-t border-gray-100">
-          <Skeleton className="h-4 w-24" />
-          <Skeleton className="h-4 w-16" />
-        </div>
-      </div>
-    </div>
-  );
-};
 
 export default function PostsContent() {
   const [searchQuery, setSearchQuery] = useState("");
