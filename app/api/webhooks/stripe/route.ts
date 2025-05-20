@@ -175,6 +175,49 @@ export async function POST(req: Request) {
       }
       break;
 
+    case "customer.subscription.deleted":
+      const deletedSubscription = event.data.object as Stripe.Subscription;
+      const deletedCustomerId = deletedSubscription.customer as string;
+
+      try {
+        const user = await db.user.findFirst({
+          where: { stripeCustomerId: deletedCustomerId },
+        });
+
+        if (!user) {
+          console.error(
+            `User with stripeCustomerId ${deletedCustomerId} not found. Subscription: ${deletedSubscription.id}`
+          );
+          return NextResponse.json(
+            { error: "User not found" },
+            { status: 404 }
+          );
+        }
+
+        await db.user.update({
+          where: { id: user.id },
+          data: {
+            stripeSubscriptionId: null,
+            subscriptionStatus: "CANCELED",
+            subscriptionType: null,
+            subscriptionInterval: null,
+            subscriptionStart: null,
+            subscriptionEnd: null,
+          },
+        });
+
+        console.log(
+          `Subscription for user ${user.id} (${user.email}) deleted successfully.`
+        );
+      } catch (error) {
+        console.error("Error deleting subscription:", error);
+        return NextResponse.json(
+          { error: "Failed to process subscription deletion" },
+          { status: 500 }
+        );
+      }
+      break;
+
     default:
       console.log(`Unhandled event type ${event.type}`);
   }
