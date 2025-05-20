@@ -23,6 +23,7 @@ export async function POST(req: Request) {
   console.log("Otrzymane dane:", {
     content,
     mediaUrls: mediaUrls?.map((m: MediaData) => ({
+      data: m.data,
       type: m.type,
       dataLength: m.data?.length,
     })),
@@ -104,6 +105,7 @@ export async function POST(req: Request) {
             );
           }
 
+          // Konwertuj dane na base64
           const base64Data = Buffer.from(binaryData).toString("base64");
           const mediaBlob = new Blob([binaryData], { type: mediaType });
 
@@ -159,7 +161,6 @@ export async function POST(req: Request) {
           initForm.append("total_bytes", s3Blob.size.toString());
           initForm.append("media_type", mediaType);
           initForm.append("media_category", mediaCategory);
-          initForm.append("media_data", base64Data);
 
           // Step 1: INIT
           const initRequestData = {
