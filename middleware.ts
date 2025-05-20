@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
 function addSecurityHeaders(response: NextResponse) {
   response.headers.set(
     "Content-Security-Policy",
-    "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self';"
+    "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self' https://js.stripe.com;"
   );
   response.headers.set(
     "Strict-Transport-Security",
