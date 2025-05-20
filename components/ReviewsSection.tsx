@@ -18,7 +18,7 @@ const reviews: Review[] = [
     rating: 5,
     content:
       "Social Flow znacząco usprawniło naszą pracę. Oszczędzamy mnóstwo czasu na planowaniu postów, a interfejs jest intuicyjny i przyjemny w użyciu.",
-    avatar: "/avatars/avatar-1.png",
+    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Anna Kowalska`,
   },
   {
     name: "Marek Nowak",
@@ -26,7 +26,7 @@ const reviews: Review[] = [
     rating: 5,
     content:
       "Najlepsze narzędzie do zarządzania social mediami, z jakiego korzystałem. Wszystko w jednym miejscu, bez zbędnych komplikacji.",
-    avatar: "/avatars/avatar-2.png",
+    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Marek Nowak`,
   },
   {
     name: "Karolina Wiśniewska",
@@ -34,7 +34,7 @@ const reviews: Review[] = [
     rating: 5,
     content:
       "Dzięki Social Flow mogę się skupić na tworzeniu treści, zamiast tracić czas na żmudne publikowanie na różnych platformach.",
-    avatar: "/avatars/avatar-3.png",
+    avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Karolina Wisniewska`,
   },
 ];
 
