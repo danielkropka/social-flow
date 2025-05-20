@@ -849,6 +849,59 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                 )}
               </div>
             )}
+
+            <div className="mt-6 pt-6 border-t border-gray-100">
+              <Button
+                type="submit"
+                disabled={
+                  isPublishing ||
+                  selectedFiles.length === 0 ||
+                  form.watch("text")?.length === 0 ||
+                  selectedAccounts.length === 0
+                }
+                className={cn(
+                  "w-full transition-all duration-200",
+                  isPublishing ||
+                    selectedFiles.length === 0 ||
+                    form.watch("text")?.length === 0 ||
+                    selectedAccounts.length === 0
+                    ? "opacity-75 cursor-not-allowed"
+                    : "hover:shadow-md bg-blue-600 hover:bg-blue-700 text-white"
+                )}
+              >
+                {isPublishing ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    {scheduledDate ? "Planowanie..." : "Publikowanie..."}
+                  </>
+                ) : (
+                  <>
+                    <Send className="h-4 w-4 mr-2" />
+                    {scheduledDate ? "Zaplanuj post" : "Opublikuj post"}
+                  </>
+                )}
+              </Button>
+              <div className="mt-3 space-y-2">
+                {selectedFiles.length === 0 && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Info className="h-4 w-4" />
+                    <span>Dodaj plik, aby opublikować post</span>
+                  </div>
+                )}
+                {form.watch("text")?.length === 0 && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Info className="h-4 w-4" />
+                    <span>Dodaj tekst posta</span>
+                  </div>
+                )}
+                {selectedAccounts.length === 0 && (
+                  <div className="flex items-center gap-2 text-sm text-gray-500">
+                    <Info className="h-4 w-4" />
+                    <span>Wybierz przynajmniej jedno konto</span>
+                  </div>
+                )}
+              </div>
+            </div>
           </form>
         </div>
 
@@ -1196,59 +1249,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                     <p>{form.formState.errors.scheduledDate.message}</p>
                   </div>
                 )}
-              </div>
-
-              <div className="mt-6 pt-6 border-t border-gray-100">
-                <Button
-                  type="submit"
-                  disabled={
-                    isPublishing ||
-                    selectedFiles.length === 0 ||
-                    form.watch("text")?.length === 0 ||
-                    selectedAccounts.length === 0
-                  }
-                  className={cn(
-                    "w-full transition-all duration-200",
-                    isPublishing ||
-                      selectedFiles.length === 0 ||
-                      form.watch("text")?.length === 0 ||
-                      selectedAccounts.length === 0
-                      ? "opacity-75 cursor-not-allowed"
-                      : "hover:shadow-md bg-blue-600 hover:bg-blue-700 text-white"
-                  )}
-                >
-                  {isPublishing ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      {scheduledDate ? "Planowanie..." : "Publikowanie..."}
-                    </>
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      {scheduledDate ? "Zaplanuj post" : "Opublikuj post"}
-                    </>
-                  )}
-                </Button>
-                <div className="mt-3 space-y-2">
-                  {selectedFiles.length === 0 && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Info className="h-4 w-4" />
-                      <span>Dodaj plik, aby opublikować post</span>
-                    </div>
-                  )}
-                  {form.watch("text")?.length === 0 && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Info className="h-4 w-4" />
-                      <span>Dodaj tekst posta</span>
-                    </div>
-                  )}
-                  {selectedAccounts.length === 0 && (
-                    <div className="flex items-center gap-2 text-sm text-gray-500">
-                      <Info className="h-4 w-4" />
-                      <span>Wybierz przynajmniej jedno konto</span>
-                    </div>
-                  )}
-                </div>
               </div>
             </div>
           </div>
