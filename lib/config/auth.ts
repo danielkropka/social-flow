@@ -40,9 +40,11 @@ export const authOptions: NextAuthOptions = {
       async authorize(credentials): Promise<User | null> {
         try {
           // Sprawdź limit prób logowania
-          const key = `auth-rate-limit:${credentials?.email || "anonymous"}`;
-          const isAllowed = await checkRateLimit(key, 5, 60 * 60 * 1000); // 5 prób na godzinę
-
+          const isAllowed = await checkRateLimit(
+            `auth-rate-limit:${credentials?.email || "anonymous"}`,
+            5,
+            60 * 60 * 1000
+          );
           if (!isAllowed) {
             throw new Error("TooManyAttempts");
           }
@@ -170,6 +172,7 @@ export const authOptions: NextAuthOptions = {
         session.user.subscriptionEnd = token.subscriptionEnd as Date;
         session.user.subscriptionInterval =
           token.subscriptionInterval as PlanInterval;
+        token.subscriptionInterval as PlanInterval;
       }
       return session;
     },
