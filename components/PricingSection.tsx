@@ -17,7 +17,7 @@ export default function PricingSection() {
   const [isFreeTrial, setIsFreeTrial] = useState(false);
   const router = useRouter();
 
-  const handleSubscribe = (priceId: string, key: string) => {
+  const handleSubscribe = (priceId: string) => {
     startTransition(async () => {
       if (!session?.user) {
         router.push("/sign-in");
@@ -159,8 +159,7 @@ export default function PricingSection() {
                 className="mt-auto w-full bg-gray-900 text-white hover:bg-gray-800 transition-colors h-12 flex items-center justify-center"
                 onClick={() =>
                   handleSubscribe(
-                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!,
-                    plan.key
+                    isAnnual ? plan.priceId.yearly! : plan.priceId.monthly!
                   )
                 }
                 disabled={isLoading}
