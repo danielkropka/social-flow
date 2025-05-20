@@ -20,7 +20,11 @@ export const authLimiter = {
 };
 
 // Funkcja pomocnicza do sprawdzania limitu
-async function checkRateLimit(key: string, limit: number, windowMs: number) {
+export async function checkRateLimit(
+  key: string,
+  limit: number,
+  windowMs: number
+) {
   const now = Date.now();
   const windowKey = `${key}:${Math.floor(now / windowMs)}`;
 
