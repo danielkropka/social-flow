@@ -14,36 +14,18 @@ export async function POST(request: Request) {
       const session = await getAuthSession();
 
       if (!session?.user?.id) {
-        return NextResponse.json(
-          {
-            error: "Nie jesteś zalogowany",
-            details: "Musisz być zalogowany, aby połączyć konto Facebook",
-          },
-          { status: 401 }
-        );
+        throw new Error("Nie jesteś zalogowany");
       }
 
       if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
         console.error("Brak konfiguracji Facebook");
-        return NextResponse.json(
-          {
-            error: "Błąd konfiguracji",
-            details: "Brak wymaganej konfiguracji Facebook",
-          },
-          { status: 500 }
-        );
+        throw new Error("Brak wymaganej konfiguracji Facebook");
       }
 
       const { code } = await request.json();
 
       if (!code) {
-        return NextResponse.json(
-          {
-            error: "Brak kodu autoryzacji",
-            details: "Nie otrzymano kodu autoryzacji z Facebook",
-          },
-          { status: 400 }
-        );
+        throw new Error("Brak kodu autoryzacji");
       }
 
       // Wymiana kodu na token dostępu
@@ -54,13 +36,7 @@ export async function POST(request: Request) {
       if (!tokenResponse.ok) {
         const errorData = await tokenResponse.json();
         console.error("Facebook API error:", errorData);
-        return NextResponse.json(
-          {
-            error: "Błąd podczas wymiany kodu na token",
-            details: errorData.error?.message || "Nieznany błąd",
-          },
-          { status: 400 }
-        );
+        throw new Error("Błąd podczas wymiany kodu na token");
       }
 
       const tokenData = await tokenResponse.json();
@@ -73,13 +49,7 @@ export async function POST(request: Request) {
       if (!longLivedTokenResponse.ok) {
         const errorData = await longLivedTokenResponse.json();
         console.error("Facebook Long-lived token error:", errorData);
-        return NextResponse.json(
-          {
-            error: "Błąd podczas pobierania długoterminowego tokenu",
-            details: errorData.error?.message || "Nieznany błąd",
-          },
-          { status: 400 }
-        );
+        throw new Error("Błąd podczas pobierania długoterminowego tokenu");
       }
 
       const longLivedTokenData = await longLivedTokenResponse.json();
@@ -92,13 +62,7 @@ export async function POST(request: Request) {
       if (!userInfoResponse.ok) {
         const errorData = await userInfoResponse.json();
         console.error("Facebook User Info error:", errorData);
-        return NextResponse.json(
-          {
-            error: "Nie udało się pobrać informacji o koncie Facebook",
-            details: errorData.error?.message || "Nieznany błąd",
-          },
-          { status: 400 }
-        );
+        throw new Error("Nie udało się pobrać informacji o koncie Facebook");
       }
 
       const userInfo = await userInfoResponse.json();
@@ -111,37 +75,32 @@ export async function POST(request: Request) {
       if (!pagesResponse.ok) {
         const errorData = await pagesResponse.json();
         console.error("Facebook Pages error:", errorData);
-        return NextResponse.json(
-          {
-            error: "Nie udało się pobrać listy stron Facebook",
-            details:
-              "Upewnij się, że masz utworzoną stronę na Facebooku i masz do niej dostęp",
-          },
-          { status: 400 }
-        );
+        throw new Error("Nie udało się pobrać listy stron Facebook");
       }
 
       const pagesData = await pagesResponse.json();
 
       if (!pagesData.data || pagesData.data.length === 0) {
-        return NextResponse.json(
-          {
-            error: "Brak stron Facebook",
-            details:
-              "Nie znaleziono żadnych stron Facebook powiązanych z Twoim kontem. Utwórz stronę na Facebooku przed połączeniem konta.",
-          },
-          { status: 400 }
-        );
+        throw new Error("Brak stron Facebook");
       }
 
       try {
-        // Zapisz token w bazie danych
+        // Sprawdź, czy konto już istnieje
+        const existingAccount = await db.connectedAccount.findFirst({
+          where: {
+            provider: "FACEBOOK",
+            providerAccountId: userInfo.id,
+            userId: session.user.id,
+          },
+        });
+
+        if (!existingAccount) {
+          throw new Error("Konto Facebook nie istnieje");
+        }
+
         const connectedAccount = await db.connectedAccount.upsert({
           where: {
-            provider_providerAccountId: {
-              provider: "FACEBOOK",
-              providerAccountId: userInfo.id,
-            },
+            id: existingAccount.id,
           },
           update: {
             accessToken: longLivedTokenData.access_token,
