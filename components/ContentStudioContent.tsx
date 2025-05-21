@@ -14,6 +14,16 @@ import {
 } from "recharts";
 import { FaInstagram, FaTiktok, FaFacebook, FaTwitter } from "react-icons/fa";
 
+interface Account {
+  id: string;
+  provider: string;
+  name?: string;
+  username?: string;
+  providerAccountId?: string;
+  followers?: number;
+  posts?: number;
+}
+
 const lineChartData = Array.from({ length: 22 }, (_, i) => ({
   day: i + 2,
   Instagram: Math.floor(Math.random() * 3000) + 2000,
@@ -28,11 +38,6 @@ const followerSegmentation = [
   { label: "33-50 lat", value: 4439 },
 ];
 
-const heatmapData = [
-  // Każdy dzień tygodnia, każda godzina (0-7)
-  // Przykładowe dane: { day: 'Mon', hour: '6am-9am', value: 400 }
-  // ...
-];
 const days = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Niedz"];
 const hours = ["0-3", "3-6", "6-9", "9-12", "12-15", "15-18", "18-21", "21-24"];
 // Generuj przykładowe dane do heatmapy
@@ -83,27 +88,25 @@ function ContentStudioContent() {
     to: new Date(),
   });
 
-  // Nowe: pobieranie kont z API
-  const [accounts, setAccounts] = useState<any[]>([]);
+  const [accounts, setAccounts] = useState<Account[]>([]);
   const [selectedAccounts, setSelectedAccounts] = useState<
     Record<string, string>
   >({});
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    setLoading(true);
     fetch("/api/accounts")
       .then((res) => res.json())
       .then((data) => {
         setAccounts(data.accounts || []);
-        // domyślnie wybierz pierwsze konto z każdej platformy
-        const grouped = data.accounts.reduce((acc: any, curr: any) => {
-          if (!acc[curr.provider]) acc[curr.provider] = curr.id;
-          return acc;
-        }, {});
+        const grouped = data.accounts.reduce(
+          (acc: Record<string, string>, curr: Account) => {
+            if (!acc[curr.provider]) acc[curr.provider] = curr.id;
+            return acc;
+          },
+          {}
+        );
         setSelectedAccounts(grouped);
-      })
-      .finally(() => setLoading(false));
+      });
   }, []);
 
   // Funkcja do filtrowania kont po platformie
@@ -187,9 +190,9 @@ function ContentStudioContent() {
                       </select>
                     ) : (
                       <div className="font-semibold">
-                        {selectedAccount.name ||
-                          selectedAccount.username ||
-                          selectedAccount.providerAccountId}
+                        {selectedAccount?.name ||
+                          selectedAccount?.username ||
+                          selectedAccount?.providerAccountId}
                       </div>
                     )
                   ) : (
@@ -200,7 +203,7 @@ function ContentStudioContent() {
                   <div className="text-xs text-gray-500">{label}</div>
                 </div>
               </div>
-              {hasAccount ? (
+              {hasAccount && selectedAccount ? (
                 <>
                   <div className="text-2xl font-bold mt-2">
                     {selectedAccount.followers?.toLocaleString() ?? "-"}{" "}
@@ -208,8 +211,8 @@ function ContentStudioContent() {
                       Obserwujących
                     </span>
                   </div>
-                  <div className="text-xs text-gray-500">
-                    {selectedAccount.posts ?? "-"} postów
+                  <div className="text-sm text-gray-500 mt-1">
+                    {selectedAccount.posts?.toLocaleString() ?? "-"} postów
                   </div>
                 </>
               ) : null}
