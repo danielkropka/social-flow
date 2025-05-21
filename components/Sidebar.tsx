@@ -8,6 +8,7 @@ import {
   LogOut,
   ChevronDown,
   Layout,
+  BarChart2,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
@@ -21,6 +22,7 @@ const contentCreationItems = [
 
 const configurationItems = [
   { href: "accounts", icon: Share2, label: "Połączone konta" },
+  { href: "content-studio", icon: BarChart2, label: "Studio treści" },
 ];
 
 interface SidebarProps {

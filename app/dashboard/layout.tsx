@@ -7,6 +7,7 @@ import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
 import PostsContent from "@/components/PostsContent";
 import AccountsContent from "@/components/AccountsContent";
+import ContentStudioContent from "@/components/ContentStudioContent";
 
 function DashboardContent({ children }: { children: React.ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -20,6 +21,8 @@ function DashboardContent({ children }: { children: React.ReactNode }) {
         return <PostsContent />;
       case "accounts":
         return <AccountsContent />;
+      case "content-studio":
+        return <ContentStudioContent />;
       default:
         return children;
     }

@@ -133,6 +133,9 @@ export async function POST(req: Request) {
           username: account.username,
           name: account.name,
           status: "ACTIVE",
+          followersCount: account.public_metrics.followers_count,
+          postsCount: account.public_metrics.tweet_count,
+          lastStatsUpdate: new Date(),
         },
       });
 
