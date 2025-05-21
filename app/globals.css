@@ -68,3 +68,40 @@ body {
     --font-mono: monospace;
   }
 }
+
+@keyframes gradient {
+  0% {
+    background-position: 200% 30%;
+  }
+  100% {
+    background-position: -100% 30%;
+  }
+}
+
+.animate-gradient {
+  position: relative;
+  display: inline-block;
+}
+
+.animate-gradient::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #3b82f6,
+    #4b5563,
+    #3b82f6,
+    transparent
+  );
+  background-size: 200% 100%;
+  animation: gradient 4s linear infinite;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  opacity: 0.8;
+}

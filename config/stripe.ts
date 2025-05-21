@@ -13,9 +13,9 @@ export const STRIPE_PLANS = {
       "Idealne rozwiązanie dla początkujących twórców i małych firm, które chcą efektywnie zarządzać swoją obecnością w social mediach.",
     features: [
       "Do 5 połączonych kont social media",
-      "Nieograniczona liczba zaplanowanych postów",
-      "Podstawowe statystyki i analityka",
-      "10 podstawowych szablonów postów",
+      "Publikacja postów",
+      "Planowanie postów",
+      "Studio treści",
     ],
   },
   creator: {
@@ -31,10 +31,10 @@ export const STRIPE_PLANS = {
     description:
       "Zaawansowane narzędzie dla profesjonalistów i firm, które chcą maksymalizować zasięgi i engagement swojego contentu.",
     features: [
-      "Nielimitowana liczba kont social media",
-      "Nieograniczona liczba zaplanowanych postów",
-      "Szczegółowe statystyki i analityka",
-      "30+ profesjonalnych szablonów postów",
+      "Nielimitowane połączenia kont",
+      "Publikacja postów",
+      "Planowanie postów",
+      "Studio treści",
       "Automatyczne sugestie najlepszych godzin publikacji",
     ],
   },

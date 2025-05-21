@@ -18,6 +18,10 @@ import {
 } from "@/components/ui/dialog";
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import { IconType } from "react-icons";
+import { useSubscription } from "@/hooks/useSubscription";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import Link from "next/link";
 
 type PostType = "images" | "video" | "text";
 
@@ -164,8 +168,12 @@ const POST_TYPES: PostTypeConfig[] = [
 export function PostTypeSelectionStep() {
   const { setCurrentStep, setIsTextOnly, setPostType } = usePostCreation();
   const [showHelp, setShowHelp] = useState(false);
+  const { isSubscribed } = useSubscription();
 
   const handleTypeSelect = (type: PostType) => {
+    if (!isSubscribed) {
+      return;
+    }
     setIsTextOnly(type === "text");
     setPostType(type);
     setCurrentStep(2);
@@ -201,7 +209,28 @@ export function PostTypeSelectionStep() {
         </TooltipProvider>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {!isSubscribed && (
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertTitle>Wymagana subskrypcja</AlertTitle>
+          <AlertDescription>
+            Aby korzystać z funkcji tworzenia postów, musisz wykupić subskrypcję
+            lub skorzystać z okresu próbnego.
+            <br />
+            <Link href="/#pricing" className="hover:underline">
+              Kliknij tutaj
+            </Link>
+            , aby wykupić subskrypcję lub rozpocząć okres próbny.
+          </AlertDescription>
+        </Alert>
+      )}
+
+      <div
+        className={cn(
+          "grid grid-cols-1 md:grid-cols-3 gap-6",
+          !isSubscribed && "opacity-50 pointer-events-none"
+        )}
+      >
         {POST_TYPES.map((type) => (
           <button
             key={type.id}
