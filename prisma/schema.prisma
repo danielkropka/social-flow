@@ -177,6 +177,9 @@ model ConnectedAccount {
     requestToken          String?       @db.String
     requestTokenSecret    String?       @db.String
     requestTokenExpiresAt DateTime?
+    followersCount        Int?          @default(0)
+    postsCount            Int?          @default(0)
+    lastStatsUpdate       DateTime?
 
     // Relacje
     userId                String                 @db.ObjectId

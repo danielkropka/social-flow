@@ -18,7 +18,6 @@ export default function DashboardContent() {
       {currentStep === 2 && (
         <PostCreationForm
           onPublish={() => {
-            // Przekieruj do zakładki z listą postów
             router.push("/dashboard");
             setActiveTab("posts");
           }}
