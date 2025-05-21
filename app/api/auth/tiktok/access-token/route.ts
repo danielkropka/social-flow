@@ -138,13 +138,23 @@ export async function POST(request: Request) {
       }
 
       try {
+        // Sprawdź, czy konto już istnieje
+        const existingAccount = await db.connectedAccount.findFirst({
+          where: {
+            userId: session.user.id,
+            provider: "TIKTOK",
+            providerAccountId: userInfo.data.user.open_id,
+          },
+        });
+
+        if (!existingAccount) {
+          throw new Error("Konto TikTok nie istnieje");
+        }
+
         // Zapisz token w bazie danych
         const connectedAccount = await db.connectedAccount.upsert({
           where: {
-            provider_providerAccountId: {
-              provider: "TIKTOK",
-              providerAccountId: userInfo.data.user.open_id,
-            },
+            id: existingAccount.id,
           },
           update: {
             accessToken: tokenData.access_token,

@@ -150,13 +150,23 @@ export async function POST(request: Request) {
     }
 
     try {
+      // Sprawdź, czy konto już istnieje
+      const existingAccount = await prisma.connectedAccount.findFirst({
+        where: {
+          userId: session.user.id,
+          provider: "INSTAGRAM",
+          providerAccountId: userInfo.id,
+        },
+      });
+
+      if (!existingAccount) {
+        throw new Error("Konto Instagram nie istnieje");
+      }
+
       // Zapisz token w bazie danych
       const connectedAccount = await prisma.connectedAccount.upsert({
         where: {
-          provider_providerAccountId: {
-            provider: "INSTAGRAM",
-            providerAccountId: userInfo.id,
-          },
+          id: existingAccount.id,
         },
         update: {
           accessToken: longLivedTokenData.access_token,
