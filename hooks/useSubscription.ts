@@ -1,3 +1,4 @@
+import { PlanInterval, PlanType } from "@prisma/client";
 import { useSession } from "next-auth/react";
 
 export function useSubscription() {
@@ -5,8 +6,10 @@ export function useSubscription() {
   const user = session?.user as any;
 
   return {
-    isSubscribed: user?.subscriptionStatus === "active",
-    plan: user?.subscriptionPlan,
-    interval: user?.subscriptionInterval,
+    isSubscribed:
+      user?.subscriptionStatus === "ACTIVE" ||
+      user?.subscriptionStatus === "TRIALING",
+    plan: user?.subscriptionPlan as PlanType,
+    interval: user?.subscriptionInterval as PlanInterval,
   };
 }
