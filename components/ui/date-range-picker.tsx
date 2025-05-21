@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { CalendarIcon } from "@radix-ui/react-icons";
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { DateRange, SelectRangeEventHandler } from "react-day-picker";
 import { cn } from "@/lib/utils/utils";
 import { Button } from "@/components/ui/button";
