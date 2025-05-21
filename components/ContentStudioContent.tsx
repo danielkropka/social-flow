@@ -1,28 +1,16 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { DateRangePicker } from "@/components/ui/date-range-picker";
 import { DateRange } from "react-day-picker";
 import {
   LineChart,
   Line,
-  AreaChart,
-  Area,
   CartesianGrid,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
   Legend,
-  BarChart,
-  Bar,
-  Cell,
 } from "recharts";
 import { FaInstagram, FaTiktok, FaFacebook, FaTwitter } from "react-icons/fa";
 
