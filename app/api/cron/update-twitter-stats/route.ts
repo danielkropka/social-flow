@@ -14,9 +14,10 @@ async function updateTwitterStats() {
       where: {
         provider: "TWITTER",
         status: "ACTIVE",
-        deletedAt: null,
       },
     });
+
+    console.log(twitterAccounts);
 
     for (const account of twitterAccounts) {
       try {
