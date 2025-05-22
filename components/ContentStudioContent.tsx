@@ -20,8 +20,8 @@ interface Account {
   name?: string;
   username?: string;
   providerAccountId?: string;
-  followers?: number;
-  posts?: number;
+  followersCount?: number;
+  postsCount?: number;
 }
 
 const lineChartData = Array.from({ length: 22 }, (_, i) => ({
@@ -206,13 +206,13 @@ function ContentStudioContent() {
               {hasAccount && selectedAccount ? (
                 <>
                   <div className="text-2xl font-bold mt-2">
-                    {selectedAccount.followers?.toLocaleString() ?? "-"}{" "}
+                    {selectedAccount.followersCount?.toLocaleString() ?? "-"}{" "}
                     <span className="text-base font-normal text-gray-500">
                       Obserwujących
                     </span>
                   </div>
                   <div className="text-sm text-gray-500 mt-1">
-                    {selectedAccount.posts?.toLocaleString() ?? "-"} postów
+                    {selectedAccount.postsCount?.toLocaleString() ?? "-"} postów
                   </div>
                 </>
               ) : null}

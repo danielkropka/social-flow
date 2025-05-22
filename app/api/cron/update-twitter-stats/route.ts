@@ -17,8 +17,6 @@ async function updateTwitterStats() {
       },
     });
 
-    console.log(twitterAccounts);
-
     for (const account of twitterAccounts) {
       try {
         // Inicjalizacja klienta Twitter
@@ -29,13 +27,10 @@ async function updateTwitterStats() {
           accessSecret: decryptToken(account.accessTokenSecret!),
         });
 
-        console.log(client);
         // Pobierz informacje o użytkowniku
         const user = await client.v2.me({
           "user.fields": ["public_metrics"],
         });
-
-        console.log(user);
 
         // Aktualizuj statystyki w bazie danych
         await db.connectedAccount.update({
@@ -46,8 +41,6 @@ async function updateTwitterStats() {
             lastStatsUpdate: new Date(),
           },
         });
-
-        console.log("Updated account", account.username);
       } catch (error) {
         console.error(
           `Błąd podczas aktualizacji konta ${account.username}:`,
