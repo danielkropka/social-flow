@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { TwitterApi } from "twitter-api-v2";
 import { headers } from "next/headers";
+import { decryptToken } from "@/lib/utils/utils";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
@@ -23,8 +24,8 @@ async function updateTwitterStats() {
         const client = new TwitterApi({
           appKey: process.env.TWITTER_API_KEY!,
           appSecret: process.env.TWITTER_API_SECRET!,
-          accessToken: account.accessToken,
-          accessSecret: account.accessTokenSecret!,
+          accessToken: decryptToken(account.accessToken!),
+          accessSecret: decryptToken(account.accessTokenSecret!),
         });
 
         // Pobierz informacje o użytkowniku
