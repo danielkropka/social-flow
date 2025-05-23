@@ -106,7 +106,7 @@ export async function POST(req: Request) {
     const mediaObjectIds: string[] = [];
     if (s3MediaUrls.length > 0) {
       for (const media of s3MediaUrls) {
-        const creationUrl = `https://graph.facebook.com/v22.0/${instagramUserId}/media`;
+        const creationUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
         const mediaType = media.type.startsWith("video/") ? "video" : "image";
         const params: Record<string, string> = {
           access_token: accessToken,
@@ -140,7 +140,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Publikacja posta (jeden lub karuzela)
-    const publishUrl = `https://graph.facebook.com/v22.0/${instagramUserId}/media_publish`;
+    const publishUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media_publish`;
     const publishParams: Record<string, string> = {
       access_token: accessToken,
     };
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
       publishParams["creation_id"] = mediaObjectIds[0];
     } else if (mediaObjectIds.length > 1) {
       // Karuzela (album)
-      const carouselUrl = `https://graph.facebook.com/v22.0/${instagramUserId}/media`;
+      const carouselUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
       const carouselParams: Record<string, string> = {
         access_token: accessToken,
         media_type: "CAROUSEL",
