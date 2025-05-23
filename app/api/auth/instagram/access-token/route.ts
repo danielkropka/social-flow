@@ -48,7 +48,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Wymiana kodu na token dostępu
+    // Wymiana kodu na user access token
     const formData = new URLSearchParams();
     formData.append("client_id", INSTAGRAM_APP_ID);
     formData.append("client_secret", INSTAGRAM_APP_SECRET);
@@ -81,130 +81,101 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
+    const userAccessToken = data.access_token;
 
-    // Pobierz długoterminowy token
-    const longLivedTokenResponse = await fetch(
-      `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${INSTAGRAM_APP_SECRET}&access_token=${data.access_token}`
+    // 1. Pobierz listę stron użytkownika
+    const pagesRes = await fetch(
+      `https://graph.facebook.com/v19.0/me/accounts?access_token=${userAccessToken}`
     );
-
-    if (!longLivedTokenResponse.ok) {
-      const errorData = await longLivedTokenResponse.text();
-      console.error("Instagram Long-lived token error:", errorData);
+    const pagesData = await pagesRes.json();
+    if (!pagesRes.ok || !pagesData.data || !Array.isArray(pagesData.data)) {
       return NextResponse.json(
         {
-          error: "Błąd połączenia z Instagram.",
-          details: "Nie udało się pobrać długoterminowego tokenu.",
-          code: "INSTAGRAM_API_ERROR",
+          error: "Nie udało się pobrać stron powiązanych z kontem Facebook.",
+          details: pagesData,
+          code: "FACEBOOK_API_ERROR",
         },
         { status: 400 }
       );
     }
 
-    const longLivedTokenData = await longLivedTokenResponse.json();
-
-    // Pobierz informacje o koncie Instagram
-    const userInfoResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username,profile_picture_url&access_token=${data.access_token}`
-    );
-
-    if (!userInfoResponse.ok) {
-      const errorData = await userInfoResponse.json();
-      console.error("Instagram User Info error:", errorData);
-      return NextResponse.json(
-        {
-          error: "Nie udało się pobrać informacji o koncie Instagram.",
-          details: "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
-          code: "INSTAGRAM_API_ERROR",
-        },
-        { status: 400 }
+    // 2. Dla każdej strony sprawdź, czy jest powiązana z IG Business
+    let found = false;
+    let connectedAccount = null;
+    for (const page of pagesData.data) {
+      const pageId = page.id;
+      const pageAccessToken = page.access_token;
+      // Pobierz IG Business Account ID
+      const igRes = await fetch(
+        `https://graph.facebook.com/v19.0/${pageId}?fields=instagram_business_account&access_token=${pageAccessToken}`
       );
+      const igData = await igRes.json();
+      if (
+        igRes.ok &&
+        igData.instagram_business_account &&
+        igData.instagram_business_account.id
+      ) {
+        // Zapisz do bazy jako konto IG
+        try {
+          connectedAccount = await db.connectedAccount.upsert({
+            where: {
+              provider_providerAccountId_userId: {
+                provider: "INSTAGRAM",
+                providerAccountId: igData.instagram_business_account.id,
+                userId: session.user.id,
+              },
+            },
+            update: {
+              accessToken: encryptToken(pageAccessToken),
+              expiresAt: null, // Page Access Token nie zawsze ma expiresAt
+              username: page.name,
+              name: page.name,
+              profileImage: page.picture?.data?.url || null,
+            },
+            create: {
+              provider: "INSTAGRAM",
+              providerAccountId: igData.instagram_business_account.id,
+              accessToken: encryptToken(pageAccessToken),
+              expiresAt: null,
+              name: page.name,
+              username: page.name,
+              profileImage: page.picture?.data?.url || null,
+              userId: session.user.id,
+            },
+          });
+          found = true;
+          break;
+        } catch (dbError) {
+          console.error("Błąd bazy danych:", dbError);
+          return NextResponse.json(
+            {
+              error: "Nie udało się zapisać danych konta Instagram.",
+              details:
+                "Wystąpił błąd po stronie serwera. Spróbuj ponownie później.",
+              code: "DB_ERROR",
+            },
+            { status: 500 }
+          );
+        }
+      }
     }
 
-    const userInfo = await userInfoResponse.json();
-
-    // Sprawdź czy konto jest firmowe lub twórcy
-    const accountInfoResponse = await fetch(
-      `https://graph.instagram.com/me?fields=id,username,profile_picture_url,account_type&access_token=${data.access_token}`
-    );
-
-    if (!accountInfoResponse.ok) {
-      const errorData = await accountInfoResponse.json();
-      console.error("Instagram Account Info error:", errorData);
+    if (!found) {
       return NextResponse.json(
         {
-          error: "Nie udało się pobrać typu konta Instagram.",
-          details: "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
-          code: "INSTAGRAM_API_ERROR",
-        },
-        { status: 400 }
-      );
-    }
-
-    const accountInfo = await accountInfoResponse.json();
-
-    // Sprawdź czy konto jest firmowe lub twórcy
-    if (
-      accountInfo.account_type !== "BUSINESS" &&
-      accountInfo.account_type !== "CREATOR"
-    ) {
-      return NextResponse.json(
-        {
-          error: "Nieprawidłowy typ konta Instagram.",
-          details: "Twoje konto musi być kontem firmowym lub twórcy.",
-          code: "INVALID_ACCOUNT_TYPE",
-        },
-        { status: 400 }
-      );
-    }
-
-    try {
-      // Zapisz token w bazie danych
-      const connectedAccount = await db.connectedAccount.upsert({
-        where: {
-          provider_providerAccountId_userId: {
-            provider: "INSTAGRAM",
-            providerAccountId: userInfo.id,
-            userId: session.user.id,
-          },
-        },
-        update: {
-          accessToken: encryptToken(longLivedTokenData.access_token),
-          expiresAt: new Date(
-            Date.now() + longLivedTokenData.expires_in * 1000
-          ),
-          username: userInfo.username,
-          profileImage: userInfo.profile_picture_url,
-        },
-        create: {
-          provider: "INSTAGRAM",
-          providerAccountId: userInfo.id,
-          accessToken: encryptToken(longLivedTokenData.access_token),
-          expiresAt: new Date(
-            Date.now() + longLivedTokenData.expires_in * 1000
-          ),
-          name: userInfo.username,
-          username: userInfo.username,
-          profileImage: userInfo.profile_picture_url,
-          userId: session.user.id,
-        },
-      });
-
-      return NextResponse.json({
-        success: true,
-        account: connectedAccount,
-      });
-    } catch (dbError) {
-      console.error("Błąd bazy danych:", dbError);
-      return NextResponse.json(
-        {
-          error: "Nie udało się zapisać danych konta Instagram.",
+          error: "Nie znaleziono powiązanego konta Instagram Business.",
           details:
-            "Wystąpił błąd po stronie serwera. Spróbuj ponownie później.",
-          code: "DB_ERROR",
+            "Połącz konto Instagram Business z wybraną stroną na Facebooku.",
+          code: "NO_IG_BUSINESS_ACCOUNT",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
+
+    return NextResponse.json({
+      success: true,
+      account: connectedAccount,
+    });
   } catch (error) {
     console.error("Błąd autoryzacji Instagram:", error);
     return NextResponse.json(
