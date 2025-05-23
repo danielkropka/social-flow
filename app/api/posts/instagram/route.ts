@@ -33,6 +33,7 @@ export async function POST(req: Request) {
   }
 
   const accessToken = decryptToken(account.accessToken);
+  console.log(accessToken);
   const instagramUserId = account.providerAccountId;
 
   if (!accessToken || !instagramUserId) {
