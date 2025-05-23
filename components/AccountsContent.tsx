@@ -37,15 +37,19 @@ const fetchAccounts = async () => {
   return data.accounts;
 };
 
-const removeAccount = async (accountId: string) => {
-  const response = await fetch(`/api/accounts/${accountId}`, {
+const removeAccount = async (account: ConnectedAccountWithDetails) => {
+  const response = await fetch("/api/accounts", {
     method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id: account.id }),
   });
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.error || "Błąd podczas usuwania konta");
   }
-  return accountId;
+  return account;
 };
 
 export default function AccountsContent() {
@@ -68,26 +72,17 @@ export default function AccountsContent() {
 
   const removeAccountMutation = useMutation({
     mutationFn: removeAccount,
-    onMutate: async (accountId) => {
-      // Anuluj wszystkie trwające odświeżenia
+    onMutate: async (account) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] });
-
-      // Zachowaj poprzedni stan
       const previousAccounts = queryClient.getQueryData(["accounts"]);
-
-      // Optymistycznie zaktualizuj UI
       queryClient.setQueryData(
         ["accounts"],
         (old: ConnectedAccountWithDetails[]) =>
-          old.filter(
-            (account: ConnectedAccountWithDetails) => account.id !== accountId
-          )
+          old.map((a) => (a.id === account.id ? { ...a, isLoading: true } : a))
       );
-
       return { previousAccounts };
     },
     onError: (err, _, context) => {
-      // W przypadku błędu, przywróć poprzedni stan
       if (context?.previousAccounts) {
         queryClient.setQueryData(["accounts"], context.previousAccounts);
       }
@@ -96,16 +91,12 @@ export default function AccountsContent() {
           err instanceof Error ? err.message : "Spróbuj ponownie później",
       });
     },
-    onSuccess: (accountId) => {
-      const removedAccount = accounts.find(
-        (acc: ConnectedAccountWithDetails) => acc.id === accountId
-      );
+    onSuccess: (removedAccount) => {
       toast.success("Konto zostało pomyślnie usunięte", {
         description: `Konto ${removedAccount?.name} zostało odłączone.`,
       });
     },
     onSettled: () => {
-      // Odśwież dane po zakończeniu mutacji
       queryClient.invalidateQueries({ queryKey: ["accounts"] });
     },
   });
@@ -125,7 +116,7 @@ export default function AccountsContent() {
   const handleRemoveAccount = async () => {
     if (accountToRemove) {
       setShowDeletionModal(false);
-      removeAccountMutation.mutate(accountToRemove.id);
+      removeAccountMutation.mutate(accountToRemove);
       setAccountToRemove(null);
     }
   };
@@ -292,18 +283,18 @@ export default function AccountsContent() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Potwierdzenie usunięcia</DialogTitle>
-            <DialogDescription className="flex flex-col gap-2">
+            <DialogDescription>
               <span>
                 Czy na pewno chcesz usunąć konto{" "}
                 <strong>{accountToRemove?.name}</strong>?
               </span>
-              <div className="mt-2 p-3 bg-destructive/10 rounded-lg">
-                <span className="text-sm text-destructive">
-                  Uwaga: Wszystkie zaplanowane posty dla tego konta zostaną
-                  anulowane.
-                </span>
-              </div>
             </DialogDescription>
+            <div className="mt-2 p-3 bg-destructive/10 rounded-lg">
+              <span className="text-sm text-destructive">
+                Uwaga: Wszystkie zaplanowane posty dla tego konta zostaną
+                anulowane.
+              </span>
+            </div>
           </DialogHeader>
           <DialogFooter className="gap-2">
             <Button
