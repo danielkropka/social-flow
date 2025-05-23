@@ -152,7 +152,7 @@ export async function POST(req: Request) {
                 "Content-Type": "application/json",
                 Authorization: `Bearer ${accessToken}`,
               },
-              body: initForm,
+              body: JSON.stringify(initForm),
             });
 
             if (!initResponse.ok) {
