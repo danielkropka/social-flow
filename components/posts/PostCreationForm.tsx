@@ -304,10 +304,10 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
           }
         } else {
           // Błąd ogólny
-          let errorMsg =
+          const errorMsg =
             responseData.error || "Wystąpił błąd podczas publikacji";
           let details = responseData.details;
-          let code = responseData.code;
+          const code = responseData.code;
           let customMsg = null;
           switch (code) {
             case "ACCOUNT_NOT_FOUND":
