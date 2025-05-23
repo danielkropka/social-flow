@@ -197,7 +197,11 @@ export async function POST(req: Request) {
                 });
               } else {
                 throw new Error(
-                  instaResult.details || instaResult.error || "Nieznany błąd"
+                  typeof instaResult.details === "object"
+                    ? JSON.stringify(instaResult.details)
+                    : instaResult.details ||
+                      instaResult.error ||
+                      "Nieznany błąd"
                 );
               }
               break;
