@@ -9,15 +9,12 @@ import { SessionWarningModal } from "@/components/SessionWarningModal";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
 
 function SessionManager({ children }: { children: React.ReactNode }) {
-  const { showWarning, showExpired, setShowWarning } = useSessionTimeout();
+  const { showWarning, showExpired } = useSessionTimeout();
 
   return (
     <>
       {children}
-      <SessionWarningModal
-        isOpen={showWarning}
-        onClose={() => setShowWarning(false)}
-      />
+      <SessionWarningModal isOpen={showWarning} />
       <SessionExpiredModal isOpen={showExpired} />
     </>
   );

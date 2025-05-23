@@ -8,15 +8,11 @@ import {
 
 interface SessionWarningModalProps {
   isOpen: boolean;
-  onClose: () => void;
 }
 
-export function SessionWarningModal({
-  isOpen,
-  onClose,
-}: SessionWarningModalProps) {
+export function SessionWarningModal({ isOpen }: SessionWarningModalProps) {
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen}>
       <DialogContent className="sm:max-w-md z-[100]">
         <DialogHeader>
           <DialogTitle>Uwaga - sesja wkrótce wygaśnie</DialogTitle>

@@ -14,6 +14,7 @@ import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
+import { useSubscription } from "@/hooks/useSubscription";
 
 const contentCreationItems = [
   { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
@@ -22,7 +23,12 @@ const contentCreationItems = [
 
 const configurationItems = [
   { href: "accounts", icon: Share2, label: "Połączone konta" },
-  { href: "content-studio", icon: BarChart2, label: "Studio treści" },
+  {
+    href: "content-studio",
+    icon: BarChart2,
+    label: "Studio treści",
+    requiresCreator: true,
+  },
 ];
 
 interface SidebarProps {
@@ -39,6 +45,7 @@ export function Sidebar({
   activeTab,
 }: SidebarProps) {
   const { data: session, status } = useSession();
+  const { type } = useSubscription();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -97,7 +104,7 @@ export function Sidebar({
         </div>
 
         {/* Main navigation */}
-        <nav className="flex-1 px-3 py-4 border-b border-gray-100 overflow-y-auto">
+        <nav className="flex-1 px-3 py-6 overflow-y-auto">
           <div className="mb-6">
             <h3 className="text-sm font-semibold text-gray-600 mb-3 px-3">
               Tworzenie treści
@@ -146,6 +153,10 @@ export function Sidebar({
               Konfiguracja
             </h3>
             {configurationItems.map((item) => {
+              if (item.requiresCreator && type !== "CREATOR") {
+                return null;
+              }
+
               const isActive = activeTab === item.href;
               return (
                 <button

@@ -15,7 +15,6 @@ export const STRIPE_PLANS = {
       "Do 5 połączonych kont social media",
       "Publikacja postów",
       "Planowanie postów",
-      "Studio treści",
     ],
   },
   creator: {
