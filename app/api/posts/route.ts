@@ -186,6 +186,7 @@ export async function POST(req: Request) {
               );
 
               const instaResult = await response.json();
+              console.log(instaResult);
 
               if (response.ok) {
                 // Instagram nie zwraca mediaUrls, ale można dodać obsługę jeśli będzie potrzebna
