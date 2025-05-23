@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
 import { getAuthSession } from "@/lib/config/auth";
+import { db } from "@/lib/config/prisma";
+import { encryptToken } from "@/lib/utils/utils";
 
-const prisma = new PrismaClient();
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 const REDIRECT_URI = "https://social-flow.pl/instagram-callback";
@@ -158,33 +158,13 @@ export async function POST(request: Request) {
     }
 
     try {
-      // Sprawdź, czy konto już istnieje
-      const existingAccount = await prisma.connectedAccount.findFirst({
-        where: {
-          userId: session.user.id,
-          provider: "INSTAGRAM",
-          providerAccountId: userInfo.id,
-        },
-      });
-
-      if (!existingAccount) {
-        return NextResponse.json(
-          {
-            error: "Konto Instagram nie istnieje w systemie.",
-            details: "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
-            code: "ACCOUNT_NOT_FOUND",
-          },
-          { status: 404 }
-        );
-      }
-
       // Zapisz token w bazie danych
-      const connectedAccount = await prisma.connectedAccount.upsert({
+      const connectedAccount = await db.connectedAccount.upsert({
         where: {
-          id: existingAccount.id,
+          id: session.user.id,
         },
         update: {
-          accessToken: longLivedTokenData.access_token,
+          accessToken: encryptToken(longLivedTokenData.access_token),
           expiresAt: new Date(
             Date.now() + longLivedTokenData.expires_in * 1000
           ),
@@ -194,7 +174,7 @@ export async function POST(request: Request) {
         create: {
           provider: "INSTAGRAM",
           providerAccountId: userInfo.id,
-          accessToken: longLivedTokenData.access_token,
+          accessToken: encryptToken(longLivedTokenData.access_token),
           expiresAt: new Date(
             Date.now() + longLivedTokenData.expires_in * 1000
           ),
