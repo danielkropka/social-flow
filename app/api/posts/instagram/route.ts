@@ -2,6 +2,8 @@ import { getAuthSession } from "@/lib/config/auth";
 import { NextResponse } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
+import { withRateLimit } from "@/middleware/rateLimit";
+import { PLATFORM_LIMITS } from "@/constants";
 
 export async function POST(req: Request) {
   const session = await getAuthSession();
@@ -11,6 +13,7 @@ export async function POST(req: Request) {
   }
 
   const { content, mediaUrls, accountId } = await req.json();
+  console.log("content", content);
 
   // Pobierz konto Instagram powiązane z użytkownikiem
   const account = await db.connectedAccount.findFirst({
@@ -46,178 +49,147 @@ export async function POST(req: Request) {
     );
   }
 
-  try {
-    // 1. Upload mediów do S3 jeśli trzeba, zbierz publiczne linki
-    const s3MediaUrls: { url: string; type: string }[] = [];
-    if (mediaUrls && mediaUrls.length > 0) {
-      for (const media of mediaUrls) {
-        // Jeśli media.url już istnieje i jest publicznym linkiem, użyj go
-        if (media.url && media.url.startsWith("http")) {
-          s3MediaUrls.push({ url: media.url, type: media.type });
-          continue;
-        }
-        // W przeciwnym razie uploaduj do S3
-        const mediaType = media.type || "application/octet-stream";
-        let binaryData;
-        if (Array.isArray(media.data)) {
-          binaryData = new Uint8Array(media.data);
-        } else if (typeof media.data === "string") {
-          binaryData = new Uint8Array(Buffer.from(media.data, "base64"));
-        } else {
-          return NextResponse.json(
-            {
-              error: "Nieprawidłowy format danych mediów",
-              details: "Plik nie jest poprawnym obrazem lub wideo.",
-              code: "INVALID_MEDIA_FORMAT",
-            },
-            { status: 400 }
-          );
-        }
-        const mediaBlob = new Blob([binaryData], { type: mediaType });
-        const baseUrl =
-          process.env.NEXT_PUBLIC_APP_URL ||
-          `http://${req.headers.get("host")}`;
-        const uploadResponse = await fetch(`${baseUrl}/api/media/upload`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/octet-stream",
-            "X-File-Name": `${Date.now()}-file`,
-            "X-File-Type": mediaType,
-          },
-          body: mediaBlob,
-        });
-        if (!uploadResponse.ok) {
-          const errorText = await uploadResponse.text();
-          return NextResponse.json(
-            {
-              error: "Błąd podczas uploadu do S3",
-              details: errorText,
-              code: "S3_UPLOAD_ERROR",
-            },
-            { status: 400 }
-          );
-        }
-        const { url: s3Url } = await uploadResponse.json();
-        s3MediaUrls.push({ url: s3Url, type: mediaType });
-      }
-    }
+  return withRateLimit(async (req: Request) => {
+    try {
+      const mediaIds: { mediaId: string; url: string; type: string }[] = [];
 
-    // 2. Upload do Instagram Graph API (przekazuj linki z S3)
-    const mediaObjectIds: string[] = [];
-    if (s3MediaUrls.length > 0) {
-      for (const media of s3MediaUrls) {
-        const creationUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
-        const mediaType = media.type.startsWith("video/") ? "video" : "image";
-        const params: Record<string, string> = {
-          access_token: accessToken,
-        };
-        if (mediaType === "image") {
-          params["image_url"] = media.url;
-        } else if (mediaType === "video") {
-          params["video_url"] = media.url;
-        }
-        if (content) {
-          params["caption"] = content;
-        }
-        const formData = new URLSearchParams(params);
-        console.log("INSTAGRAM TOKEN:", accessToken);
-        const creationRes = await fetch(creationUrl, {
-          method: "POST",
-          body: formData,
-        });
-        const creationData = await creationRes.json();
-        if (!creationRes.ok || !creationData.id) {
-          return NextResponse.json(
-            {
-              error: "Błąd podczas tworzenia kontenera mediów na Instagramie",
-              details: creationData,
-              code: "INSTAGRAM_API_ERROR",
-            },
-            { status: 400 }
-          );
-        }
-        mediaObjectIds.push(creationData.id);
-      }
-    }
+      if (mediaUrls && mediaUrls.length > 0) {
+        for (
+          let i = 0;
+          i <
+          Math.min(mediaUrls.length, PLATFORM_LIMITS.instagram.maxMediaCount);
+          i++
+        ) {
+          const mediaData = mediaUrls[i];
+          const mediaType = mediaData.type || "application/octet-stream";
 
-    // 3. Publikacja posta (jeden lub karuzela)
-    const publishUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media_publish`;
-    const publishParams: Record<string, string> = {
-      access_token: accessToken,
-    };
-    if (mediaObjectIds.length === 1) {
-      publishParams["creation_id"] = mediaObjectIds[0];
-    } else if (mediaObjectIds.length > 1) {
-      // Karuzela (album)
-      const carouselUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
-      const carouselParams: Record<string, string> = {
-        access_token: accessToken,
-        media_type: "CAROUSEL",
-        children: mediaObjectIds.join(","),
-      };
-      if (content) {
-        carouselParams["caption"] = content;
+          if (!mediaData.data) {
+            console.error("Brak danych mediów:", mediaData);
+            throw new Error(
+              `Nieprawidłowe dane mediów dla pliku ${i + 1}: brak danych`
+            );
+          }
+
+          let binaryData;
+          try {
+            if (Array.isArray(mediaData.data)) {
+              binaryData = new Uint8Array(mediaData.data);
+            } else if (typeof mediaData.data === "string") {
+              binaryData = new Uint8Array(
+                Buffer.from(mediaData.data, "base64")
+              );
+            } else {
+              throw new Error(`Nieprawidłowy format danych dla pliku ${i + 1}`);
+            }
+          } catch (error) {
+            console.error("Błąd konwersji danych:", error);
+            throw new Error(
+              `Nie udało się przetworzyć danych mediów dla pliku ${i + 1}`
+            );
+          }
+
+          const mediaBlob = new Blob([binaryData], { type: mediaType });
+
+          const baseUrl =
+            process.env.NEXT_PUBLIC_APP_URL ||
+            `http://${req.headers.get("host")}`;
+          const uploadResponse = await fetch(`${baseUrl}/api/media/upload`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/octet-stream",
+              "X-File-Name": `${Date.now()}-file`,
+              "X-File-Type": mediaType,
+            },
+            body: mediaBlob,
+          });
+
+          if (!uploadResponse.ok) {
+            const errorText = await uploadResponse.text();
+            console.error("Błąd S3:", errorText);
+            throw new Error("Błąd podczas uploadu do S3");
+          }
+
+          const { url: s3Url } = await uploadResponse.json();
+
+          console.log("S3 URL:", s3Url);
+
+          let mediaCategory = "image";
+          if (mediaType.startsWith("video/")) {
+            mediaCategory = "video";
+          }
+
+          const s3Response = await fetch(s3Url);
+          if (!s3Response.ok) {
+            throw new Error(
+              `Nie udało się pobrać pliku z S3: ${s3Response.statusText}`
+            );
+          }
+          const s3Blob = await s3Response.blob();
+
+          if (
+            s3Blob.size >
+            (mediaCategory === "video"
+              ? PLATFORM_LIMITS.instagram.maxVideoSize
+              : PLATFORM_LIMITS.instagram.maxImageSize)
+          ) {
+            throw new Error(
+              `Plik jest zbyt duży. Maksymalny rozmiar to ${PLATFORM_LIMITS.instagram.maxVideoSize}MB.`
+            );
+          }
+
+          const initForm = new FormData();
+          initForm.append("image_url", s3Url);
+
+          const initRequestData = {
+            url: `https://graph.instagram.com/v22.0/${instagramUserId}/media`,
+            method: "POST",
+          };
+
+          try {
+            const initResponse = await fetch(initRequestData.url, {
+              method: initRequestData.method,
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${accessToken}`,
+              },
+              body: initForm,
+            });
+
+            if (!initResponse.ok) {
+              const errorText = await initResponse.text();
+              console.error("Błąd INIT:", errorText);
+              throw new Error(
+                `Błąd podczas inicjalizacji uploadu mediów: ${errorText}`
+              );
+            }
+
+            const initData = await initResponse.json();
+            const { id } = initData;
+
+            mediaIds.push({ mediaId: id, url: s3Url, type: mediaCategory });
+          } catch (error) {
+            console.error("Błąd podczas inicjalizacji uploadu mediów:", error);
+            throw new Error("Błąd podczas inicjalizacji uploadu mediów");
+          }
+        }
       }
-      const carouselForm = new URLSearchParams(carouselParams);
-      const carouselRes = await fetch(carouselUrl, {
-        method: "POST",
-        body: carouselForm,
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          mediaIds: mediaIds.map((m) => m.mediaId),
+          mediaUrls: mediaIds.map((m) => ({ url: m.url, type: m.type })),
+        },
       });
-      const carouselData = await carouselRes.json();
-      if (!carouselRes.ok || !carouselData.id) {
-        return NextResponse.json(
-          {
-            error: "Błąd podczas tworzenia karuzeli na Instagramie",
-            details: carouselData,
-            code: "INSTAGRAM_API_ERROR",
-          },
-          { status: 400 }
-        );
-      }
-      publishParams["creation_id"] = carouselData.id;
-    }
-
-    // Publikuj post
-    const publishForm = new URLSearchParams(publishParams);
-    const publishRes = await fetch(publishUrl, {
-      method: "POST",
-      body: publishForm,
-    });
-    const publishData = await publishRes.json();
-    if (!publishRes.ok || !publishData.id) {
+    } catch (error) {
+      console.error("Błąd podczas publikacji na Instagramie:", error);
       return NextResponse.json(
         {
-          error: "Błąd podczas publikacji posta na Instagramie",
-          details: publishData,
-          code: "INSTAGRAM_API_ERROR",
+          error: "Nie udało się opublikować posta na Instagramie",
+          details: error instanceof Error ? error.message : "Nieznany błąd",
         },
-        { status: 400 }
+        { status: 500 }
       );
     }
-
-    // Zwróć sukces
-    return NextResponse.json({
-      success: true,
-      data: {
-        instagramPostId: publishData.id,
-        mediaObjectIds,
-        s3MediaUrls,
-      },
-    });
-  } catch (error) {
-    console.error("Błąd podczas publikacji na Instagramie:", error);
-    return NextResponse.json(
-      {
-        error: "Wystąpił błąd podczas publikacji na Instagramie.",
-        details:
-          error instanceof Error
-            ? error.message
-            : typeof error === "object"
-            ? JSON.stringify(error)
-            : String(error),
-        code: "UNKNOWN_ERROR",
-      },
-      { status: 500 }
-    );
-  }
+  })(req);
 }
