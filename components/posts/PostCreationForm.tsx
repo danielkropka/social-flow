@@ -304,10 +304,44 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
           }
         } else {
           // Błąd ogólny
+          const errorMsg =
+            responseData.error || "Wystąpił błąd podczas publikacji";
+          let details = responseData.details;
+          const code = responseData.code;
+          let customMsg = null;
+          switch (code) {
+            case "ACCOUNT_NOT_FOUND":
+              customMsg =
+                "Nie znaleziono konta Instagram. Połącz konto i spróbuj ponownie.";
+              break;
+            case "S3_UPLOAD_ERROR":
+              customMsg =
+                "Błąd podczas przesyłania pliku na serwer. Spróbuj ponownie lub wybierz inny plik.";
+              break;
+            case "INSTAGRAM_API_ERROR":
+              customMsg =
+                "Błąd po stronie Instagrama. Spróbuj ponownie za chwilę lub sprawdź poprawność pliku.";
+              break;
+            case "INVALID_MEDIA_FORMAT":
+              customMsg =
+                "Nieprawidłowy format pliku. Upewnij się, że przesyłasz poprawny obraz lub wideo.";
+              break;
+            case "MISSING_TOKEN_OR_ID":
+              customMsg =
+                "Brak tokenu lub ID użytkownika Instagram. Połącz konto ponownie.";
+              break;
+            case "UNKNOWN_ERROR":
+              customMsg =
+                "Wystąpił nieoczekiwany błąd podczas publikacji na Instagramie.";
+              break;
+            default:
+              customMsg = null;
+          }
+          if (typeof details === "object" && details !== null) {
+            details = JSON.stringify(details);
+          }
           toast.error(
-            responseData.details ||
-              responseData.error ||
-              "Wystąpił błąd podczas publikacji"
+            customMsg ? customMsg : errorMsg + (details ? ": " + details : "")
           );
           setIsPublishingModalOpen(false);
           setIsPublishing(false);
