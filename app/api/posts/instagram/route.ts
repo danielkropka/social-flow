@@ -120,6 +120,7 @@ export async function POST(req: Request) {
           params["caption"] = content;
         }
         const formData = new URLSearchParams(params);
+        console.log("INSTAGRAM TOKEN:", accessToken);
         const creationRes = await fetch(creationUrl, {
           method: "POST",
           body: formData,
