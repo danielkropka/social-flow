@@ -168,6 +168,39 @@ export async function POST(req: Request) {
                 );
               }
               break;
+            case "INSTAGRAM":
+              response = await fetch(
+                `${process.env.NEXT_PUBLIC_APP_URL}/api/posts/instagram`,
+                {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                    Cookie: req.headers.get("cookie") || "",
+                  },
+                  body: JSON.stringify({
+                    content,
+                    mediaUrls,
+                    accountId: account.id,
+                  }),
+                }
+              );
+
+              const instaResult = await response.json();
+
+              if (response.ok) {
+                // Instagram nie zwraca mediaUrls, ale można dodać obsługę jeśli będzie potrzebna
+                results.push({
+                  accountId: account.id,
+                  provider: account.provider,
+                  success: true,
+                  data: instaResult.data,
+                });
+              } else {
+                throw new Error(
+                  instaResult.details || instaResult.error || "Nieznany błąd"
+                );
+              }
+              break;
             default:
               throw new Error(`Nieobsługiwana platforma: ${account.provider}`);
           }
