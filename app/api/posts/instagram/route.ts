@@ -23,7 +23,11 @@ export async function POST(req: Request) {
 
   if (!account || !account.accessToken) {
     return NextResponse.json(
-      { error: "Nie znaleziono konta Instagram lub brak tokenu dostępu" },
+      {
+        error: "Nie znaleziono konta Instagram lub brak tokenu dostępu",
+        details: "Połącz konto Instagram i spróbuj ponownie.",
+        code: "ACCOUNT_NOT_FOUND",
+      },
       { status: 400 }
     );
   }
@@ -33,7 +37,11 @@ export async function POST(req: Request) {
 
   if (!accessToken || !instagramUserId) {
     return NextResponse.json(
-      { error: "Brak tokenu dostępu lub ID użytkownika Instagram" },
+      {
+        error: "Brak tokenu dostępu lub ID użytkownika Instagram",
+        details: "Spróbuj ponownie połączyć konto Instagram.",
+        code: "MISSING_TOKEN_OR_ID",
+      },
       { status: 400 }
     );
   }
@@ -57,7 +65,11 @@ export async function POST(req: Request) {
           binaryData = new Uint8Array(Buffer.from(media.data, "base64"));
         } else {
           return NextResponse.json(
-            { error: "Nieprawidłowy format danych mediów" },
+            {
+              error: "Nieprawidłowy format danych mediów",
+              details: "Plik nie jest poprawnym obrazem lub wideo.",
+              code: "INVALID_MEDIA_FORMAT",
+            },
             { status: 400 }
           );
         }
@@ -77,7 +89,11 @@ export async function POST(req: Request) {
         if (!uploadResponse.ok) {
           const errorText = await uploadResponse.text();
           return NextResponse.json(
-            { error: "Błąd podczas uploadu do S3", details: errorText },
+            {
+              error: "Błąd podczas uploadu do S3",
+              details: errorText,
+              code: "S3_UPLOAD_ERROR",
+            },
             { status: 400 }
           );
         }
@@ -114,6 +130,7 @@ export async function POST(req: Request) {
             {
               error: "Błąd podczas tworzenia kontenera mediów na Instagramie",
               details: creationData,
+              code: "INSTAGRAM_API_ERROR",
             },
             { status: 400 }
           );
@@ -151,6 +168,7 @@ export async function POST(req: Request) {
           {
             error: "Błąd podczas tworzenia karuzeli na Instagramie",
             details: carouselData,
+            code: "INSTAGRAM_API_ERROR",
           },
           { status: 400 }
         );
@@ -170,6 +188,7 @@ export async function POST(req: Request) {
         {
           error: "Błąd podczas publikacji posta na Instagramie",
           details: publishData,
+          code: "INSTAGRAM_API_ERROR",
         },
         { status: 400 }
       );
@@ -188,10 +207,9 @@ export async function POST(req: Request) {
     console.error("Błąd podczas publikacji na Instagramie:", error);
     return NextResponse.json(
       {
-        error:
-          error instanceof Error
-            ? error.message
-            : "Wystąpił błąd podczas publikacji na Instagramie",
+        error: "Wystąpił błąd podczas publikacji na Instagramie.",
+        details: error instanceof Error ? error.message : error,
+        code: "UNKNOWN_ERROR",
       },
       { status: 500 }
     );
