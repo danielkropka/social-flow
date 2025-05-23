@@ -71,15 +71,59 @@ function InstagramCallbackContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        // Jeśli mamy szczegółowy komunikat błędu z API
-        if (data.error) {
-          throw new Error(data.error);
+        let errorMessage = "Nie udało się połączyć konta Instagram";
+        let errorDescription =
+          "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+        if (data.code) {
+          switch (data.code) {
+            case "NOT_LOGGED_IN":
+              errorMessage = "Musisz być zalogowany";
+              errorDescription = "Zaloguj się i spróbuj ponownie.";
+              break;
+            case "CONFIG_ERROR":
+              errorMessage = "Błąd konfiguracji aplikacji";
+              errorDescription = "Skontaktuj się z pomocą techniczną.";
+              break;
+            case "MISSING_CODE":
+              errorMessage = "Brak kodu autoryzacji";
+              errorDescription = "Spróbuj ponownie połączyć konto Instagram.";
+              break;
+            case "INSTAGRAM_API_ERROR":
+              errorMessage = "Błąd połączenia z Instagram";
+              errorDescription =
+                "Wystąpił problem z połączeniem z Instagram. Spróbuj ponownie.";
+              break;
+            case "INVALID_ACCOUNT_TYPE":
+              errorMessage = "Nieprawidłowy typ konta";
+              errorDescription =
+                "Twoje konto Instagram musi być kontem firmowym lub twórcy. Przekonwertuj swoje konto na konto firmowe w ustawieniach Instagram.";
+              break;
+            case "ACCOUNT_NOT_FOUND":
+              errorMessage = "Konto Instagram nie istnieje w systemie";
+              errorDescription =
+                "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.";
+              break;
+            case "DB_ERROR":
+              errorMessage = "Błąd serwera";
+              errorDescription =
+                "Wystąpił błąd po stronie serwera. Spróbuj ponownie później.";
+              break;
+            case "UNKNOWN_ERROR":
+            default:
+              errorMessage = "Nieoczekiwany błąd";
+              errorDescription =
+                "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
+              break;
+          }
         }
-        // Jeśli mamy szczegóły techniczne
-        if (data.details) {
-          console.error("Szczegóły błędu:", data.details);
-        }
-        throw new Error("Wystąpił błąd podczas łączenia z kontem Instagram");
+        toast.error(errorMessage, {
+          description: errorDescription,
+          duration: 7000,
+        });
+        setTimeout(() => {
+          router.push("/dashboard/");
+        }, 3000);
+        return;
       }
 
       if (data.success) {
@@ -89,47 +133,22 @@ function InstagramCallbackContent() {
         });
         router.push("/dashboard/");
       } else {
-        throw new Error(data.error || "Nieznany błąd");
+        toast.error("Nieznany błąd", {
+          description:
+            "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+          duration: 7000,
+        });
+        setTimeout(() => {
+          router.push("/dashboard/");
+        }, 3000);
       }
     } catch (error) {
       console.error("Błąd podczas łączenia z Instagram:", error);
-
-      let errorMessage = "Nie udało się połączyć konta Instagram";
-      let errorDescription =
-        "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.";
-
-      if (error instanceof Error) {
-        const errorText = error.message.toLowerCase();
-
-        if (errorText.includes("konto instagram musi być kontem firmowym")) {
-          errorMessage = "Nieprawidłowy typ konta";
-          errorDescription =
-            "Twoje konto Instagram musi być kontem firmowym lub twórcy. Przekonwertuj swoje konto na konto firmowe w ustawieniach Instagram.";
-        } else if (
-          errorText.includes("uprawnień") ||
-          errorText.includes("scope")
-        ) {
-          errorMessage = "Brak wymaganych uprawnień";
-          errorDescription =
-            "Upewnij się, że wyraziłeś zgodę na wszystkie wymagane uprawnienia podczas łączenia konta.";
-        } else if (
-          errorText.includes("sesja") ||
-          errorText.includes("wygasła")
-        ) {
-          errorMessage = "Sesja wygasła";
-          errorDescription = "Spróbuj ponownie połączyć konto Instagram.";
-        } else if (errorText.includes("dane") || errorText.includes("pobrać")) {
-          errorMessage = "Problem z danymi konta";
-          errorDescription =
-            "Nie udało się pobrać wszystkich wymaganych danych z Twojego konta Instagram.";
-        }
-      }
-
-      toast.error(errorMessage, {
-        description: errorDescription,
+      toast.error("Nie udało się połączyć konta Instagram", {
+        description:
+          "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
         duration: 7000,
       });
-
       setTimeout(() => {
         router.push("/dashboard/");
       }, 3000);

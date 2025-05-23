@@ -16,7 +16,8 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "Nie jesteś zalogowany",
-          details: "Musisz być zalogowany, aby połączyć konto Instagram",
+          details: "Musisz być zalogowany, aby połączyć konto Instagram.",
+          code: "NOT_LOGGED_IN",
         },
         { status: 401 }
       );
@@ -26,8 +27,9 @@ export async function POST(request: Request) {
       console.error("Brak konfiguracji Instagram");
       return NextResponse.json(
         {
-          error: "Błąd konfiguracji",
-          details: "Brak wymaganej konfiguracji Instagram",
+          error: "Błąd konfiguracji aplikacji Instagram.",
+          details: "Skontaktuj się z pomocą techniczną.",
+          code: "CONFIG_ERROR",
         },
         { status: 500 }
       );
@@ -38,8 +40,9 @@ export async function POST(request: Request) {
     if (!code) {
       return NextResponse.json(
         {
-          error: "Brak kodu autoryzacji",
-          details: "Nie otrzymano kodu autoryzacji z Instagram",
+          error: "Brak kodu autoryzacji.",
+          details: "Nie otrzymano kodu autoryzacji z Instagram.",
+          code: "MISSING_CODE",
         },
         { status: 400 }
       );
@@ -69,8 +72,9 @@ export async function POST(request: Request) {
       console.error("Instagram API error:", errorData);
       return NextResponse.json(
         {
-          error: "Błąd podczas wymiany kodu na token",
-          details: errorData,
+          error: "Błąd połączenia z Instagram.",
+          details: "Nie udało się wymienić kodu na token. Spróbuj ponownie.",
+          code: "INSTAGRAM_API_ERROR",
         },
         { status: 400 }
       );
@@ -88,8 +92,9 @@ export async function POST(request: Request) {
       console.error("Instagram Long-lived token error:", errorData);
       return NextResponse.json(
         {
-          error: "Błąd podczas pobierania długoterminowego tokenu",
-          details: errorData,
+          error: "Błąd połączenia z Instagram.",
+          details: "Nie udało się pobrać długoterminowego tokenu.",
+          code: "INSTAGRAM_API_ERROR",
         },
         { status: 400 }
       );
@@ -107,8 +112,9 @@ export async function POST(request: Request) {
       console.error("Instagram User Info error:", errorData);
       return NextResponse.json(
         {
-          error: "Nie udało się pobrać informacji o koncie Instagram",
-          details: errorData.error?.message || "Nieznany błąd",
+          error: "Nie udało się pobrać informacji o koncie Instagram.",
+          details: "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
+          code: "INSTAGRAM_API_ERROR",
         },
         { status: 400 }
       );
@@ -126,8 +132,9 @@ export async function POST(request: Request) {
       console.error("Instagram Account Info error:", errorData);
       return NextResponse.json(
         {
-          error: "Nie udało się pobrać informacji o typie konta Instagram",
-          details: errorData.error?.message || "Nieznany błąd",
+          error: "Nie udało się pobrać typu konta Instagram.",
+          details: "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
+          code: "INSTAGRAM_API_ERROR",
         },
         { status: 400 }
       );
@@ -137,13 +144,14 @@ export async function POST(request: Request) {
 
     // Sprawdź czy konto jest firmowe lub twórcy
     if (
-      accountInfo.account_type !== "MEDIA_BUSINESS" &&
-      accountInfo.account_type !== "MEDIA_CREATOR"
+      accountInfo.account_type !== "BUSINESS" &&
+      accountInfo.account_type !== "CREATOR"
     ) {
       return NextResponse.json(
         {
-          error: "Nieprawidłowy typ konta Instagram",
-          details: `Twoje konto musi być kontem firmowym lub twórcy. Aktualny typ konta: ${accountInfo.account_type}`,
+          error: "Nieprawidłowy typ konta Instagram.",
+          details: "Twoje konto musi być kontem firmowym lub twórcy.",
+          code: "INVALID_ACCOUNT_TYPE",
         },
         { status: 400 }
       );
@@ -160,7 +168,14 @@ export async function POST(request: Request) {
       });
 
       if (!existingAccount) {
-        throw new Error("Konto Instagram nie istnieje");
+        return NextResponse.json(
+          {
+            error: "Konto Instagram nie istnieje w systemie.",
+            details: "Spróbuj ponownie lub skontaktuj się z pomocą techniczną.",
+            code: "ACCOUNT_NOT_FOUND",
+          },
+          { status: 404 }
+        );
       }
 
       // Zapisz token w bazie danych
@@ -198,8 +213,10 @@ export async function POST(request: Request) {
       console.error("Błąd bazy danych:", dbError);
       return NextResponse.json(
         {
-          error: "Nie udało się zapisać danych konta Instagram",
-          details: "Błąd podczas zapisywania w bazie danych",
+          error: "Nie udało się zapisać danych konta Instagram.",
+          details:
+            "Wystąpił błąd po stronie serwera. Spróbuj ponownie później.",
+          code: "DB_ERROR",
         },
         { status: 500 }
       );
@@ -208,8 +225,10 @@ export async function POST(request: Request) {
     console.error("Błąd autoryzacji Instagram:", error);
     return NextResponse.json(
       {
-        error: "Wystąpił nieoczekiwany błąd podczas łączenia z Instagram",
-        details: error instanceof Error ? error.message : "Nieznany błąd",
+        error: "Wystąpił nieoczekiwany błąd podczas łączenia z Instagram.",
+        details:
+          "Spróbuj ponownie później lub skontaktuj się z pomocą techniczną.",
+        code: "UNKNOWN_ERROR",
       },
       { status: 500 }
     );
