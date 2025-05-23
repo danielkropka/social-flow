@@ -5,6 +5,7 @@ import { decryptToken } from "@/lib/utils/utils";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import { withRateLimit } from "@/middleware/rateLimit";
+import { PLATFORM_LIMITS } from "@/constants";
 
 export async function POST(req: Request) {
   const session = await getAuthSession();
@@ -119,8 +120,6 @@ export async function POST(req: Request) {
           let mediaCategory = "tweet_image";
           if (mediaType.startsWith("video/")) {
             mediaCategory = "tweet_video";
-          } else if (mediaType.startsWith("image/gif")) {
-            mediaCategory = "tweet_gif";
           }
 
           // Pobierz plik z S3
@@ -133,10 +132,18 @@ export async function POST(req: Request) {
           const s3Blob = await s3Response.blob();
 
           // Sprawdź rozmiar pliku
-          if (s3Blob.size > 512 * 1024 * 1024) {
-            // 512MB limit dla Twittera
+          if (
+            s3Blob.size >
+            (mediaCategory === "tweet_video"
+              ? PLATFORM_LIMITS.twitter.maxVideoSize
+              : PLATFORM_LIMITS.twitter.maxImageSize)
+          ) {
             throw new Error(
-              "Plik jest zbyt duży. Maksymalny rozmiar to 512MB."
+              `Plik jest zbyt duży. Maksymalny rozmiar to ${
+                mediaCategory === "tweet_video"
+                  ? PLATFORM_LIMITS.twitter.maxVideoSize
+                  : PLATFORM_LIMITS.twitter.maxImageSize
+              }MB.`
             );
           }
 

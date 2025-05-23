@@ -33,6 +33,7 @@ export const SUPPORTED_PLATFORMS = {
   FACEBOOK: "facebook",
   INSTAGRAM: "instagram",
   TWITTER: "twitter",
+  TIKTOK: "tiktok",
 } as const;
 
 export type SupportedPlatform =
@@ -44,18 +45,29 @@ export const PLATFORM_LIMITS = {
     maxVideoSize: 1024 * 1024 * 1024, // 1GB
     maxVideoDuration: 600, // 10 minut
     maxTextLength: 63206,
+    maxMediaCount: 10,
   },
   [SUPPORTED_PLATFORMS.INSTAGRAM]: {
     maxImageSize: 8 * 1024 * 1024, // 8MB
-    maxVideoSize: 100 * 1024 * 1024, // 100MB
-    maxVideoDuration: 60, // 1 minuta
+    maxVideoSize: 250 * 1024 * 1024, // 250MB
+    maxVideoDuration: 60 * 2, // 2 minutes
+    minVideoDuration: 3, // 3 seconds
     maxTextLength: 2200,
+    maxMediaCount: 10,
   },
   [SUPPORTED_PLATFORMS.TWITTER]: {
     maxImageSize: 5 * 1024 * 1024, // 5MB
     maxVideoSize: 512 * 1024 * 1024, // 512MB
     maxVideoDuration: 600, // 10 minut
     maxTextLength: 280,
+    maxMediaCount: 4,
+  },
+  [SUPPORTED_PLATFORMS.TIKTOK]: {
+    maxImageSize: 8 * 1024 * 1024, // 8MB
+    maxVideoSize: 100 * 1024 * 1024, // 100MB
+    maxVideoDuration: 60, // 1 minuta
+    maxTextLength: 2200,
+    maxMediaCount: 35,
   },
 } as const;
 
