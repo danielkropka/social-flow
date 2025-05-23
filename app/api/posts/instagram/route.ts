@@ -39,28 +39,70 @@ export async function POST(req: Request) {
   }
 
   try {
-    // 1. Upload mediów do Instagram Graph API (jeśli są)
-    let mediaObjectIds: string[] = [];
+    // 1. Upload mediów do S3 jeśli trzeba, zbierz publiczne linki
+    const s3MediaUrls: { url: string; type: string }[] = [];
     if (mediaUrls && mediaUrls.length > 0) {
       for (const media of mediaUrls) {
-        // Instagram wymaga najpierw utworzenia kontenera mediów
-        // Obsługa tylko zdjęć i filmów (image_url lub video_url)
-        let creationUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
-        let mediaType = media.type.startsWith("video/") ? "video" : "image";
-        let params: Record<string, string> = {
+        // Jeśli media.url już istnieje i jest publicznym linkiem, użyj go
+        if (media.url && media.url.startsWith("http")) {
+          s3MediaUrls.push({ url: media.url, type: media.type });
+          continue;
+        }
+        // W przeciwnym razie uploaduj do S3
+        const mediaType = media.type || "application/octet-stream";
+        let binaryData;
+        if (Array.isArray(media.data)) {
+          binaryData = new Uint8Array(media.data);
+        } else if (typeof media.data === "string") {
+          binaryData = new Uint8Array(Buffer.from(media.data, "base64"));
+        } else {
+          return NextResponse.json(
+            { error: "Nieprawidłowy format danych mediów" },
+            { status: 400 }
+          );
+        }
+        const mediaBlob = new Blob([binaryData], { type: mediaType });
+        const baseUrl =
+          process.env.NEXT_PUBLIC_APP_URL ||
+          `http://${req.headers.get("host")}`;
+        const uploadResponse = await fetch(`${baseUrl}/api/media/upload`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/octet-stream",
+            "X-File-Name": `${Date.now()}-file`,
+            "X-File-Type": mediaType,
+          },
+          body: mediaBlob,
+        });
+        if (!uploadResponse.ok) {
+          const errorText = await uploadResponse.text();
+          return NextResponse.json(
+            { error: "Błąd podczas uploadu do S3", details: errorText },
+            { status: 400 }
+          );
+        }
+        const { url: s3Url } = await uploadResponse.json();
+        s3MediaUrls.push({ url: s3Url, type: mediaType });
+      }
+    }
+
+    // 2. Upload do Instagram Graph API (przekazuj linki z S3)
+    const mediaObjectIds: string[] = [];
+    if (s3MediaUrls.length > 0) {
+      for (const media of s3MediaUrls) {
+        const creationUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
+        const mediaType = media.type.startsWith("video/") ? "video" : "image";
+        const params: Record<string, string> = {
           access_token: accessToken,
         };
         if (mediaType === "image") {
-          params["image_url"] =
-            media.url || media.s3Url || media.mediaUrl || media.url;
+          params["image_url"] = media.url;
         } else if (mediaType === "video") {
-          params["video_url"] =
-            media.url || media.s3Url || media.mediaUrl || media.url;
+          params["video_url"] = media.url;
         }
         if (content) {
           params["caption"] = content;
         }
-        // Utwórz kontener mediów
         const formData = new URLSearchParams(params);
         const creationRes = await fetch(creationUrl, {
           method: "POST",
@@ -80,16 +122,15 @@ export async function POST(req: Request) {
       }
     }
 
-    // 2. Publikacja posta (jeden lub karuzela)
-    let publishUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media_publish`;
-    let publishParams: Record<string, string> = {
+    // 3. Publikacja posta (jeden lub karuzela)
+    const publishUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media_publish`;
+    const publishParams: Record<string, string> = {
       access_token: accessToken,
     };
     if (mediaObjectIds.length === 1) {
       publishParams["creation_id"] = mediaObjectIds[0];
     } else if (mediaObjectIds.length > 1) {
       // Karuzela (album)
-      // Najpierw utwórz kontener karuzeli
       const carouselUrl = `https://graph.facebook.com/v19.0/${instagramUserId}/media`;
       const carouselParams: Record<string, string> = {
         access_token: accessToken,
@@ -140,6 +181,7 @@ export async function POST(req: Request) {
       data: {
         instagramPostId: publishData.id,
         mediaObjectIds,
+        s3MediaUrls,
       },
     });
   } catch (error) {
