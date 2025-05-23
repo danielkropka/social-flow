@@ -13,6 +13,7 @@ export async function POST(req: Request) {
   }
 
   const { content, mediaUrls, accountId } = await req.json();
+  console.log("content", content);
 
   // Pobierz konto Instagram powiązane z użytkownikiem
   const account = await db.connectedAccount.findFirst({
