@@ -161,7 +161,11 @@ export async function POST(request: Request) {
       // Zapisz token w bazie danych
       const connectedAccount = await db.connectedAccount.upsert({
         where: {
-          id: session.user.id,
+          provider_providerAccountId_userId: {
+            provider: "INSTAGRAM",
+            providerAccountId: userInfo.id,
+            userId: session.user.id,
+          },
         },
         update: {
           accessToken: encryptToken(longLivedTokenData.access_token),

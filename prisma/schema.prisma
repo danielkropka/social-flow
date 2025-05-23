@@ -190,6 +190,7 @@ model ConnectedAccount {
     updatedAt DateTime  @updatedAt
     deletedAt DateTime?
 
+    @@unique([provider, providerAccountId, userId])
     @@index([userId])
     @@index([provider])
     @@index([status])
