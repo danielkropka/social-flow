@@ -208,7 +208,12 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: "Wystąpił błąd podczas publikacji na Instagramie.",
-        details: error instanceof Error ? error.message : error,
+        details:
+          error instanceof Error
+            ? error.message
+            : typeof error === "object"
+            ? JSON.stringify(error)
+            : String(error),
         code: "UNKNOWN_ERROR",
       },
       { status: 500 }
