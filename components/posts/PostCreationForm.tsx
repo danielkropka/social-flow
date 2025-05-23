@@ -59,7 +59,7 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
-import { POST_TYPES, PostType } from "./PostTypeSelectionStep";
+import { POST_TYPES } from "./PostTypeSelectionStep";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface ConnectedAccountWithDetails extends ConnectedAccount {
@@ -129,7 +129,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
     setCurrentStep,
     setContent,
     isTextOnly,
-    content,
     resetState,
     postType,
   } = usePostCreation();
