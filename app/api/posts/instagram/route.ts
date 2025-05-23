@@ -137,8 +137,9 @@ export async function POST(req: Request) {
             );
           }
 
-          const initForm = new FormData();
-          initForm.append("image_url", s3Url);
+          const initForm = {
+            image_url: s3Url,
+          };
 
           const initRequestData = {
             url: `https://graph.instagram.com/v22.0/${instagramUserId}/media`,
