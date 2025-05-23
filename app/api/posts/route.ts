@@ -209,7 +209,12 @@ export async function POST(req: Request) {
             accountId: account.id,
             provider: account.provider,
             success: false,
-            error: error instanceof Error ? error.message : "Nieznany błąd",
+            error:
+              error instanceof Error
+                ? error.message
+                : typeof error === "object"
+                ? JSON.stringify(error)
+                : String(error),
           });
         }
       }
