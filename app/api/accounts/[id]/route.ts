@@ -4,7 +4,6 @@ import { getAuthSession } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 
-// Funkcja do odświeżania tokenu Instagram
 async function refreshInstagramToken(accessToken: string) {
   try {
     const response = await fetch(
