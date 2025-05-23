@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ConnectedAccount } from "@prisma/client";
 import { getAuthSession } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
+import { decryptToken } from "@/lib/utils/utils";
 
 // Funkcja do odświeżania tokenu Instagram
 async function refreshInstagramToken(accessToken: string) {
@@ -85,7 +86,9 @@ async function refreshTikTokToken(refreshToken: string) {
 async function handleTokenRefresh(account: ConnectedAccount) {
   try {
     if (account.provider === "INSTAGRAM") {
-      const newToken = await refreshInstagramToken(account.accessToken);
+      const newToken = await refreshInstagramToken(
+        decryptToken(account.accessToken)
+      );
       if (newToken) {
         await db.connectedAccount.update({
           where: { id: account.id },
