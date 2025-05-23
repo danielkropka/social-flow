@@ -59,6 +59,8 @@ import {
   Draggable,
   DropResult,
 } from "@hello-pangea/dnd";
+import { POST_TYPES } from "./PostTypeSelectionStep";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ConnectedAccountWithDetails extends ConnectedAccount {
   accountType?: string;
@@ -127,7 +129,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
     setCurrentStep,
     setContent,
     isTextOnly,
-    content,
     resetState,
     postType,
   } = usePostCreation();
@@ -510,18 +511,15 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
     setSelectedFiles(newFiles);
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[500px]">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-10 w-10 animate-spin text-blue-500 mx-auto" />
-          <p className="text-gray-600 font-medium">
-            Ładowanie połączonych kont...
-          </p>
-        </div>
-      </div>
+  const getAvailablePlatforms = () => {
+    const currentPostType = POST_TYPES.find((type) => type.id === postType);
+    if (!currentPostType) return AVAILABLE_PLATFORMS;
+    return AVAILABLE_PLATFORMS.filter((platform) =>
+      currentPostType.platforms.some(
+        (p) => p.name.toLowerCase() === platform.name.toLowerCase()
+      )
     );
-  }
+  };
 
   if (error) {
     return (
@@ -756,18 +754,41 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                   <Label className="text-base font-medium text-gray-900">
                     Tekst posta
                   </Label>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => setCurrentStep(1)}
-                    className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                  >
-                    Edytuj tekst
-                  </Button>
                 </div>
-                <p className="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                  {content}
-                </p>
+                <div className="relative">
+                  <Textarea
+                    {...form.register("text")}
+                    placeholder={
+                      selectedAccounts.length === 0
+                        ? "Najpierw wybierz konto, aby dodać tekst..."
+                        : "Wpisz tekst posta..."
+                    }
+                    disabled={selectedAccounts.length === 0}
+                    readOnly={selectedAccounts.length === 0}
+                    className={cn(
+                      "min-h-[120px] text-base resize-none transition-all duration-200 bg-gray-50 border-gray-200",
+                      form.formState.errors.text
+                        ? "border-red-500 focus-visible:ring-red-500"
+                        : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500",
+                      selectedAccounts.length === 0 &&
+                        "cursor-not-allowed opacity-75 pointer-events-none"
+                    )}
+                  />
+                  {selectedAccounts.length === 0 && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 rounded-lg pointer-events-none">
+                      <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-full shadow-sm">
+                        <Info className="h-4 w-4" />
+                        <span>Wybierz konto, aby dodać tekst</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {form.formState.errors.text && (
+                  <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded-md animate-fade-in mt-2">
+                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                    <p>{form.formState.errors.text.message}</p>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-shadow duration-200">
@@ -787,7 +808,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                             form.watch("text")?.length >
                               Math.min(
                                 ...selectedAccounts.map((account) => {
-                                  const platform = AVAILABLE_PLATFORMS.find(
+                                  const platform = getAvailablePlatforms().find(
                                     (p) =>
                                       p.id === account.provider.toLowerCase()
                                   );
@@ -804,7 +825,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                         <span className="font-medium text-gray-700">
                           {Math.min(
                             ...selectedAccounts.map((account) => {
-                              const platform = AVAILABLE_PLATFORMS.find(
+                              const platform = getAvailablePlatforms().find(
                                 (p) => p.id === account.provider.toLowerCase()
                               );
                               return platform?.maxChars || Infinity;
@@ -825,17 +846,18 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                         : "Wpisz tekst posta..."
                     }
                     disabled={selectedAccounts.length === 0}
+                    readOnly={selectedAccounts.length === 0}
                     className={cn(
                       "min-h-[120px] text-base resize-none transition-all duration-200 bg-gray-50 border-gray-200",
                       form.formState.errors.text
                         ? "border-red-500 focus-visible:ring-red-500"
                         : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500",
                       selectedAccounts.length === 0 &&
-                        "cursor-not-allowed opacity-75"
+                        "cursor-not-allowed opacity-75 pointer-events-none"
                     )}
                   />
                   {selectedAccounts.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 rounded-lg">
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 rounded-lg pointer-events-none">
                       <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-full shadow-sm">
                         <Info className="h-4 w-4" />
                         <span>Wybierz konto, aby dodać tekst</span>
@@ -857,14 +879,14 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                 type="submit"
                 disabled={
                   isPublishing ||
-                  selectedFiles.length === 0 ||
+                  (!isTextOnly && selectedFiles.length === 0) ||
                   form.watch("text")?.length === 0 ||
                   selectedAccounts.length === 0
                 }
                 className={cn(
                   "w-full transition-all duration-200",
                   isPublishing ||
-                    selectedFiles.length === 0 ||
+                    (!isTextOnly && selectedFiles.length === 0) ||
                     form.watch("text")?.length === 0 ||
                     selectedAccounts.length === 0
                     ? "opacity-75 cursor-not-allowed"
@@ -884,7 +906,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                 )}
               </Button>
               <div className="mt-3 space-y-2">
-                {selectedFiles.length === 0 && (
+                {!isTextOnly && selectedFiles.length === 0 && (
                   <div className="flex items-center gap-2 text-sm text-gray-500">
                     <Info className="h-4 w-4" />
                     <span>Dodaj plik, aby opublikować post</span>
@@ -1032,7 +1054,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
               <div className="flex items-center gap-2">
-                {AVAILABLE_PLATFORMS.map((platform) => (
+                {getAvailablePlatforms().map((platform) => (
                   <TooltipProvider key={platform.id}>
                     <Tooltip>
                       <TooltipTrigger asChild>
@@ -1059,69 +1081,101 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
             </div>
 
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              {Object.entries(groupedAccounts).map(([platform, accounts]) => (
-                <div key={platform} className="space-y-2">
-                  <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
-                    {AVAILABLE_PLATFORMS.find((p) => p.id === platform)?.icon}
-                    {AVAILABLE_PLATFORMS.find((p) => p.id === platform)?.name}
-                    <span className="text-xs text-gray-500">
-                      ({accounts.length})
-                    </span>
-                  </h3>
-                  <div className="grid gap-2">
-                    {accounts.map((account) => (
-                      <button
-                        key={account.id}
-                        onClick={() => handleAccountSelection(account)}
-                        className={cn(
-                          "flex items-center gap-3 p-3 rounded-lg border transition-all duration-300",
-                          selectedAccounts.some(
-                            (selected) => selected.id === account.id
+              {isLoading ? (
+                <>
+                  {[1, 2, 3].map((idx: number) => (
+                    <div
+                      key={idx}
+                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-100"
+                    >
+                      <Skeleton className="w-10 h-10 rounded-full" />
+                      <div className="flex-1">
+                        <Skeleton className="h-4 w-32 mb-2" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                Object.entries(groupedAccounts).map(
+                  ([platform, accounts]: [
+                    string,
+                    ConnectedAccountWithDetails[]
+                  ]) => (
+                    <div key={platform} className="space-y-2">
+                      <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
+                        {
+                          getAvailablePlatforms().find((p) => p.id === platform)
+                            ?.icon
+                        }
+                        {
+                          getAvailablePlatforms().find((p) => p.id === platform)
+                            ?.name
+                        }
+                        <span className="text-xs text-gray-500">
+                          ({accounts.length})
+                        </span>
+                      </h3>
+                      <div className="grid gap-2">
+                        {accounts.map(
+                          (account: ConnectedAccountWithDetails) => (
+                            <button
+                              key={account.id}
+                              onClick={() => handleAccountSelection(account)}
+                              className={cn(
+                                "flex items-center gap-3 p-3 rounded-lg border transition-all duration-300",
+                                selectedAccounts.some(
+                                  (selected) => selected.id === account.id
+                                )
+                                  ? "border-blue-500 bg-blue-50"
+                                  : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                              )}
+                            >
+                              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                <Avatar className="w-10 h-10">
+                                  {account.profileImage ? (
+                                    <Image
+                                      src={account.profileImage}
+                                      alt={account.name}
+                                      fill
+                                      className="object-cover"
+                                      sizes="40px"
+                                    />
+                                  ) : (
+                                    <AvatarFallback className="text-sm font-medium">
+                                      {account.name
+                                        .substring(0, 2)
+                                        .toUpperCase()}
+                                    </AvatarFallback>
+                                  )}
+                                </Avatar>
+                              </div>
+                              <div className="flex-1 text-left">
+                                <p className="font-medium text-gray-900">
+                                  {account.name}
+                                </p>
+                                <p className="text-sm text-gray-500">
+                                  @{account.username}
+                                </p>
+                              </div>
+                              {selectedAccounts.some(
+                                (selected) => selected.id === account.id
+                              ) && (
+                                <div className="flex items-center gap-2">
+                                  <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                                  <span className="text-sm text-blue-500 font-medium">
+                                    Wybrane
+                                  </span>
+                                </div>
+                              )}
+                            </button>
                           )
-                            ? "border-blue-500 bg-blue-50"
-                            : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
                         )}
-                      >
-                        <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                          <Avatar className="w-10 h-10">
-                            {account.profileImage ? (
-                              <Image
-                                src={account.profileImage}
-                                alt={account.name}
-                                fill
-                                className="object-cover"
-                                sizes="40px"
-                              />
-                            ) : (
-                              <AvatarFallback className="text-sm font-medium">
-                                {account.name.substring(0, 2).toUpperCase()}
-                              </AvatarFallback>
-                            )}
-                          </Avatar>
-                        </div>
-                        <div className="flex-1 text-left">
-                          <p className="font-medium text-gray-900">
-                            {account.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            @{account.username}
-                          </p>
-                        </div>
-                        {selectedAccounts.some(
-                          (selected) => selected.id === account.id
-                        ) && (
-                          <div className="flex items-center gap-2">
-                            <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                            <span className="text-sm text-blue-500 font-medium">
-                              Wybrane
-                            </span>
-                          </div>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+                      </div>
+                    </div>
+                  )
+                )
+              )}
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-100">

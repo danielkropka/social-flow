@@ -22,8 +22,9 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
+import { Skeleton } from "@/components/ui/skeleton";
 
-type PostType = "images" | "video" | "text";
+export type PostType = "images" | "video" | "text";
 
 interface Platform {
   name: string;
@@ -41,7 +42,7 @@ interface PostTypeConfig {
   platforms: Platform[];
 }
 
-const PLATFORM_LIMITS = {
+export const PLATFORM_LIMITS = {
   facebook: {
     maxImages: 10,
     maxImageSize: 4 * 1024 * 1024, // 4MB
@@ -68,7 +69,7 @@ const PLATFORM_LIMITS = {
   },
 };
 
-const POST_TYPES: PostTypeConfig[] = [
+export const POST_TYPES: PostTypeConfig[] = [
   {
     id: "images",
     title: "Post ze zdjęciami",
@@ -168,7 +169,7 @@ const POST_TYPES: PostTypeConfig[] = [
 export function PostTypeSelectionStep() {
   const { setCurrentStep, setIsTextOnly, setPostType } = usePostCreation();
   const [showHelp, setShowHelp] = useState(false);
-  const { isSubscribed } = useSubscription();
+  const { isSubscribed, isLoading } = useSubscription();
 
   const handleTypeSelect = (type: PostType) => {
     if (!isSubscribed) {
@@ -178,6 +179,41 @@ export function PostTypeSelectionStep() {
     setPostType(type);
     setCurrentStep(2);
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div className="flex flex-col gap-2">
+            <Skeleton className="h-8 w-48" />
+            <Skeleton className="h-4 w-72" />
+          </div>
+          <Skeleton className="h-10 w-10 rounded-full" />
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {[1, 2, 3].map((index) => (
+            <div
+              key={index}
+              className="flex flex-col items-center p-6 border rounded-xl"
+            >
+              <Skeleton className="w-16 h-16 rounded-full mb-4" />
+              <Skeleton className="h-6 w-32 mb-2" />
+              <Skeleton className="h-4 w-48 mb-4" />
+              <div className="flex flex-wrap gap-2 justify-center">
+                {[1, 2, 3].map((platformIndex) => (
+                  <Skeleton
+                    key={platformIndex}
+                    className="h-8 w-24 rounded-full"
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -209,7 +245,7 @@ export function PostTypeSelectionStep() {
         </TooltipProvider>
       </div>
 
-      {!isSubscribed && (
+      {!isLoading && !isSubscribed && (
         <Alert variant="destructive" className="mb-6">
           <AlertCircle className="h-4 w-4" />
           <AlertTitle>Wymagana subskrypcja</AlertTitle>

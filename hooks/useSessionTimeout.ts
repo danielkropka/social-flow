@@ -3,10 +3,9 @@ import { useSession, signOut } from "next-auth/react";
 
 const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
 const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before expiration
-const REFRESH_INTERVAL = 5 * 60 * 1000; // Refresh session every 5 minutes
 
 export function useSessionTimeout() {
-  const { data: session, update: updateSession } = useSession();
+  const { data: session } = useSession();
   const [showWarning, setShowWarning] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
   const [lastActivity, setLastActivity] = useState(Date.now());
@@ -47,22 +46,15 @@ export function useSessionTimeout() {
       }
     };
 
-    // Refresh session every specified interval
-    const refreshSession = () => {
-      updateSession();
-    };
-
     const interval = setInterval(checkInactivity, 1000);
-    const refreshInterval = setInterval(refreshSession, REFRESH_INTERVAL);
 
     return () => {
       events.forEach((event) => {
         window.removeEventListener(event, updateLastActivity);
       });
       clearInterval(interval);
-      clearInterval(refreshInterval);
     };
-  }, [session, lastActivity, showWarning, updateSession]);
+  }, [session, lastActivity, showWarning]);
 
   return {
     showWarning,
