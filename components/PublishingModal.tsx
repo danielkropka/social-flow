@@ -32,7 +32,7 @@ interface PublishingModalProps {
   onClose: () => void;
   accounts: ConnectedAccount[];
   content: string;
-  mediaUrls?: any[]; // dostosuj do swojego formatu
+  mediaUrls?: File[];
 }
 
 export function PublishingModal({
