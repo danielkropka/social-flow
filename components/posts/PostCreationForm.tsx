@@ -89,6 +89,12 @@ const postSchema = z.object({
 
 type PostFormValues = z.infer<typeof postSchema>;
 
+export type MediaUrl = {
+  data: number[];
+  type: string;
+  name: string;
+};
+
 const AVAILABLE_PLATFORMS = [
   {
     id: "facebook",
@@ -116,7 +122,7 @@ const AVAILABLE_PLATFORMS = [
   },
 ];
 
-export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
+export function PostCreationForm() {
   const {
     selectedFiles,
     setSelectedFiles,
@@ -149,6 +155,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
   const [dragActive, setDragActive] = useState(false);
+  const [mediaUrls, setMediaUrls] = useState<MediaUrl[]>([]);
 
   const getSupportedFormats = () => {
     if (isTextOnly) return [];
@@ -232,7 +239,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         })
       );
 
-      // Zamiast wysyłania requesta do endpointu, po prostu otwórz PublishingModal z odpowiednimi danymi (accounts, content, mediaUrls)
+      setMediaUrls(mediaUrls);
       setIsPublishingModalOpen(true);
     } catch (error) {
       toast.error(
@@ -1243,7 +1250,7 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         }}
         accounts={selectedAccounts}
         content={form.watch("text")}
-        mediaUrls={selectedFiles}
+        mediaUrls={mediaUrls}
       />
 
       <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>

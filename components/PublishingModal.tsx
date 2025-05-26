@@ -11,6 +11,7 @@ import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils/utils";
+import { MediaUrl } from "./posts/PostCreationForm";
 
 // Typy
 interface ConnectedAccount {
@@ -32,7 +33,7 @@ interface PublishingModalProps {
   onClose: () => void;
   accounts: ConnectedAccount[];
   content: string;
-  mediaUrls?: File[];
+  mediaUrls?: MediaUrl[];
 }
 
 export function PublishingModal({
@@ -96,14 +97,14 @@ export function PublishingModal({
             )
           );
         }
-      } catch (e: any) {
+      } catch (e: unknown) {
         setStatusList((list) =>
           list.map((s, i) =>
             i === nextIndex
               ? {
                   ...s,
                   status: "error",
-                  error: e.message || "Błąd publikacji",
+                  error: e instanceof Error ? e.message : "Błąd publikacji",
                 }
               : s
           )
