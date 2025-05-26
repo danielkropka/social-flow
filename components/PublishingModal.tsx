@@ -12,6 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils/utils";
 import { MediaUrl } from "./posts/PostCreationForm";
+import { useTab } from "@/context/TabContext";
+import { useRouter } from "next/navigation";
 
 // Typy
 interface ConnectedAccount {
@@ -43,6 +45,8 @@ export function PublishingModal({
   content,
   mediaUrls = [],
 }: PublishingModalProps) {
+  const router = useRouter();
+  const { setActiveTab } = useTab();
   const [statusList, setStatusList] = useState<PublishingStatus[]>([]);
 
   // Inicjalizacja statusów
@@ -175,8 +179,15 @@ export function PublishingModal({
   );
   const hasErrors = statusList.some((status) => status.status === "error");
 
+  const handleClose = () => {
+    onClose();
+
+    router.push("/dashboard");
+    setActiveTab("posts");
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="text-xl font-semibold text-gray-900">
@@ -254,7 +265,7 @@ export function PublishingModal({
           {allCompleted && (
             <div className="pt-4 border-t border-gray-100">
               <Button
-                onClick={onClose}
+                onClick={handleClose}
                 className="w-full"
                 variant={hasErrors ? "destructive" : "default"}
               >
