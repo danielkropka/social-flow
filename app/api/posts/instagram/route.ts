@@ -338,12 +338,45 @@ export async function POST(req: Request) {
 
       const publishData = await publishResponse.json();
 
+      // --- ZAPIS DO BAZY ---
+      const createdPost = await db.post.create({
+        data: {
+          content,
+          status: "PUBLISHED",
+          published: true,
+          publishedAt: new Date(),
+          userId: session.user.id,
+          media: {
+            create: mediaIds.map((m) => ({
+              url: m.url,
+              type: m.type === "video" ? "VIDEO" : "IMAGE",
+            })),
+          },
+          postConnectedAccounts: {
+            create: [
+              {
+                connectedAccountId: account.id,
+                status: "PUBLISHED",
+                postUrl: `https://instagram.com/${account.username}`,
+                publishedAt: new Date(),
+              },
+            ],
+          },
+        },
+        include: {
+          media: true,
+          postConnectedAccounts: true,
+        },
+      });
+      // --- KONIEC ZAPISU DO BAZY ---
+
       return NextResponse.json({
         success: true,
         data: {
           postId: publishData.id,
           mediaIds: mediaIds.map((m) => m.mediaId),
           mediaUrls: mediaIds.map((m) => ({ url: m.url, type: m.type })),
+          post: createdPost,
         },
       });
     } catch (error) {
