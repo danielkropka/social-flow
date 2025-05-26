@@ -33,6 +33,26 @@ async function uploadMediaToS3(
   return s3Url;
 }
 
+// --- Funkcja pomocnicza do oczekiwania na gotowość media na Instagramie ---
+async function waitForMediaReady(
+  mediaId: string,
+  accessToken: string,
+  maxTries = 10,
+  intervalMs = 3000
+): Promise<void> {
+  for (let i = 0; i < maxTries; i++) {
+    const statusRes = await fetch(
+      `https://graph.instagram.com/v22.0/${mediaId}?fields=status_code&access_token=${accessToken}`
+    );
+    const statusData = await statusRes.json();
+    if (statusData.status_code === "FINISHED") {
+      return;
+    }
+    await new Promise((res) => setTimeout(res, intervalMs));
+  }
+  throw new Error("Media nie są gotowe do publikacji po wielu próbach.");
+}
+
 export async function POST(req: Request) {
   const session = await getAuthSession();
 
@@ -41,7 +61,6 @@ export async function POST(req: Request) {
   }
 
   const { content, mediaUrls, accountId } = await req.json();
-  console.log("content", content);
 
   // Pobierz konto Instagram powiązane z użytkownikiem
   const account = await db.connectedAccount.findFirst({
@@ -161,6 +180,7 @@ export async function POST(req: Request) {
 
           const initData = await initResponse.json();
           const { id } = initData;
+          await waitForMediaReady(id, accessToken);
           mediaIds.push({ mediaId: id, url: s3Url, type: mediaCategory });
         } else {
           // --- CAROUSEL ---
@@ -254,6 +274,7 @@ export async function POST(req: Request) {
 
             const initData = await initResponse.json();
             const { id } = initData;
+            await waitForMediaReady(id, accessToken);
             mediaIds.push({ mediaId: id, url: s3Url, type: mediaCategory });
           }
         }
