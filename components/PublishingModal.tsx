@@ -188,52 +188,65 @@ export function PublishingModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-md animate-fade-in">
         <DialogHeader>
-          <DialogTitle className="text-xl font-semibold text-gray-900">
-            Status publikacji
+          <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
+            <Loader2
+              className={cn(
+                "h-6 w-6 animate-spin text-blue-500",
+                allCompleted && "hidden"
+              )}
+            />
+            Publikowanie postów
           </DialogTitle>
-          <DialogDescription className="text-gray-600">
+          <DialogDescription className="text-gray-600 text-base mt-1">
             {allCompleted
               ? hasErrors
-                ? "Publikacja zakończona z błędami"
-                : "Wszystkie posty zostały opublikowane pomyślnie"
-              : "Publikowanie postów w toku..."}
+                ? "Publikacja zakończona z błędami. Możesz spróbować ponownie dla nieudanych kont."
+                : "Wszystkie posty zostały opublikowane pomyślnie!"
+              : "Trwa publikowanie postów na wybranych kontach. Możesz zamknąć okno, proces będzie kontynuowany w tle."}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4 space-y-4">
+        <div className="mt-6 space-y-5">
           <div className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-600">
-                Postęp: {completedAccounts} z {totalAccounts}
+              <span className="text-gray-600 font-medium">
+                Postęp:{" "}
+                <span className="text-gray-900">{completedAccounts}</span> /{" "}
+                {totalAccounts}
               </span>
-              <span className="font-medium text-gray-900">
+              <span className="font-semibold text-gray-900">
                 {Math.round(progress)}%
               </span>
             </div>
-            <Progress value={progress} className="h-2" />
+            <Progress
+              value={progress}
+              className="h-3 rounded-full transition-all duration-500"
+            />
           </div>
 
           <div className="space-y-3">
-            {statusList.map((status) => (
+            {statusList.map((status, idx) => (
               <div
                 key={status.accountId}
                 className={cn(
-                  "flex items-start gap-4 p-4 rounded-lg border transition-all duration-200",
-                  getStatusColor(status.status)
+                  "flex items-start gap-4 p-4 rounded-xl border shadow-sm transition-all duration-300 bg-white/90 animate-fade-in",
+                  getStatusColor(status.status),
+                  status.status === "pending" && "opacity-80 blur-[1px]"
                 )}
+                style={{ animationDelay: `${idx * 60}ms` }}
               >
-                <div className="flex-shrink-0">
+                <div className="flex-shrink-0 mt-1">
                   {getPlatformIcon(status.provider)}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900">
+                      <h4 className="font-semibold text-gray-900">
                         {status.accountName}
                       </h4>
-                      <p className="text-sm text-gray-500 capitalize">
+                      <p className="text-xs text-gray-500 capitalize">
                         {status.provider}
                       </p>
                     </div>
@@ -241,7 +254,7 @@ export function PublishingModal({
                       {getStatusIcon(status.status)}
                       <span
                         className={cn(
-                          "text-sm font-medium",
+                          "text-sm font-semibold",
                           status.status === "success" && "text-green-600",
                           status.status === "error" && "text-red-600",
                           status.status === "pending" && "text-blue-600"
@@ -252,7 +265,7 @@ export function PublishingModal({
                     </div>
                   </div>
                   {status.error && (
-                    <div className="mt-2 flex items-start gap-2 text-sm text-red-600 bg-red-50/50 p-2 rounded">
+                    <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-100/80 p-2 rounded-lg border border-red-200 animate-fade-in">
                       <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
                       <p>{status.error}</p>
                     </div>
@@ -263,13 +276,13 @@ export function PublishingModal({
           </div>
 
           {allCompleted && (
-            <div className="pt-4 border-t border-gray-100">
+            <div className="pt-6 border-t border-gray-100">
               <Button
                 onClick={handleClose}
-                className="w-full"
+                className="w-full text-base py-2.5 font-semibold"
                 variant={hasErrors ? "destructive" : "default"}
               >
-                {hasErrors ? "Spróbuj ponownie" : "Zamknij"}
+                {hasErrors ? "Spróbuj ponownie nieudane" : "Zamknij"}
               </Button>
             </div>
           )}
