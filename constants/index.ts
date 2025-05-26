@@ -72,7 +72,6 @@ export const PLATFORM_LIMITS = {
 } as const;
 
 export const API_ENDPOINTS = {
-  POSTS: "/api/posts",
   ACCOUNTS: "/api/accounts",
   MEDIA: "/api/media",
   AUTH: "/api/auth",

@@ -1,3 +1,4 @@
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -11,6 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils/utils";
 
+// Typy
+interface ConnectedAccount {
+  id: string;
+  name: string;
+  provider: string;
+}
+
 interface PublishingStatus {
   accountId: string;
   accountName: string;
@@ -22,14 +30,92 @@ interface PublishingStatus {
 interface PublishingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  publishingStatus: PublishingStatus[];
+  accounts: ConnectedAccount[];
+  content: string;
+  mediaUrls?: any[]; // dostosuj do swojego formatu
 }
 
 export function PublishingModal({
   isOpen,
   onClose,
-  publishingStatus,
+  accounts,
+  content,
+  mediaUrls = [],
 }: PublishingModalProps) {
+  const [statusList, setStatusList] = useState<PublishingStatus[]>([]);
+
+  // Inicjalizacja statusów
+  useEffect(() => {
+    if (isOpen) {
+      setStatusList(
+        accounts.map((acc) => ({
+          accountId: acc.id,
+          accountName: acc.name,
+          provider: acc.provider,
+          status: "pending",
+        }))
+      );
+    }
+  }, [isOpen, accounts]);
+
+  // Publikowanie po kolei
+  useEffect(() => {
+    const nextIndex = statusList.findIndex((s) => s.status === "pending");
+    if (nextIndex === -1) return; // Wszystko opublikowane
+
+    const publish = async () => {
+      const acc = statusList[nextIndex];
+      try {
+        // Wywołanie odpowiedniego endpointu
+        const res = await fetch(`/api/posts/${acc.provider.toLowerCase()}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content,
+            mediaUrls,
+            accountId: acc.accountId,
+          }),
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setStatusList((list) =>
+            list.map((s, i) =>
+              i === nextIndex ? { ...s, status: "success" } : s
+            )
+          );
+        } else {
+          setStatusList((list) =>
+            list.map((s, i) =>
+              i === nextIndex
+                ? {
+                    ...s,
+                    status: "error",
+                    error: data.details || data.error || "Błąd publikacji",
+                  }
+                : s
+            )
+          );
+        }
+      } catch (e: any) {
+        setStatusList((list) =>
+          list.map((s, i) =>
+            i === nextIndex
+              ? {
+                  ...s,
+                  status: "error",
+                  error: e.message || "Błąd publikacji",
+                }
+              : s
+          )
+        );
+      }
+    };
+
+    if (isOpen) publish();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [statusList, isOpen]);
+
+  // UI helpers
   const getPlatformIcon = (provider: string) => {
     switch (provider.toLowerCase()) {
       case "facebook":
@@ -78,18 +164,15 @@ export function PublishingModal({
     }
   };
 
-  const totalAccounts = publishingStatus.length;
-  const completedAccounts = publishingStatus.filter(
+  const totalAccounts = statusList.length;
+  const completedAccounts = statusList.filter(
     (status) => status.status !== "pending"
   ).length;
-  const progress = (completedAccounts / totalAccounts) * 100;
-
-  const allCompleted = publishingStatus.every(
+  const progress = (completedAccounts / (totalAccounts || 1)) * 100;
+  const allCompleted = statusList.every(
     (status) => status.status !== "pending"
   );
-  const hasErrors = publishingStatus.some(
-    (status) => status.status === "error"
-  );
+  const hasErrors = statusList.some((status) => status.status === "error");
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -121,7 +204,7 @@ export function PublishingModal({
           </div>
 
           <div className="space-y-3">
-            {publishingStatus.map((status) => (
+            {statusList.map((status) => (
               <div
                 key={status.accountId}
                 className={cn(

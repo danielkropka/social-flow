@@ -140,16 +140,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
 
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublishingModalOpen, setIsPublishingModalOpen] = useState(false);
-  const [publishingStatus, setPublishingStatus] = useState<
-    Array<{
-      accountId: string;
-      accountName: string;
-      provider: string;
-      status: "pending" | "success" | "error";
-      error?: string;
-    }>
-  >([]);
-
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -157,8 +147,8 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [dragActive, setDragActive] = useState(false);
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
 
   const getSupportedFormats = () => {
     if (isTextOnly) return [];
@@ -225,16 +215,6 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
       setIsPublishing(true);
       setContent(data.text);
 
-      const initialStatus = selectedAccounts.map((account) => ({
-        accountId: account.id,
-        accountName: account.name,
-        provider: account.provider,
-        status: "pending" as const,
-      }));
-
-      setPublishingStatus(initialStatus);
-      setIsPublishingModalOpen(true);
-
       // Bezpieczna konwersja plików
       const mediaUrls = await Promise.all(
         selectedFiles.map(async (file) => {
@@ -252,109 +232,8 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         })
       );
 
-      const response = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          content: data.text,
-          mediaUrls,
-          accountIds: selectedAccounts.map((account) => account.id),
-          scheduledDate: data.scheduledDate,
-        }),
-      });
-
-      const responseData = await response.json();
-
-      if (!response.ok) {
-        if (responseData.results) {
-          // Aktualizuj status dla każdego konta
-          setPublishingStatus((prev) =>
-            prev.map((status) => {
-              const result = responseData.results.find(
-                (r: { accountId: string; success: boolean; error?: string }) =>
-                  r.accountId === status.accountId
-              );
-              return {
-                ...status,
-                status: result?.success ? "success" : "error",
-                error: result?.error,
-              };
-            })
-          );
-
-          // Jeśli wszystkie konta mają błąd, zamknij modal po 3 sekundach
-          if (
-            responseData.results.every((r: { success: boolean }) => !r.success)
-          ) {
-            setTimeout(() => {
-              setIsPublishingModalOpen(false);
-              setIsPublishing(false);
-            }, 3000);
-          } else if (
-            responseData.results.every((r: { success: boolean }) => r.success)
-          ) {
-            // Jeśli wszystkie konta zostały pomyślnie opublikowane
-            toast.success("Post został opublikowany!");
-            setIsPublishingModalOpen(false);
-            setIsPublishing(false);
-            resetState();
-            onPublish();
-          }
-        } else {
-          // Błąd ogólny
-          const errorMsg =
-            responseData.error || "Wystąpił błąd podczas publikacji";
-          let details = responseData.details;
-          const code = responseData.code;
-          let customMsg = null;
-          switch (code) {
-            case "ACCOUNT_NOT_FOUND":
-              customMsg =
-                "Nie znaleziono konta Instagram. Połącz konto i spróbuj ponownie.";
-              break;
-            case "S3_UPLOAD_ERROR":
-              customMsg =
-                "Błąd podczas przesyłania pliku na serwer. Spróbuj ponownie lub wybierz inny plik.";
-              break;
-            case "INSTAGRAM_API_ERROR":
-              customMsg =
-                "Błąd po stronie Instagrama. Spróbuj ponownie za chwilę lub sprawdź poprawność pliku.";
-              break;
-            case "INVALID_MEDIA_FORMAT":
-              customMsg =
-                "Nieprawidłowy format pliku. Upewnij się, że przesyłasz poprawny obraz lub wideo.";
-              break;
-            case "MISSING_TOKEN_OR_ID":
-              customMsg =
-                "Brak tokenu lub ID użytkownika Instagram. Połącz konto ponownie.";
-              break;
-            case "UNKNOWN_ERROR":
-              customMsg =
-                "Wystąpił nieoczekiwany błąd podczas publikacji na Instagramie.";
-              break;
-            default:
-              customMsg = null;
-          }
-          if (typeof details === "object" && details !== null) {
-            details = JSON.stringify(details);
-          }
-          toast.error(
-            customMsg ? customMsg : errorMsg + (details ? ": " + details : "")
-          );
-          setIsPublishingModalOpen(false);
-          setIsPublishing(false);
-        }
-        return;
-      }
-
-      // Sukces dla pojedynczego konta
-      toast.success("Post został opublikowany!");
-      setIsPublishingModalOpen(false);
-      setIsPublishing(false);
-      resetState();
-      onPublish();
+      // Zamiast wysyłania requesta do endpointu, po prostu otwórz PublishingModal z odpowiednimi danymi (accounts, content, mediaUrls)
+      setIsPublishingModalOpen(true);
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Wystąpił nieoczekiwany błąd"
@@ -1362,7 +1241,9 @@ export function PostCreationForm({ onPublish }: { onPublish: () => void }) {
         onClose={() => {
           setIsPublishingModalOpen(false);
         }}
-        publishingStatus={publishingStatus}
+        accounts={selectedAccounts}
+        content={form.watch("text")}
+        mediaUrls={selectedFiles}
       />
 
       <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
