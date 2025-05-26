@@ -187,7 +187,12 @@ export function PublishingModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open && allCompleted) handleClose();
+      }}
+    >
       <DialogContent className="sm:max-w-md animate-fade-in">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-gray-900 flex items-center gap-2">
@@ -204,7 +209,7 @@ export function PublishingModal({
               ? hasErrors
                 ? "Publikacja zakończona z błędami. Możesz spróbować ponownie dla nieudanych kont."
                 : "Wszystkie posty zostały opublikowane pomyślnie!"
-              : "Trwa publikowanie postów na wybranych kontach. Możesz zamknąć okno, proces będzie kontynuowany w tle."}
+              : "Trwa publikowanie postów na wybranych kontach. Proszę zaczekać na zakończenie procesu."}
           </DialogDescription>
         </DialogHeader>
 
