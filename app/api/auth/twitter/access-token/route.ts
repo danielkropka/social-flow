@@ -75,7 +75,12 @@ export async function POST(req: Request) {
         throw new Error("Brak wymaganych tokenów w odpowiedzi");
       }
 
-      const fields = ["profile_image_url", "username", "name"];
+      const fields = [
+        "profile_image_url",
+        "username",
+        "name",
+        "public_metrics",
+      ];
 
       const oauth = new OAuth({
         consumer: {
