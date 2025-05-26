@@ -154,6 +154,7 @@ export async function POST(req: Request) {
           }
 
           const initForm = {
+            caption: content || "",
             image_url: s3Url,
           };
 
