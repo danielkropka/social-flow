@@ -189,7 +189,10 @@ export async function POST(req: Request) {
               console.log(instaResult);
 
               if (response.ok) {
-                // Instagram nie zwraca mediaUrls, ale można dodać obsługę jeśli będzie potrzebna
+                if (instaResult.data?.mediaUrls) {
+                  uploadedMediaUrls.push(...instaResult.data.mediaUrls);
+                }
+
                 results.push({
                   accountId: account.id,
                   provider: account.provider,
