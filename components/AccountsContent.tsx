@@ -122,9 +122,6 @@ export default function AccountsContent() {
     }
   };
 
-  const getPlatformIcon = (platform: string) =>
-    PLATFORM_DISPLAY[platform as keyof typeof PLATFORM_DISPLAY]?.icon || null;
-
   const getConnectedAccounts = (platform: string) => {
     return accounts.filter(
       (account: ConnectedAccountWithDetails) =>

@@ -121,9 +121,6 @@ export function PublishingModal({
   }, [statusList, isOpen]);
 
   // UI helpers
-  const getPlatformIcon = (provider: string) =>
-    PLATFORM_DISPLAY[provider as keyof typeof PLATFORM_DISPLAY]?.icon || null;
-
   const getStatusColor = (status: PublishingStatus["status"]) => {
     switch (status) {
       case "success":
