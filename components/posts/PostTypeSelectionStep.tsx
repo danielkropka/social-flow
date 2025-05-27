@@ -23,6 +23,11 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  SUPPORTED_PLATFORMS,
+  PLATFORM_LIMITS,
+  PLATFORM_DISPLAY,
+} from "@/constants";
 
 export type PostType = "images" | "video" | "text";
 
@@ -42,33 +47,6 @@ interface PostTypeConfig {
   platforms: Platform[];
 }
 
-export const PLATFORM_LIMITS = {
-  facebook: {
-    maxImages: 10,
-    maxImageSize: 4 * 1024 * 1024, // 4MB
-    maxVideoSize: 1024 * 1024 * 1024, // 1GB
-    maxTextLength: 63206, // Facebook post limit
-  },
-  instagram: {
-    maxImages: 10,
-    maxImageSize: 8 * 1024 * 1024, // 8MB
-    maxVideoSize: 100 * 1024 * 1024, // 100MB
-    maxTextLength: 2200, // Instagram caption limit
-  },
-  twitter: {
-    maxImages: 4,
-    maxImageSize: 5 * 1024 * 1024, // 5MB
-    maxVideoSize: 512 * 1024 * 1024, // 512MB
-    maxTextLength: 280, // Twitter character limit
-  },
-  tiktok: {
-    maxImages: 35,
-    maxImageSize: 10 * 1024 * 1024, // 10MB
-    maxVideoSize: 128 * 1024 * 1024, // 128MB
-    maxTextLength: 2200, // TikTok caption limit
-  },
-};
-
 export const POST_TYPES: PostTypeConfig[] = [
   {
     id: "images",
@@ -80,28 +58,28 @@ export const POST_TYPES: PostTypeConfig[] = [
         name: "Facebook",
         icon: FaFacebook,
         color: "text-[#1877F2]",
-        maxImages: PLATFORM_LIMITS.facebook.maxImages,
+        maxImages: PLATFORM_LIMITS.facebook.maxImageSize,
         maxTextLength: PLATFORM_LIMITS.facebook.maxTextLength,
       },
       {
         name: "Instagram",
         icon: FaInstagram,
         color: "text-[#E4405F]",
-        maxImages: PLATFORM_LIMITS.instagram.maxImages,
+        maxImages: PLATFORM_LIMITS.instagram.maxImageSize,
         maxTextLength: PLATFORM_LIMITS.instagram.maxTextLength,
       },
       {
         name: "Twitter",
         icon: FaTwitter,
         color: "text-[#1DA1F2]",
-        maxImages: PLATFORM_LIMITS.twitter.maxImages,
+        maxImages: PLATFORM_LIMITS.twitter.maxImageSize,
         maxTextLength: PLATFORM_LIMITS.twitter.maxTextLength,
       },
       {
         name: "TikTok",
         icon: FaTiktok,
         color: "text-black",
-        maxImages: PLATFORM_LIMITS.tiktok.maxImages,
+        maxImages: PLATFORM_LIMITS.tiktok.maxImageSize,
         maxTextLength: PLATFORM_LIMITS.tiktok.maxTextLength,
       },
     ],
@@ -332,38 +310,22 @@ export function PostTypeSelectionStep() {
                       Limity dla platform
                     </h4>
                     <div className="grid grid-cols-2 gap-3">
-                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
-                        <div className="p-2 rounded-lg bg-[#1877F2]/10">
-                          <FaFacebook className="h-5 w-5 text-[#1877F2]" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          do {PLATFORM_LIMITS.facebook.maxImages} zdjęć
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
-                        <div className="p-2 rounded-lg bg-[#E4405F]/10">
-                          <FaInstagram className="h-5 w-5 text-[#E4405F]" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          do {PLATFORM_LIMITS.instagram.maxImages} zdjęć
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
-                        <div className="p-2 rounded-lg bg-[#1DA1F2]/10">
-                          <FaTwitter className="h-5 w-5 text-[#1DA1F2]" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          do {PLATFORM_LIMITS.twitter.maxImages} zdjęć
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300">
-                        <div className="p-2 rounded-lg bg-black/10">
-                          <FaTiktok className="h-5 w-5 text-black" />
-                        </div>
-                        <span className="text-sm font-medium text-gray-700">
-                          do {PLATFORM_LIMITS.tiktok.maxImages} zdjęć
-                        </span>
-                      </div>
+                      {Object.values(SUPPORTED_PLATFORMS).map((platform) => {
+                        const { icon: Icon } = PLATFORM_DISPLAY[platform];
+                        return (
+                          <div
+                            key={platform}
+                            className="flex items-center gap-3 rounded-lg bg-white p-3 shadow-sm border border-gray-100 hover:shadow-md transition-all duration-300"
+                          >
+                            <div className="p-2 rounded-lg bg-[#1877F2]/10">
+                              <Icon className="h-5 w-5 text-[#1877F2]" />
+                            </div>
+                            <span className="text-sm font-medium text-gray-700">
+                              do {PLATFORM_LIMITS[platform].maxImageSize} zdjęć
+                            </span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 </div>

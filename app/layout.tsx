@@ -5,6 +5,7 @@ import { cn } from "@/lib/utils/utils";
 import { Toaster } from "sonner";
 import Providers from "@/components/Providers";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { headers } from "next/headers";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -31,13 +32,20 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const headersList = await headers();
+  const host = headersList.get("host");
+  const protocol = headersList.get("x-forwarded-proto") || "https";
+  const canonicalUrl = `${protocol}://${host}`;
   return (
     <html lang="pl">
+      <head>
+        <link rel="canonical" href={canonicalUrl} />
+      </head>
       <body className={cn("bg-white relative", inter.className)}>
         <Providers>
           {children}

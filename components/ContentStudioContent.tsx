@@ -12,7 +12,7 @@ import {
   YAxis,
   Legend,
 } from "recharts";
-import { FaInstagram, FaTiktok, FaFacebook, FaTwitter } from "react-icons/fa";
+import { SUPPORTED_PLATFORMS, PLATFORM_DISPLAY } from "@/constants";
 
 interface Account {
   id: string;
@@ -131,32 +131,12 @@ function ContentStudioContent() {
 
       {/* Selecty do wyboru kont */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {[
-          {
-            provider: "INSTAGRAM",
-            label: "Instagram",
-            icon: <FaInstagram className="text-pink-500 text-3xl" />,
-          },
-          {
-            provider: "TIKTOK",
-            label: "TikTok",
-            icon: <FaTiktok className="text-black text-3xl" />,
-          },
-          {
-            provider: "FACEBOOK",
-            label: "Facebook",
-            icon: <FaFacebook className="text-blue-600 text-3xl" />,
-          },
-          {
-            provider: "TWITTER",
-            label: "Twitter",
-            icon: <FaTwitter className="text-blue-400 text-3xl" />,
-          },
-        ].map(({ provider, label, icon }) => {
-          const providerAccounts = getAccountsByProvider(provider);
+        {Object.values(SUPPORTED_PLATFORMS).map((platform) => {
+          const { icon: Icon, label } = PLATFORM_DISPLAY[platform];
+          const providerAccounts = getAccountsByProvider(platform);
           const hasAccount = providerAccounts.length > 0;
           const selectedId = hasAccount
-            ? selectedAccounts[provider] || providerAccounts[0].id
+            ? selectedAccounts[platform] || providerAccounts[0].id
             : undefined;
           const selectedAccount = hasAccount
             ? providerAccounts.find((acc) => acc.id === selectedId) ||
@@ -164,11 +144,11 @@ function ContentStudioContent() {
             : undefined;
           return (
             <Card
-              key={provider}
+              key={platform}
               className="p-6 flex flex-col justify-between min-h-[140px]"
             >
               <div className="flex items-center gap-3 mb-2">
-                {icon}
+                <Icon className="h-5 w-5" />
                 <div>
                   {hasAccount ? (
                     providerAccounts.length > 1 ? (
@@ -178,7 +158,7 @@ function ContentStudioContent() {
                         onChange={(e) =>
                           setSelectedAccounts((prev) => ({
                             ...prev,
-                            [provider]: e.target.value,
+                            [platform]: e.target.value,
                           }))
                         }
                       >
@@ -226,22 +206,17 @@ function ContentStudioContent() {
         <div className="flex justify-between items-center mb-2">
           <div className="font-semibold">Twoi obserwujący</div>
           <div className="flex gap-4 text-xs">
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-pink-500 inline-block" />
-              Instagram
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-black inline-block" />
-              TikTok
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-blue-600 inline-block" />
-              Facebook
-            </span>
-            <span className="flex items-center gap-1">
-              <span className="w-3 h-3 rounded-full bg-blue-400 inline-block" />
-              Twitter
-            </span>
+            {Object.values(SUPPORTED_PLATFORMS).map((platform) => {
+              const { icon } = PLATFORM_DISPLAY[platform];
+              return (
+                <span key={platform} className="flex items-center gap-1">
+                  <span
+                    className={`w-3 h-3 rounded-full ${icon} inline-block`}
+                  />
+                  {platform}
+                </span>
+              );
+            })}
           </div>
         </div>
         <ResponsiveContainer width="100%" height={250}>
@@ -254,34 +229,19 @@ function ContentStudioContent() {
             <YAxis />
             <Tooltip />
             <Legend />
-            <Line
-              type="monotone"
-              dataKey="Instagram"
-              stroke="#E1306C"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="TikTok"
-              stroke="#000000"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="Facebook"
-              stroke="#1877F3"
-              strokeWidth={2}
-              dot={false}
-            />
-            <Line
-              type="monotone"
-              dataKey="Twitter"
-              stroke="#1DA1F2"
-              strokeWidth={2}
-              dot={false}
-            />
+            {Object.values(SUPPORTED_PLATFORMS).map((platform) => {
+              const { strokeColor } = PLATFORM_DISPLAY[platform];
+              return (
+                <Line
+                  key={platform}
+                  type="monotone"
+                  dataKey={platform}
+                  stroke={strokeColor}
+                  strokeWidth={2}
+                  dot={false}
+                />
+              );
+            })}
           </LineChart>
         </ResponsiveContainer>
       </div>
