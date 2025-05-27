@@ -14,9 +14,13 @@ import {
   registerSchema,
   type RegisterFormValues,
 } from "@/lib/validations/auth";
+import { EyeIcon } from "@/components/icons/Eye";
+import { EyeOffIcon } from "@/components/icons/EyeOff";
 
 export default function SignUp() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const router = useRouter();
 
   const {
@@ -126,13 +130,13 @@ export default function SignUp() {
 
       <div className="animate-fade-in-up max-w-[28rem] w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-2xl flex flex-col gap-8 relative z-10 m-4 border border-gray-100">
         <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-transparent bg-clip-text">
+          <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 drop-shadow-sm font-display">
             Social Flow
           </h1>
-          <h2 className="mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="mt-4 text-2xl font-semibold text-gray-800 tracking-tight">
             Stwórz konto
           </h2>
-          <p className="mt-3 text-base sm:text-lg text-gray-600">
+          <p className="mt-2 text-base text-gray-600">
             Dołącz do Social Flow już dziś
           </p>
         </div>
@@ -160,7 +164,20 @@ export default function SignUp() {
                   disabled={isLoading}
                 />
                 {errors.firstName && (
-                  <p className="mt-2 text-sm text-red-600 animate-shake">
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                    <svg
+                      className="w-4 h-4 text-red-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                      />
+                    </svg>
                     {errors.firstName.message}
                   </p>
                 )}
@@ -185,7 +202,20 @@ export default function SignUp() {
                   disabled={isLoading}
                 />
                 {errors.lastName && (
-                  <p className="mt-2 text-sm text-red-600 animate-shake">
+                  <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                    <svg
+                      className="w-4 h-4 text-red-500"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                      />
+                    </svg>
                     {errors.lastName.message}
                   </p>
                 )}
@@ -212,7 +242,20 @@ export default function SignUp() {
                 disabled={isLoading}
               />
               {errors.email && (
-                <p className="mt-2 text-sm text-red-600 animate-shake">
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                  <svg
+                    className="w-4 h-4 text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                    />
+                  </svg>
                   {errors.email.message}
                 </p>
               )}
@@ -225,20 +268,45 @@ export default function SignUp() {
               >
                 Hasło
               </label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password")}
-                placeholder="Min. 8 znaków"
-                className={`mt-1 transition-all duration-200 ${
-                  errors.password
-                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                    : "focus:ring-blue-500 focus:border-blue-500"
-                }`}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                  placeholder="Min. 8 znaków"
+                  className={`mt-1 pr-10 transition-all duration-200 focus:shadow-lg focus:shadow-blue-100/60 ${
+                    errors.password
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "focus:ring-blue-500 focus:border-blue-500"
+                  }`}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors p-1"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
               {errors.password && (
-                <p className="mt-2 text-sm text-red-600 animate-shake">
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                  <svg
+                    className="w-4 h-4 text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                    />
+                  </svg>
                   {errors.password.message}
                 </p>
               )}
@@ -251,20 +319,47 @@ export default function SignUp() {
               >
                 Potwierdź hasło
               </label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                {...register("confirmPassword")}
-                placeholder="••••••••"
-                className={`mt-1 transition-all duration-200 ${
-                  errors.confirmPassword
-                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                    : "focus:ring-blue-500 focus:border-blue-500"
-                }`}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? "text" : "password"}
+                  {...register("confirmPassword")}
+                  placeholder="••••••••"
+                  className={`mt-1 pr-10 transition-all duration-200 focus:shadow-lg focus:shadow-blue-100/60 ${
+                    errors.confirmPassword
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "focus:ring-blue-500 focus:border-blue-500"
+                  }`}
+                  disabled={isLoading}
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors p-1"
+                  onClick={() => setShowConfirmPassword((v) => !v)}
+                  aria-label={
+                    showConfirmPassword ? "Ukryj hasło" : "Pokaż hasło"
+                  }
+                  disabled={isLoading}
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
               {errors.confirmPassword && (
-                <p className="mt-2 text-sm text-red-600 animate-shake">
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                  <svg
+                    className="w-4 h-4 text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                    />
+                  </svg>
                   {errors.confirmPassword.message}
                 </p>
               )}
@@ -273,7 +368,7 @@ export default function SignUp() {
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-medium relative overflow-hidden group transition-all duration-300 hover:shadow-lg"
+            className="w-full h-12 text-base font-semibold relative overflow-hidden group transition-all duration-300 hover:shadow-xl rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none"
             disabled={isLoading}
           >
             <span className="relative z-10 flex items-center justify-center">
@@ -303,7 +398,7 @@ export default function SignUp() {
           <Button
             type="button"
             onClick={handleGoogleSignUp}
-            className="w-full h-12 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center text-gray-700 transition-all duration-300 hover:shadow-md"
+            className="w-full h-12 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center text-gray-700 transition-all duration-300 hover:shadow-lg rounded-xl focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none"
             disabled={isLoading}
           >
             <GoogleLogo />
@@ -317,7 +412,7 @@ export default function SignUp() {
               Masz już konto?{" "}
               <Link
                 href="/sign-in"
-                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                className="font-medium text-blue-600 hover:text-blue-800 transition-colors"
               >
                 Zaloguj się
               </Link>

@@ -84,19 +84,21 @@ export const authOptions: NextAuthOptions = {
             throw new Error("Nie znaleziono konta z podanym adresem email");
           }
 
-          const hasGoogleAccount = user.accounts.some(
-            (account) => account.provider === "google"
-          );
-          if (hasGoogleAccount) {
-            throw new Error("GoogleAccount");
-          }
+          // const hasGoogleAccount = user.accounts.some(
+          //   (account) => account.provider === "google"
+          // );
+          // if (hasGoogleAccount) {
+          //   throw new Error("GoogleAccount");
+          // }
 
           if (!user.emailVerified) {
             throw new Error("EmailNotVerified");
           }
 
           if (!user.password) {
-            throw new Error("InvalidCredentials");
+            throw new Error(
+              "Brak hasła. Zaloguj się przez Google lub ustaw hasło przez reset hasła."
+            );
           }
 
           const isCorrectPassword = await bcrypt.compare(

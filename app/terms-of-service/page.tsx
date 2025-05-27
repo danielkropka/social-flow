@@ -26,12 +26,14 @@ export default function TermsOfService() {
             </p>
 
             <nav className="mb-8 bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Spis treści:</h3>
+              <h3 className="font-semibold text-lg mb-2 text-gray-900">
+                Spis treści:
+              </h3>
               <ul className="space-y-1">
                 <li>
                   <a
                     href="#postanowienia"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     1. Postanowienia ogólne
                   </a>
@@ -39,7 +41,7 @@ export default function TermsOfService() {
                 <li>
                   <a
                     href="#definicje"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     2. Definicje
                   </a>
@@ -47,7 +49,7 @@ export default function TermsOfService() {
                 <li>
                   <a
                     href="#warunki"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     3. Warunki korzystania
                   </a>
@@ -55,7 +57,7 @@ export default function TermsOfService() {
                 <li>
                   <a
                     href="#zasady"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     4. Zasady korzystania
                   </a>
@@ -63,7 +65,7 @@ export default function TermsOfService() {
                 <li>
                   <a
                     href="#odpowiedzialnosc"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     5. Odpowiedzialność
                   </a>
@@ -71,7 +73,7 @@ export default function TermsOfService() {
                 <li>
                   <a
                     href="#koncowe"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     6. Postanowienia końcowe
                   </a>
@@ -79,7 +81,7 @@ export default function TermsOfService() {
                 <li>
                   <a
                     href="#kontakt"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     7. Kontakt
                   </a>
@@ -91,7 +93,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-4 text-gray-900">
                 1. Postanowienia ogólne
               </h2>
-              <p className="text-gray-700">
+              <p className="text-base text-gray-700">
                 Niniejszy regulamin określa zasady korzystania z serwisu Social
                 Flow, który jest platformą do zarządzania mediami
                 społecznościowymi.
@@ -152,7 +154,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-4 text-gray-900">
                 5. Odpowiedzialność
               </h2>
-              <p className="text-gray-700 mb-2">
+              <p className="text-base text-gray-700 mb-2">
                 Serwis nie ponosi odpowiedzialności za:
               </p>
               <ul className="list-disc pl-6 space-y-2 text-gray-700">
@@ -171,7 +173,7 @@ export default function TermsOfService() {
               <h2 className="text-2xl font-semibold mb-4 text-gray-900">
                 6. Postanowienia końcowe
               </h2>
-              <p className="text-gray-700">
+              <p className="text-base text-gray-700">
                 W sprawach nieuregulowanych niniejszym Regulaminem zastosowanie
                 mają odpowiednie przepisy prawa polskiego.
               </p>
@@ -187,7 +189,7 @@ export default function TermsOfService() {
                     Dane kontaktowe
                   </h3>
                   <div className="space-y-3">
-                    <p className="text-gray-700 flex items-center">
+                    <p className="text-base text-gray-700 flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 mr-2 text-blue-600"
@@ -199,7 +201,7 @@ export default function TermsOfService() {
                       </svg>
                       <a
                         href="mailto:legal@social-flow.pl"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         legal@social-flow.pl
                       </a>

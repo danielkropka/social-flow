@@ -11,17 +11,19 @@ import { toast } from "sonner";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
+import { EyeIcon } from "@/components/icons/Eye";
+import { EyeOffIcon } from "@/components/icons/EyeOff";
 
 const loginSchema = z.object({
   email: z.string().email("Nieprawidłowy adres email"),
   password: z.string().min(6, "Hasło musi mieć minimum 6 znaków"),
-  remember: z.boolean().optional(),
 });
 
 type LoginFormValues = z.infer<typeof loginSchema>;
 
 export default function SignIn() {
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const {
@@ -38,7 +40,6 @@ export default function SignIn() {
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
-        remember: data.remember,
         redirect: false,
       });
 
@@ -113,13 +114,13 @@ export default function SignIn() {
 
       <div className="animate-fade-in-up max-w-[28rem] w-full bg-white/80 backdrop-blur-sm p-8 rounded-3xl shadow-2xl flex flex-col gap-8 relative z-10 m-4 border border-gray-100">
         <div className="text-center">
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 text-transparent bg-clip-text">
+          <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 drop-shadow-sm font-display">
             Social Flow
           </h1>
-          <h2 className="mt-6 text-2xl sm:text-3xl font-bold text-gray-900">
+          <h2 className="mt-4 text-2xl font-semibold text-gray-800 tracking-tight">
             Witaj ponownie
           </h2>
-          <p className="mt-3 text-base sm:text-lg text-gray-600">
+          <p className="mt-2 text-base text-gray-600">
             Zaloguj się do swojego konta
           </p>
         </div>
@@ -146,7 +147,20 @@ export default function SignIn() {
                 disabled={isLoading}
               />
               {errors.email && (
-                <p className="mt-2 text-sm text-red-600 animate-shake">
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                  <svg
+                    className="w-4 h-4 text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                    />
+                  </svg>
                   {errors.email.message}
                 </p>
               )}
@@ -159,41 +173,52 @@ export default function SignIn() {
               >
                 Hasło
               </label>
-              <Input
-                id="password"
-                type="password"
-                {...register("password")}
-                placeholder="••••••••"
-                className={`mt-1 transition-all duration-200 ${
-                  errors.password
-                    ? "border-red-500 focus:ring-red-500 focus:border-red-500"
-                    : "focus:ring-blue-500 focus:border-blue-500"
-                }`}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  {...register("password")}
+                  placeholder="••••••••"
+                  className={`mt-1 pr-10 transition-all duration-200 focus:shadow-lg focus:shadow-blue-100/60 ${
+                    errors.password
+                      ? "border-red-500 focus:ring-red-500 focus:border-red-500"
+                      : "focus:ring-blue-500 focus:border-blue-500"
+                  }`}
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  tabIndex={-1}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 transition-colors p-1"
+                  onClick={() => setShowPassword((v) => !v)}
+                  aria-label={showPassword ? "Ukryj hasło" : "Pokaż hasło"}
+                  disabled={isLoading}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </button>
+              </div>
               {errors.password && (
-                <p className="mt-2 text-sm text-red-600 animate-shake">
+                <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                  <svg
+                    className="w-4 h-4 text-red-500"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                    />
+                  </svg>
                   {errors.password.message}
                 </p>
               )}
             </div>
 
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember"
-                  type="checkbox"
-                  {...register("remember")}
-                  className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 transition-colors"
-                  disabled={isLoading}
-                />
-                <label
-                  htmlFor="remember"
-                  className="ml-2 text-sm text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-                >
-                  Zapamiętaj mnie
-                </label>
-              </div>
+            <div className="flex items-center">
               <Link
                 href="/forgot-password"
                 className="text-sm text-blue-600 hover:text-blue-700 transition-colors font-medium"
@@ -205,7 +230,7 @@ export default function SignIn() {
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-medium relative overflow-hidden group transition-all duration-300 hover:shadow-lg"
+            className="w-full h-12 text-base font-semibold relative overflow-hidden group transition-all duration-300 hover:shadow-xl rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none"
             disabled={isLoading}
           >
             <span className="relative z-10 flex items-center justify-center">
@@ -235,7 +260,7 @@ export default function SignIn() {
           <Button
             type="button"
             onClick={handleGoogleLogin}
-            className="w-full h-12 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center text-gray-700 transition-all duration-300 hover:shadow-md"
+            className="w-full h-12 bg-white border border-gray-200 hover:bg-gray-50 hover:border-gray-300 flex items-center justify-center text-gray-700 transition-all duration-300 hover:shadow-lg rounded-xl focus:ring-2 focus:ring-blue-400 focus:ring-offset-2 focus:outline-none"
             disabled={isLoading}
           >
             <GoogleLogo />
@@ -249,7 +274,7 @@ export default function SignIn() {
               Nie masz jeszcze konta?{" "}
               <Link
                 href="/sign-up"
-                className="font-medium text-blue-600 hover:text-blue-700 transition-colors"
+                className="font-medium text-blue-600 hover:text-blue-800 transition-colors"
               >
                 Zarejestruj się
               </Link>

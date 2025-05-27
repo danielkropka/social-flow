@@ -124,17 +124,17 @@ function TwitterCallbackContent() {
 
             <div className="text-center space-y-8">
               <div className="space-y-3">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
+                <h1 className="text-4xl font-bold text-gray-900">
                   Łączenie konta Twitter
                 </h1>
-                <p className="text-gray-600 text-lg">
+                <p className="text-base text-gray-700">
                   Trwa proces autoryzacji i konfiguracji Twojego konta
                 </p>
               </div>
 
               <div className="flex items-center justify-center gap-4 text-blue-500 bg-blue-50/50 px-6 py-3 rounded-full">
                 <Loader2 className="h-6 w-6 animate-spin" />
-                <span className="font-medium text-lg">Przetwarzanie...</span>
+                <span className="font-medium text-base">Przetwarzanie...</span>
               </div>
 
               <div className="space-y-5 pt-8 border-t border-gray-100">
@@ -152,7 +152,7 @@ function TwitterCallbackContent() {
                 </div>
               </div>
 
-              <div className="text-sm text-gray-500 mt-8 bg-gray-50/50 px-4 py-2 rounded-lg">
+              <div className="text-sm text-gray-600 mt-8 bg-gray-50/50 px-4 py-2 rounded-lg">
                 <p>
                   Proces może potrwać kilka sekund. Prosimy o cierpliwość...
                 </p>

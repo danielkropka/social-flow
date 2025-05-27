@@ -3,6 +3,7 @@ import { hash } from "bcryptjs";
 import { db } from "@/lib/config/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { withAuthRateLimit } from "@/middleware/rateLimit";
+import { Resend } from "resend";
 
 export async function POST(req: Request) {
   return withAuthRateLimit(async (req: Request) => {
@@ -81,6 +82,43 @@ export async function POST(req: Request) {
             password: hashedPassword,
             gotFreeTrial: false,
           },
+        });
+
+        // Generuj token weryfikacyjny
+        const crypto = await import("crypto");
+        const rawToken = crypto.randomBytes(32).toString("hex");
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
+        await db.emailVerificationToken.create({
+          data: {
+            userId: user.id,
+            token: rawToken,
+            expiresAt: expires,
+          },
+        });
+        const verifyUrl = `${
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        }/verify-email?token=${encodeURIComponent(rawToken)}&uid=${user.id}`;
+
+        // Wysyłka maila przez Resend
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: "no-reply@" + process.env.NEXT_PUBLIC_MAIL_DOMAIN,
+          to: email,
+          subject: "Weryfikacja adresu email w Social Flow",
+          html: `
+            <div style="font-family: Arial, sans-serif; background: #f9fafb; padding: 32px;">
+              <div style="max-width: 480px; margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001; padding: 32px 24px;">
+                <h2 style="color: #2563eb; text-align: center; margin-bottom: 16px;">Witaj w Social Flow!</h2>
+                <p style="font-size: 16px; color: #222; margin-bottom: 24px;">Dziękujemy za rejestrację.<br> Aby aktywować swoje konto, potwierdź swój adres email klikając w poniższy przycisk:</p>
+                <div style="text-align: center; margin-bottom: 24px;">
+                  <a href="${verifyUrl}" style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 12px 32px; border-radius: 6px; font-size: 16px; font-weight: bold;">Zweryfikuj email</a>
+                </div>
+                <p style="font-size: 14px; color: #555;">Jeśli nie rejestrowałeś się w Social Flow, po prostu zignoruj tę wiadomość.</p>
+                <hr style="margin: 32px 0; border: none; border-top: 1px solid #eee;">
+                <p style="font-size: 12px; color: #aaa; text-align: center;">Social Flow &copy; ${new Date().getFullYear()}</p>
+              </div>
+            </div>
+          `,
         });
 
         return NextResponse.json(

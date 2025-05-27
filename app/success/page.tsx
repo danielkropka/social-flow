@@ -32,38 +32,32 @@ export default function SuccessPage() {
             <CheckCircle2 className="w-20 h-20 text-[#3b82f6] mx-auto" />
           </motion.div>
 
-          <motion.h1
-            {...fadeInUp}
-            style={{
-              fontSize: "2.25rem",
-              fontWeight: "bold",
-              color: "#111827",
-              marginBottom: "1rem",
-            }}
-          >
-            Dziękujemy za zakup!
-          </motion.h1>
+          <motion.div {...fadeInUp} style={{ marginBottom: "1rem" }}>
+            <h1 className="text-4xl font-bold text-gray-900">
+              Dziękujemy za zakup!
+            </h1>
+          </motion.div>
 
-          <motion.p
+          <motion.div
             {...fadeInUp}
             transition={{ delay: 0.1 }}
-            style={{
-              fontSize: "1.25rem",
-              color: "#4B5563",
-              marginBottom: "1rem",
-            }}
+            style={{ marginBottom: "1rem" }}
           >
-            Twoja subskrypcja została aktywowana i jest już gotowa do użycia.
-          </motion.p>
+            <p className="text-base text-gray-700">
+              Twoja subskrypcja została aktywowana i jest już gotowa do użycia.
+            </p>
+          </motion.div>
 
-          <motion.p
+          <motion.div
             {...fadeInUp}
             transition={{ delay: 0.2 }}
-            style={{ fontSize: "1rem", color: "#6B7280", marginBottom: "3rem" }}
+            style={{ marginBottom: "3rem" }}
           >
-            Cieszymy się, że jesteś z nami. Od teraz możesz w pełni korzystać z
-            możliwości naszej platformy bez żadnych ograniczeń.
-          </motion.p>
+            <p className="text-base text-gray-700">
+              Cieszymy się, że jesteś z nami. Od teraz możesz w pełni korzystać
+              z możliwości naszej platformy bez żadnych ograniczeń.
+            </p>
+          </motion.div>
         </motion.div>
 
         <motion.div

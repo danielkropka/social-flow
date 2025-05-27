@@ -26,12 +26,14 @@ export default function PrivacyPolicy() {
             </p>
 
             <nav className="mb-8 bg-gray-50 p-4 rounded-lg">
-              <h3 className="font-semibold mb-2">Spis treści:</h3>
+              <h3 className="font-semibold text-lg mb-2 text-gray-900">
+                Spis treści:
+              </h3>
               <ul className="space-y-1">
                 <li>
                   <a
                     href="#informacje"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     1. Informacje ogólne
                   </a>
@@ -39,20 +41,23 @@ export default function PrivacyPolicy() {
                 <li>
                   <a
                     href="#administrator"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     2. Administrator danych
                   </a>
                 </li>
                 <li>
-                  <a href="#cel" className="text-blue-600 hover:text-blue-800">
+                  <a
+                    href="#cel"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
+                  >
                     3. Cel i zakres zbierania danych
                   </a>
                 </li>
                 <li>
                   <a
                     href="#prawa"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     4. Prawa użytkownika
                   </a>
@@ -60,7 +65,7 @@ export default function PrivacyPolicy() {
                 <li>
                   <a
                     href="#cookies"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     5. Pliki cookies
                   </a>
@@ -68,7 +73,7 @@ export default function PrivacyPolicy() {
                 <li>
                   <a
                     href="#kontakt"
-                    className="text-blue-600 hover:text-blue-800"
+                    className="text-blue-600 hover:text-blue-800 font-medium"
                   >
                     6. Kontakt
                   </a>
@@ -157,7 +162,7 @@ export default function PrivacyPolicy() {
                     Dane kontaktowe
                   </h3>
                   <div className="space-y-3">
-                    <p className="text-gray-700 flex items-center">
+                    <p className="text-base text-gray-700 flex items-center">
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         className="h-5 w-5 mr-2 text-blue-600"
@@ -169,7 +174,7 @@ export default function PrivacyPolicy() {
                       </svg>
                       <a
                         href="mailto:privacy@social-flow.pl"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 font-medium"
                       >
                         privacy@social-flow.pl
                       </a>
