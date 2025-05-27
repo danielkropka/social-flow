@@ -34,8 +34,8 @@ export const registerSchema = z
       .regex(/[a-z]/, "Hasło musi zawierać przynajmniej jedną małą literę")
       .regex(/[0-9]/, "Hasło musi zawierać przynajmniej jedną cyfrę")
       .regex(
-        /[!@#$%^&*(),.?":{}|<>]/,
-        "Hasło musi zawierać przynajmniej jeden znak specjalny"
+        /[!@#$%^&*(),.?":{}|<>_\-+=/\\'`;~`]/,
+        "Hasło musi zawierać przynajmniej jeden znak specjalny (!@#$%^&*(),.?\":{}|<>_-+=/\\'`;~`)"
       ),
     confirmPassword: z.string().min(1, "Potwierdzenie hasła jest wymagane"),
     terms: z
