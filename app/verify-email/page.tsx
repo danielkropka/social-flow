@@ -35,9 +35,13 @@ export default function VerifyEmailPage() {
           setStatus("error");
           setMessage(data.error || "Weryfikacja nie powiodła się.");
         }
-      } catch (e) {
+      } catch (error: unknown) {
         setStatus("error");
-        setMessage("Wystąpił błąd połączenia z serwerem.");
+        setMessage(
+          error instanceof Error
+            ? error.message
+            : "Wystąpił błąd połączenia z serwerem."
+        );
       }
     };
     verify();

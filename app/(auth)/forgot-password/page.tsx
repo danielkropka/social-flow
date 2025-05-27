@@ -24,8 +24,12 @@ export default function ForgotPassword() {
       if (!res.ok) throw new Error(data.error || "Błąd serwera");
       setIsSent(true);
       toast.success(data.message);
-    } catch (err: any) {
-      toast.error(err.message || "Wystąpił błąd podczas wysyłania żądania");
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Wystąpił błąd podczas wysyłania żądania"
+      );
     } finally {
       setIsLoading(false);
     }

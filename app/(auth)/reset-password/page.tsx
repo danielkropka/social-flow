@@ -43,8 +43,12 @@ export default function ResetPasswordPage() {
       setIsSuccess(true);
       toast.success(data.message);
       setTimeout(() => router.push("/sign-in"), 2000);
-    } catch (err: any) {
-      toast.error(err.message || "Wystąpił błąd podczas resetowania hasła");
+    } catch (err: unknown) {
+      toast.error(
+        err instanceof Error
+          ? err.message
+          : "Wystąpił błąd podczas resetowania hasła"
+      );
     } finally {
       setIsLoading(false);
     }
