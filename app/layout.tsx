@@ -38,9 +38,8 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const headersList = await headers();
-  const host = headersList.get("host");
-  const protocol = headersList.get("x-forwarded-proto") || "https";
-  const canonicalUrl = `${protocol}://${host}`;
+  const path = headersList.get("x-invoke-path") || "";
+  const canonicalUrl = `https://www.social-flow.pl${path}`;
   return (
     <html lang="pl">
       <head>
