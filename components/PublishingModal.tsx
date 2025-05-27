@@ -7,13 +7,13 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Loader2, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
-import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils/utils";
 import { MediaUrl } from "./posts/PostCreationForm";
 import { useTab } from "@/context/TabContext";
 import { useRouter } from "next/navigation";
+import { PLATFORM_DISPLAY } from "@/constants";
 
 // Typy
 interface ConnectedAccount {
@@ -121,21 +121,6 @@ export function PublishingModal({
   }, [statusList, isOpen]);
 
   // UI helpers
-  const getPlatformIcon = (provider: string) => {
-    switch (provider.toLowerCase()) {
-      case "facebook":
-        return <FaFacebook className="h-5 w-5 text-[#1877F2]" />;
-      case "instagram":
-        return <FaInstagram className="h-5 w-5 text-[#E4405F]" />;
-      case "twitter":
-        return <FaTwitter className="h-5 w-5 text-[#1DA1F2]" />;
-      case "tiktok":
-        return <FaTiktok className="h-5 w-5 text-black" />;
-      default:
-        return null;
-    }
-  };
-
   const getStatusColor = (status: PublishingStatus["status"]) => {
     switch (status) {
       case "success":
@@ -232,52 +217,58 @@ export function PublishingModal({
           </div>
 
           <div className="space-y-3">
-            {statusList.map((status, idx) => (
-              <div
-                key={status.accountId}
-                className={cn(
-                  "flex items-start gap-4 p-4 rounded-xl border shadow-sm transition-all duration-300 bg-white/90 animate-fade-in",
-                  getStatusColor(status.status),
-                  status.status === "pending" && "opacity-80 blur-[1px]"
-                )}
-                style={{ animationDelay: `${idx * 60}ms` }}
-              >
-                <div className="flex-shrink-0 mt-1">
-                  {getPlatformIcon(status.provider)}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h4 className="font-semibold text-gray-900">
-                        {status.accountName}
-                      </h4>
-                      <p className="text-xs text-gray-500 capitalize">
-                        {status.provider}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {getStatusIcon(status.status)}
-                      <span
-                        className={cn(
-                          "text-sm font-semibold",
-                          status.status === "success" && "text-green-600",
-                          status.status === "error" && "text-red-600",
-                          status.status === "pending" && "text-blue-600"
-                        )}
-                      >
-                        {getStatusText(status.status)}
-                      </span>
-                    </div>
-                  </div>
-                  {status.error && (
-                    <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-100/80 p-2 rounded-lg border border-red-200 animate-fade-in">
-                      <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                      <p>{status.error}</p>
-                    </div>
+            {statusList.map((status, idx) => {
+              const { icon: Icon } =
+                PLATFORM_DISPLAY[
+                  status.provider as keyof typeof PLATFORM_DISPLAY
+                ];
+              return (
+                <div
+                  key={status.accountId}
+                  className={cn(
+                    "flex items-start gap-4 p-4 rounded-xl border shadow-sm transition-all duration-300 bg-white/90 animate-fade-in",
+                    getStatusColor(status.status),
+                    status.status === "pending" && "opacity-80 blur-[1px]"
                   )}
+                  style={{ animationDelay: `${idx * 60}ms` }}
+                >
+                  <div className="flex-shrink-0 mt-1">
+                    <Icon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-semibold text-gray-900">
+                          {status.accountName}
+                        </h4>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {status.provider}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        {getStatusIcon(status.status)}
+                        <span
+                          className={cn(
+                            "text-sm font-semibold",
+                            status.status === "success" && "text-green-600",
+                            status.status === "error" && "text-red-600",
+                            status.status === "pending" && "text-blue-600"
+                          )}
+                        >
+                          {getStatusText(status.status)}
+                        </span>
+                      </div>
+                    </div>
+                    {status.error && (
+                      <div className="mt-2 flex items-start gap-2 text-sm text-red-700 bg-red-100/80 p-2 rounded-lg border border-red-200 animate-fade-in">
+                        <AlertCircle className="h-4 w-4 flex-shrink-0 mt-0.5" />
+                        <p>{status.error}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {allCompleted && (

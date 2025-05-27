@@ -1,5 +1,5 @@
 import React from "react";
-import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
+import { SUPPORTED_PLATFORMS, PLATFORM_DISPLAY } from "@/constants";
 
 export default function PlatformsSection() {
   return (
@@ -20,49 +20,28 @@ export default function PlatformsSection() {
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-          {platforms.map((platform) => (
-            <div
-              key={platform.name}
-              className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col items-center text-center transform transition-transform duration-200 hover:-translate-y-1 hover:shadow-md"
-            >
-              <div className="w-16 h-16 flex items-center justify-center mb-4">
-                <platform.icon className={`w-10 h-10 ${platform.color}`} />
+          {Object.values(SUPPORTED_PLATFORMS).map((platform) => {
+            const {
+              icon: Icon,
+              color,
+              label,
+              description,
+            } = PLATFORM_DISPLAY[platform];
+            return (
+              <div
+                key={label}
+                className="bg-white p-6 rounded-lg border border-gray-200 flex flex-col items-center text-center transform transition-transform duration-200 hover:-translate-y-1 hover:shadow-md"
+              >
+                <div className="w-16 h-16 flex items-center justify-center mb-4">
+                  <Icon className={`w-10 h-10 ${color}`} />
+                </div>
+                <h3 className="font-semibold text-gray-900 mb-2">{label}</h3>
+                <p className="text-sm text-gray-600">{description}</p>
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">
-                {platform.name}
-              </h3>
-              <p className="text-sm text-gray-600">{platform.description}</p>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
     </section>
   );
 }
-
-const platforms = [
-  {
-    name: "Facebook",
-    icon: FaFacebook,
-    color: "text-[#1877F2]",
-    description: "Posty i relacje",
-  },
-  {
-    name: "Instagram",
-    icon: FaInstagram,
-    color: "text-[#E4405F]",
-    description: "Posty, relacje i historie",
-  },
-  {
-    name: "Twitter",
-    icon: FaTwitter,
-    color: "text-[#1DA1F2]",
-    description: "Tweetowanie i wątki",
-  },
-  {
-    name: "TikTok",
-    icon: FaTiktok,
-    color: "text-[#000000]",
-    description: "Krótkie filmy i treści wideo",
-  },
-];

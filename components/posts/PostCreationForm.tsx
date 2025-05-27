@@ -41,7 +41,6 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { FaTwitter, FaFacebook, FaInstagram, FaTiktok } from "react-icons/fa";
 import {
   Tooltip,
   TooltipContent,
@@ -50,7 +49,11 @@ import {
 } from "@/components/ui/tooltip";
 import { ConnectedAccount } from "@prisma/client";
 import { useVideoProcessing } from "@/hooks/useVideoProcessing";
-import { MAX_FILE_SIZE } from "@/constants";
+import {
+  MAX_FILE_SIZE,
+  SUPPORTED_PLATFORMS,
+  PLATFORM_DISPLAY,
+} from "@/constants";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import Image from "next/image";
 import {
@@ -95,32 +98,14 @@ export type MediaUrl = {
   name: string;
 };
 
-const AVAILABLE_PLATFORMS = [
-  {
-    id: "facebook",
-    name: "Facebook",
-    icon: <FaFacebook className="h-5 w-5 text-blue-600" />,
-    maxChars: 60000,
-  },
-  {
-    id: "instagram",
-    name: "Instagram",
-    icon: <FaInstagram className="h-5 w-5 text-pink-600" />,
-    maxChars: 2200,
-  },
-  {
-    id: "twitter",
-    name: "Twitter",
-    icon: <FaTwitter className="h-5 w-5 text-blue-400" />,
-    maxChars: 280,
-  },
-  {
-    id: "tiktok",
-    name: "TikTok",
-    icon: <FaTiktok className="h-5 w-5 text-black" />,
-    maxChars: 2200,
-  },
-];
+const AVAILABLE_PLATFORMS = Object.values(SUPPORTED_PLATFORMS).map(
+  (platform) => ({
+    id: platform,
+    name: PLATFORM_DISPLAY[platform].label,
+    icon: PLATFORM_DISPLAY[platform].icon,
+    maxChars: PLATFORM_DISPLAY[platform].maxChars,
+  })
+);
 
 export function PostCreationForm() {
   const {
@@ -974,29 +959,35 @@ export function PostCreationForm() {
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               </div>
               <div className="flex items-center gap-2">
-                {getAvailablePlatforms().map((platform) => (
-                  <TooltipProvider key={platform.id}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handlePlatformToggle(platform.id)}
-                          className={cn(
-                            "text-gray-500 hover:text-gray-700 transition-colors duration-200",
-                            selectedPlatforms.includes(platform.id) &&
-                              "bg-gray-100 text-gray-900"
-                          )}
-                        >
-                          {platform.icon}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{platform.name}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
+                {getAvailablePlatforms().map((platform) => {
+                  const { icon: Icon } =
+                    PLATFORM_DISPLAY[
+                      platform.id as keyof typeof PLATFORM_DISPLAY
+                    ];
+                  return (
+                    <TooltipProvider key={platform.id}>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handlePlatformToggle(platform.id)}
+                            className={cn(
+                              "text-gray-500 hover:text-gray-700 transition-colors duration-200",
+                              selectedPlatforms.includes(platform.id) &&
+                                "bg-gray-100 text-gray-900"
+                            )}
+                          >
+                            <Icon className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{platform.name}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  );
+                })}
               </div>
             </div>
 
@@ -1021,79 +1012,83 @@ export function PostCreationForm() {
                   ([platform, accounts]: [
                     string,
                     ConnectedAccountWithDetails[]
-                  ]) => (
-                    <div key={platform} className="space-y-2">
-                      <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
-                        {
-                          getAvailablePlatforms().find((p) => p.id === platform)
-                            ?.icon
-                        }
-                        {
-                          getAvailablePlatforms().find((p) => p.id === platform)
-                            ?.name
-                        }
-                        <span className="text-xs text-gray-500">
-                          ({accounts.length})
-                        </span>
-                      </h3>
-                      <div className="grid gap-2">
-                        {accounts.map(
-                          (account: ConnectedAccountWithDetails) => (
-                            <button
-                              key={account.id}
-                              onClick={() => handleAccountSelection(account)}
-                              className={cn(
-                                "flex items-center gap-3 p-3 rounded-lg border transition-all duration-300",
-                                selectedAccounts.some(
-                                  (selected) => selected.id === account.id
-                                )
-                                  ? "border-blue-500 bg-blue-50"
-                                  : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                              )}
-                            >
-                              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                <Avatar className="w-10 h-10">
-                                  {account.profileImage ? (
-                                    <Image
-                                      src={account.profileImage}
-                                      alt={account.name}
-                                      fill
-                                      className="object-cover"
-                                      sizes="40px"
-                                    />
-                                  ) : (
-                                    <AvatarFallback className="text-sm font-medium">
-                                      {account.name
-                                        .substring(0, 2)
-                                        .toUpperCase()}
-                                    </AvatarFallback>
-                                  )}
-                                </Avatar>
-                              </div>
-                              <div className="flex-1 text-left">
-                                <p className="font-medium text-gray-900">
-                                  {account.name}
-                                </p>
-                                <p className="text-sm text-gray-500">
-                                  @{account.username}
-                                </p>
-                              </div>
-                              {selectedAccounts.some(
-                                (selected) => selected.id === account.id
-                              ) && (
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                                  <span className="text-sm text-blue-500 font-medium">
-                                    Wybrane
-                                  </span>
+                  ]) => {
+                    const { icon: Icon } =
+                      PLATFORM_DISPLAY[
+                        platform as keyof typeof PLATFORM_DISPLAY
+                      ];
+                    return (
+                      <div key={platform} className="space-y-2">
+                        <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
+                          <Icon className="h-5 w-5" />
+                          {
+                            getAvailablePlatforms().find(
+                              (p) => p.id === platform
+                            )?.name
+                          }
+                          <span className="text-xs text-gray-500">
+                            ({accounts.length})
+                          </span>
+                        </h3>
+                        <div className="grid gap-2">
+                          {accounts.map(
+                            (account: ConnectedAccountWithDetails) => (
+                              <button
+                                key={account.id}
+                                onClick={() => handleAccountSelection(account)}
+                                className={cn(
+                                  "flex items-center gap-3 p-3 rounded-lg border transition-all duration-300",
+                                  selectedAccounts.some(
+                                    (selected) => selected.id === account.id
+                                  )
+                                    ? "border-blue-500 bg-blue-50"
+                                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
+                                )}
+                              >
+                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+                                  <Avatar className="w-10 h-10">
+                                    {account.profileImage ? (
+                                      <Image
+                                        src={account.profileImage}
+                                        alt={account.name}
+                                        fill
+                                        className="object-cover"
+                                        sizes="40px"
+                                      />
+                                    ) : (
+                                      <AvatarFallback className="text-sm font-medium">
+                                        {account.name
+                                          .substring(0, 2)
+                                          .toUpperCase()}
+                                      </AvatarFallback>
+                                    )}
+                                  </Avatar>
                                 </div>
-                              )}
-                            </button>
-                          )
-                        )}
+                                <div className="flex-1 text-left">
+                                  <p className="font-medium text-gray-900">
+                                    {account.name}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    @{account.username}
+                                  </p>
+                                </div>
+                                {selectedAccounts.some(
+                                  (selected) => selected.id === account.id
+                                ) && (
+                                  <div className="flex items-center gap-2">
+                                    <CheckCircle2 className="w-5 h-5 text-blue-500" />
+                                    <span className="text-sm text-blue-500 font-medium">
+                                      Wybrane
+                                    </span>
+                                  </div>
+                                )}
+                              </button>
+                            )
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )
+                    );
+                  }
                 )
               )}
             </div>
