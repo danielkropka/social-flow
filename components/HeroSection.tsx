@@ -8,6 +8,8 @@ import ReviewsSection from "./ReviewsSection";
 import FaqSection from "./FaqSection";
 import Link from "next/link";
 import { cn } from "@/lib/utils/utils";
+import { ArrowDown } from "./icons/ArrowDown";
+import { Check } from "./icons/Check";
 
 export default function HeroSection() {
   const [isMobile, setIsMobile] = useState(true);
@@ -23,10 +25,22 @@ export default function HeroSection() {
   }, []);
 
   const advantages = [
-    "Publikacja na wielu kontach społecznościowych",
-    "Intuicyjny interfejs",
-    "Planowanie z wyprzedzeniem",
-    "Oszczędność czasu i pieniędzy (zaczynając od 30 zł/miesiąc)",
+    {
+      text: "Publikacja na wszystkich platformach za jednym kliknięciem",
+      icon: <Check className="w-6 h-6 text-blue-600 flex-shrink-0" />,
+    },
+    {
+      text: "Intuicyjny, nowoczesny interfejs",
+      icon: <Check className="w-6 h-6 text-blue-600 flex-shrink-0" />,
+    },
+    {
+      text: "Automatyczne planowanie postów",
+      icon: <Check className="w-6 h-6 text-blue-600 flex-shrink-0" />,
+    },
+    {
+      text: "Oszczędność czasu i pieniędzy",
+      icon: <Check className="w-6 h-6 text-blue-600 flex-shrink-0" />,
+    },
   ];
 
   const handleScrollToSection = (
@@ -59,55 +73,39 @@ export default function HeroSection() {
             }}
           >
             <div className="min-h-[200px] lg:min-h-[300px]">
-              <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900">
-                Przestań skakać między aplikacjami &mdash;&nbsp;
-                <span className="text-blue-600">publikuj posty tu i teraz</span>
-                .
+              <h1 className="text-4xl lg:text-6xl font-bold tracking-tight text-gray-900 leading-tight">
+                Publikuj na wszystkich socialach jednym kliknięciem
               </h1>
+              <span className="mt-2 text-blue-600 text-xl lg:text-2xl font-semibold block">
+                Oszczędzaj czas i rozwijaj swój biznes!
+              </span>
               <span className="mt-4 text-lg lg:text-xl text-gray-600 block">
-                <span className="text-blue-600 font-semibold">
-                  Jedno narzędzie
-                </span>{" "}
-                do jednoczesnego wrzucania treści na wszystkie Twoje profile
-                społecznościowe.&nbsp;
-                <span className="text-blue-600 font-semibold">
-                  Zaoszczędź czas
-                </span>{" "}
-                i skup się na tworzeniu świetnego contentu.
+                Twórz, planuj i publikuj posty na wszystkich swoich profilach
+                społecznościowych w kilka sekund.
+                <br />
+                Skup się na tym, co naprawdę ważne — kreatywności.
               </span>
             </div>
 
-            <div className="flex flex-col gap-2 mt-4 text-lg min-h-[200px]">
-              {advantages.map((advantage, i) => (
-                <div
-                  key={advantage}
-                  className="flex items-center gap-2"
+            <ul className="flex flex-col gap-2 mt-4 text-lg min-h-[180px] bg-white/60 rounded-xl border border-blue-100 p-4 shadow-sm backdrop-blur-sm list-disc list-inside">
+              {advantages.map((adv, i) => (
+                <li
+                  key={adv.text}
+                  className="flex items-center gap-3"
                   style={{
                     opacity: 0,
                     animation: `fade-in-up 0.5s ease-out forwards`,
                     animationDelay: `${i * 100 + 200}ms`,
                   }}
                 >
-                  <svg
-                    className="w-6 h-6 text-blue-600 flex-shrink-0"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  <span className="text-gray-600">{advantage}</span>
-                </div>
+                  {adv.icon}
+                  <span className="text-gray-700">{adv.text}</span>
+                </li>
               ))}
-            </div>
+            </ul>
 
             <section
-              className="flex flex-col mt-12 w-full lg:w-1/2"
+              className="flex flex-col mt-10 w-full lg:w-1/2"
               style={{
                 opacity: 0,
                 animation: "fade-in-up 0.5s ease-out forwards",
@@ -118,25 +116,31 @@ export default function HeroSection() {
                 href="#pricing"
                 onClick={(e) => handleScrollToSection(e, "#pricing")}
                 className={cn(
-                  buttonVariants(),
-                  "h-12 text-lg relative overflow-hidden group bg-white border-2 border-blue-600 text-blue-600 hover:text-white"
+                  buttonVariants({ size: "lg" }),
+                  "h-14 text-lg relative overflow-hidden group bg-gradient-to-r from-blue-600 to-blue-700 text-white border-0 shadow-lg hover:scale-105 transition-transform duration-200"
                 )}
               >
-                <span className="relative z-10">Wypróbuj za darmo</span>
+                <span className="relative z-10 flex items-center gap-2">
+                  Wypróbuj za darmo
+                  <ArrowDown className="w-6 h-6 animate-bounce" />
+                </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </Link>
+              <span className="mt-2 text-sm text-gray-500 text-center">
+                Wymagana karta kredytowa.
+              </span>
             </section>
           </div>
 
           <div
-            className="flex-1 relative flex justify-center items-center"
+            className="flex-1 relative justify-center items-center lg:flex hidden"
             style={{
               opacity: 0,
               animation: "fade-in-up 0.5s ease-out forwards",
               animationDelay: "300ms",
             }}
           >
-            <div className="relative w-full max-w-[800px] bg-gray-50/50 rounded-xl shadow-sm border border-gray-200 p-4 lg:p-6 mx-4 lg:mx-0">
+            <div className="relative w-full max-w-[800px] bg-white/60 backdrop-blur-md rounded-2xl shadow-xl border border-blue-100 p-4 lg:p-8 mx-4 lg:mx-0 transition-all duration-300 hover:shadow-2xl hover:scale-[1.02]">
               <div className="flex items-center gap-3 mb-4">
                 <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-red-400 hover:bg-red-500 transition-colors cursor-pointer" />
                 <div className="w-2.5 lg:w-3 h-2.5 lg:h-3 rounded-full bg-yellow-400 hover:bg-yellow-500 transition-colors cursor-pointer" />

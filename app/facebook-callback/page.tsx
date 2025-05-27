@@ -220,35 +220,35 @@ function FacebookCallbackContent() {
 
             <div className="text-center space-y-6">
               <div>
-                <h1 className="text-2xl font-bold mb-2 bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">
+                <h1 className="text-4xl font-bold text-gray-900 mb-2">
                   Łączenie konta Facebook
                 </h1>
-                <p className="text-gray-500">
+                <p className="text-base text-gray-700">
                   Trwa proces autoryzacji i konfiguracji Twojego konta
                 </p>
               </div>
 
               <div className="flex items-center justify-center gap-3 text-blue-400">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="font-medium">Przetwarzanie...</span>
+                <span className="font-medium text-base">Przetwarzanie...</span>
               </div>
 
               <div className="space-y-4 pt-6 border-t">
-                <div className="flex items-start gap-4 text-sm text-gray-600">
+                <div className="flex items-start gap-4 text-base text-gray-700">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                   <p>Weryfikacja uprawnień i poświadczeń</p>
                 </div>
-                <div className="flex items-start gap-4 text-sm text-gray-600">
+                <div className="flex items-start gap-4 text-base text-gray-700">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                   <p>Konfiguracja dostępu do publikowania treści</p>
                 </div>
-                <div className="flex items-start gap-4 text-sm text-gray-600">
+                <div className="flex items-start gap-4 text-base text-gray-700">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                   <p>Przygotowanie integracji z Social Flow</p>
                 </div>
               </div>
 
-              <div className="text-xs text-gray-400 mt-6">
+              <div className="text-sm text-gray-600 mt-6">
                 <p>Proces może potrwać kilka sekund...</p>
               </div>
             </div>
