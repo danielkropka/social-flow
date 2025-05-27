@@ -56,7 +56,7 @@ export default function ForgotPassword() {
               resetowania hasła.
             </p>
             <Link
-              href="/(auth)/sign-in"
+              href="/sign-in"
               className="text-blue-600 hover:text-blue-800 font-medium transition-colors"
             >
               Powrót do logowania
@@ -91,7 +91,7 @@ export default function ForgotPassword() {
             </Button>
             <div className="text-center">
               <Link
-                href="/(auth)/sign-in"
+                href="/sign-in"
                 className="text-sm text-gray-600 hover:text-blue-600 transition-colors"
               >
                 Powrót do logowania
