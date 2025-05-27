@@ -111,8 +111,10 @@ model User {
 
     posts Post[]
 
-    createdAt DateTime @default(now())
-    updatedAt DateTime @updatedAt
+    createdAt              DateTime                 @default(now())
+    updatedAt              DateTime                 @updatedAt
+    PasswordResetToken     PasswordResetToken[]
+    EmailVerificationToken EmailVerificationToken[]
 
     @@index([isActive])
     @@index([deletedAt])
@@ -217,4 +219,30 @@ model PostConnectedAccount {
     @@index([connectedAccountId])
     @@index([status])
     @@index([deletedAt])
+}
+
+model PasswordResetToken {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String   @db.ObjectId
+    token     String   @unique
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([expiresAt])
+}
+
+model EmailVerificationToken {
+    id        String   @id @default(auto()) @map("_id") @db.ObjectId
+    userId    String   @db.ObjectId
+    token     String   @unique
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@index([userId])
+    @@index([expiresAt])
 }
