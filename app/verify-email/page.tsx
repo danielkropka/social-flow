@@ -1,6 +1,20 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardFooter,
+} from "@/components/ui/card";
+import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Check } from "@/components/icons/Check";
+import { EyeIcon } from "@/components/icons/Eye";
+import Link from "next/link";
 
 export default function VerifyEmailPage() {
   const searchParams = useSearchParams();
@@ -49,29 +63,65 @@ export default function VerifyEmailPage() {
   }, []);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] p-4">
-      {status === "loading" && (
-        <>
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mb-4" />
-          <p className="text-lg font-medium">
-            Trwa weryfikacja adresu email...
-          </p>
-        </>
-      )}
-      {status === "success" && (
-        <>
-          <div className="text-green-600 text-4xl mb-2">✓</div>
-          <p className="text-lg font-semibold mb-2">Sukces!</p>
-          <p>{message}</p>
-        </>
-      )}
-      {status === "error" && (
-        <>
-          <div className="text-red-600 text-4xl mb-2">✗</div>
-          <p className="text-lg font-semibold mb-2">Błąd weryfikacji</p>
-          <p>{message}</p>
-        </>
-      )}
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
+      <Card className="w-full max-w-md mx-auto animate-fade-in-up">
+        <CardHeader>
+          <CardTitle className="text-2xl font-bold text-center">
+            Weryfikacja adresu e-mail
+          </CardTitle>
+          <CardDescription className="text-center">
+            {status === "loading"
+              ? "Trwa weryfikacja Twojego adresu e-mail. Prosimy o chwilę cierpliwości."
+              : status === "success"
+                ? "Twój adres e-mail został zweryfikowany. Możesz się teraz zalogować."
+                : "Weryfikacja nie powiodła się. Sprawdź link lub spróbuj ponownie."}
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {status === "loading" && (
+            <div className="flex flex-col items-center gap-4">
+              <Skeleton className="h-12 w-12 rounded-full" />
+              <Alert>
+                <AlertTitle>Weryfikacja trwa...</AlertTitle>
+                <AlertDescription>
+                  Sprawdzamy Twój link weryfikacyjny.
+                </AlertDescription>
+              </Alert>
+            </div>
+          )}
+          {status === "success" && (
+            <div className="flex flex-col items-center gap-4">
+              <Alert>
+                <Check className="w-6 h-6 text-green-500" />
+                <AlertTitle className="text-green-700">Sukces!</AlertTitle>
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+            </div>
+          )}
+          {status === "error" && (
+            <div className="flex flex-col items-center gap-4">
+              <Alert variant="destructive">
+                <EyeIcon className="w-6 h-6 text-red-500" />
+                <AlertTitle className="text-red-700">
+                  Błąd weryfikacji
+                </AlertTitle>
+                <AlertDescription>{message}</AlertDescription>
+              </Alert>
+              <p className="text-xs text-gray-400 text-center">
+                Jeśli problem się powtarza, skontaktuj się z pomocą techniczną
+                lub spróbuj ponownie później.
+              </p>
+            </div>
+          )}
+        </CardContent>
+        <CardFooter className="flex flex-col gap-2">
+          {(status === "success" || status === "error") && (
+            <Button asChild className="w-full">
+              <Link href="/sign-in">Powrót do logowania</Link>
+            </Button>
+          )}
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -33,6 +33,7 @@ export default function SignUp() {
   });
 
   const onSubmit = async (data: RegisterFormValues) => {
+    setIsLoading(true);
     try {
       const response = await fetch("/api/auth/register", {
         method: "POST",
@@ -106,6 +107,8 @@ export default function SignUp() {
           ? error.message
           : "Wystąpił błąd podczas rejestracji"
       );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -364,6 +367,60 @@ export default function SignUp() {
                 </p>
               )}
             </div>
+          </div>
+
+          <div>
+            <label
+              className={`
+                flex items-center gap-3 p-3 rounded-lg border
+                ${errors.terms ? "border-red-400 bg-red-50" : "border-gray-200 bg-gray-50"}
+                transition-all cursor-pointer select-none
+                hover:shadow-md hover:bg-gray-100
+                focus-within:ring-2 focus-within:ring-blue-400
+              `}
+              tabIndex={0}
+            >
+              <input
+                type="checkbox"
+                {...register("terms")}
+                className={`
+                  accent-blue-600 w-5 h-5 rounded
+                  border-2 border-gray-300
+                  focus:ring-2 focus:ring-blue-400
+                  transition-all
+                `}
+                disabled={isLoading}
+                id="terms"
+              />
+              <span className="text-sm text-gray-700">
+                Akceptuję{" "}
+                <Link
+                  href="/terms-of-service"
+                  className="underline text-blue-600 hover:text-blue-800"
+                  target="_blank"
+                >
+                  regulamin
+                </Link>
+              </span>
+            </label>
+            {errors.terms && (
+              <p className="mt-2 text-sm text-red-600 flex items-center gap-1 animate-shake">
+                <svg
+                  className="w-4 h-4 text-red-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 9v2m0 4h.01M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9 9 4.03 9 9z"
+                  />
+                </svg>
+                {errors.terms.message}
+              </p>
+            )}
           </div>
 
           <Button

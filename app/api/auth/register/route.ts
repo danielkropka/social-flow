@@ -197,7 +197,7 @@ function checkPasswordStrength(password: string) {
   }
 
   // Znaki specjalne
-  if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) {
+  if (/[!@#$%^&*(),.?":{}|<>_\-+=/\\'`;~`]/.test(password)) {
     score += 1;
   } else {
     feedback.push("Hasło musi zawierać przynajmniej jeden znak specjalny");
