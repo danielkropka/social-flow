@@ -29,6 +29,17 @@ const getSubscriptionType = (
   }
 };
 
+// Typ do aktualizacji użytkownika w bazie
+type UserUpdateData = {
+  stripeSubscriptionId: string | null;
+  subscriptionStatus: PlanStatus | null;
+  subscriptionType?: PlanType | null;
+  subscriptionInterval?: PlanInterval | null;
+  subscriptionStart?: Date | null;
+  subscriptionEnd?: Date | null;
+  gotFreeTrial?: boolean;
+};
+
 export async function POST(req: Request) {
   const sig = req.headers.get("stripe-signature")!;
   const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
@@ -91,9 +102,8 @@ export async function POST(req: Request) {
 
       try {
         // Pobierz dane subskrypcji z Stripe
-        const stripeSubscription = await stripe.subscriptions.retrieve(
-          subscription
-        );
+        const stripeSubscription =
+          await stripe.subscriptions.retrieve(subscription);
         const planItem = stripeSubscription.items.data[0];
 
         const user = await db.user.findFirst({
@@ -158,13 +168,16 @@ export async function POST(req: Request) {
         }
 
         const planItem = updatedSubscription.items.data[0];
+        const status = updatedSubscription.status.toUpperCase() as PlanStatus;
 
-        await db.user.update({
-          where: { id: user.id },
-          data: {
-            stripeSubscriptionId: updatedSubscription.id,
-            subscriptionStatus:
-              updatedSubscription.status.toUpperCase() as PlanStatus,
+        let updateData: UserUpdateData = {
+          stripeSubscriptionId: updatedSubscription.id,
+          subscriptionStatus: status,
+        };
+
+        if (status === "ACTIVE" || status === "TRIALING") {
+          updateData = {
+            ...updateData,
             subscriptionType: getSubscriptionType(planItem.plan.product),
             subscriptionInterval:
               planItem.plan.interval.toUpperCase() as PlanInterval,
@@ -175,7 +188,26 @@ export async function POST(req: Request) {
             gotFreeTrial: updatedSubscription.trial_start
               ? true
               : user.gotFreeTrial,
-          },
+          };
+        } else if (
+          status === "PAST_DUE" ||
+          status === "INCOMPLETE" ||
+          status === "UNPAID" ||
+          status === "CANCELED" ||
+          status === "INCOMPLETE_EXPIRED"
+        ) {
+          updateData = {
+            ...updateData,
+            subscriptionType: null,
+            subscriptionInterval: null,
+            subscriptionStart: null,
+            subscriptionEnd: null,
+          };
+        }
+
+        await db.user.update({
+          where: { id: user.id },
+          data: updateData,
         });
 
         console.log(

@@ -21,9 +21,7 @@ async function hasUsedTrialBefore(customerId: string): Promise<boolean> {
 
   return subscriptions.data.some(
     (subscription) =>
-      subscription.trial_start &&
-      subscription.trial_end &&
-      subscription.trial_end >= Date.now() / 1000
+      subscription.trial_start != null && subscription.trial_end != null
   );
 }
 
