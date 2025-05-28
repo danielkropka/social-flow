@@ -88,18 +88,13 @@ model Account {
 }
 
 model User {
-    id                String             @id @default(auto()) @map("_id") @db.ObjectId
-    name              String?
-    email             String?            @unique
-    emailVerified     DateTime?
-    password          String?            @db.String
-    image             String?
-    connectedAccounts ConnectedAccount[]
-    accounts          Account[]
-    gotFreeTrial      Boolean            @default(false)
-    lastLoginAt       DateTime?
-    isActive          Boolean            @default(true)
-    deletedAt         DateTime?
+    id            String    @id @default(auto()) @map("_id") @db.ObjectId
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    password      String?   @db.String
+    image         String?
+    accounts      Account[]
 
     stripeCustomerId     String?
     stripeSubscriptionId String?
@@ -115,9 +110,7 @@ model User {
     updatedAt              DateTime                 @updatedAt
     PasswordResetToken     PasswordResetToken[]
     EmailVerificationToken EmailVerificationToken[]
-
-    @@index([isActive])
-    @@index([deletedAt])
+    ConnectedAccount       ConnectedAccount[]
 }
 
 model Media {
@@ -125,8 +118,6 @@ model Media {
     url          String    @db.String
     type         MediaType
     thumbnailUrl String?   @db.String
-    size         Int?
-    mimeType     String?
     postId       String    @db.ObjectId
     post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
     createdAt    DateTime  @default(now())
