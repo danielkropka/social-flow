@@ -3,9 +3,7 @@ import { PlanInterval, PlanStatus, PlanType } from "@prisma/client";
 import { NextResponse } from "next/server";
 import Stripe from "stripe";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
-});
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const STRIPE_PRODUCTS = {
   CREATOR: process.env.STRIPE_CREATOR_PRODUCT_ID,
@@ -105,27 +103,45 @@ export async function POST(req: Request) {
         const stripeSubscription =
           await stripe.subscriptions.retrieve(subscription);
         const planItem = stripeSubscription.items.data[0];
-
+        if (!planItem) {
+          console.error(
+            `Brak planItem w subskrypcji Stripe: ${stripeSubscription.id}`
+          );
+          return NextResponse.json(
+            { error: "Brak planItem w subskrypcji Stripe" },
+            { status: 500 }
+          );
+        }
         const user = await db.user.findFirst({
           where: { stripeCustomerId: customerId },
         });
-
         if (!user) {
           console.error(
             `User with stripeCustomerId ${customerId} not found. Customer ID: ${customerId}, Subscription: ${subscription}`
           );
           throw new Error("User not found");
         }
-
-        await db.user.update({
-          where: { id: user.id },
-          data: {
-            stripeSubscriptionId: stripeSubscription.id,
-            subscriptionStatus:
-              stripeSubscription.status.toUpperCase() as PlanStatus,
+        const status =
+          PlanStatus[
+            stripeSubscription.status.toUpperCase() as keyof typeof PlanStatus
+          ] ?? null;
+        if (!status) {
+          console.warn(
+            `Nieoczekiwany status subskrypcji: ${stripeSubscription.status} (ID: ${stripeSubscription.id})`
+          );
+        }
+        let updateData: UserUpdateData = {
+          stripeSubscriptionId: stripeSubscription.id,
+          subscriptionStatus: status,
+        };
+        if (status === PlanStatus.ACTIVE || status === PlanStatus.TRIALING) {
+          updateData = {
+            ...updateData,
             subscriptionType: getSubscriptionType(planItem.plan.product),
             subscriptionInterval:
-              planItem.plan.interval.toUpperCase() as PlanInterval,
+              PlanInterval[
+                planItem.plan.interval.toUpperCase() as keyof typeof PlanInterval
+              ] ?? null,
             subscriptionStart: new Date(stripeSubscription.start_date * 1000),
             subscriptionEnd: new Date(
               stripeSubscription.current_period_end * 1000
@@ -133,11 +149,34 @@ export async function POST(req: Request) {
             gotFreeTrial: stripeSubscription.trial_start
               ? true
               : user.gotFreeTrial,
-          },
+          };
+        } else if (
+          status === PlanStatus.PAST_DUE ||
+          status === PlanStatus.INCOMPLETE ||
+          status === PlanStatus.UNPAID ||
+          status === PlanStatus.CANCELED ||
+          status === PlanStatus.INCOMPLETE_EXPIRED
+        ) {
+          updateData = {
+            ...updateData,
+            subscriptionType: null,
+            subscriptionInterval: null,
+            subscriptionStart: null,
+            subscriptionEnd: null,
+          };
+        } else {
+          // fallback dla nieoczekiwanych statusów
+          console.warn(
+            `Brak obsługi dla statusu: ${status} (ID subskrypcji: ${stripeSubscription.id}, user: ${user.id}, email: ${user.email})`
+          );
+        }
+        await db.user.update({
+          where: { id: user.id },
+          data: updateData,
         });
 
         console.log(
-          `Subscription for user ${user.id} (${user.email}) created successfully.`
+          `Subscription for user ${user.id} (${user.email}) created successfully. Status: ${status}, SubscriptionId: ${stripeSubscription.id}`
         );
       } catch (error) {
         console.error("Error creating subscription:", error);
@@ -168,19 +207,37 @@ export async function POST(req: Request) {
         }
 
         const planItem = updatedSubscription.items.data[0];
-        const status = updatedSubscription.status.toUpperCase() as PlanStatus;
-
+        if (!planItem) {
+          console.error(
+            `Brak planItem w subskrypcji Stripe: ${updatedSubscription.id}`
+          );
+          return NextResponse.json(
+            { error: "Brak planItem w subskrypcji Stripe" },
+            { status: 500 }
+          );
+        }
+        // Jawne mapowanie statusu na enum Prisma
+        const status =
+          PlanStatus[
+            updatedSubscription.status.toUpperCase() as keyof typeof PlanStatus
+          ] ?? null;
+        if (!status) {
+          console.warn(
+            `Nieoczekiwany status subskrypcji: ${updatedSubscription.status} (ID: ${updatedSubscription.id})`
+          );
+        }
         let updateData: UserUpdateData = {
           stripeSubscriptionId: updatedSubscription.id,
           subscriptionStatus: status,
         };
-
-        if (status === "ACTIVE" || status === "TRIALING") {
+        if (status === PlanStatus.ACTIVE || status === PlanStatus.TRIALING) {
           updateData = {
             ...updateData,
             subscriptionType: getSubscriptionType(planItem.plan.product),
             subscriptionInterval:
-              planItem.plan.interval.toUpperCase() as PlanInterval,
+              PlanInterval[
+                planItem.plan.interval.toUpperCase() as keyof typeof PlanInterval
+              ] ?? null,
             subscriptionStart: new Date(updatedSubscription.start_date * 1000),
             subscriptionEnd: new Date(
               updatedSubscription.current_period_end * 1000
@@ -190,11 +247,11 @@ export async function POST(req: Request) {
               : user.gotFreeTrial,
           };
         } else if (
-          status === "PAST_DUE" ||
-          status === "INCOMPLETE" ||
-          status === "UNPAID" ||
-          status === "CANCELED" ||
-          status === "INCOMPLETE_EXPIRED"
+          status === PlanStatus.PAST_DUE ||
+          status === PlanStatus.INCOMPLETE ||
+          status === PlanStatus.UNPAID ||
+          status === PlanStatus.CANCELED ||
+          status === PlanStatus.INCOMPLETE_EXPIRED
         ) {
           updateData = {
             ...updateData,
@@ -203,15 +260,18 @@ export async function POST(req: Request) {
             subscriptionStart: null,
             subscriptionEnd: null,
           };
+        } else {
+          // fallback dla nieoczekiwanych statusów
+          console.warn(
+            `Brak obsługi dla statusu: ${status} (ID subskrypcji: ${updatedSubscription.id}, user: ${user.id}, email: ${user.email})`
+          );
         }
-
         await db.user.update({
           where: { id: user.id },
           data: updateData,
         });
-
         console.log(
-          `Subscription for user ${user.id} (${user.email}) updated successfully.`
+          `Subscription for user ${user.id} (${user.email}) updated successfully. Status: ${status}, SubscriptionId: ${updatedSubscription.id}`
         );
       } catch (error) {
         console.error("Error updating subscription:", error);
@@ -237,12 +297,21 @@ export async function POST(req: Request) {
           );
           throw new Error("User not found");
         }
-
+        // Jawne mapowanie statusu na enum Prisma
+        const status =
+          PlanStatus[
+            deletedSubscription.status.toUpperCase() as keyof typeof PlanStatus
+          ] ?? PlanStatus.CANCELED;
+        if (!status) {
+          console.warn(
+            `Nieoczekiwany status subskrypcji: ${deletedSubscription.status} (ID: ${deletedSubscription.id})`
+          );
+        }
         await db.user.update({
           where: { id: user.id },
           data: {
             stripeSubscriptionId: null,
-            subscriptionStatus: "CANCELED",
+            subscriptionStatus: status,
             subscriptionType: null,
             subscriptionInterval: null,
             subscriptionStart: null,
@@ -251,7 +320,7 @@ export async function POST(req: Request) {
         });
 
         console.log(
-          `Subscription for user ${user.id} (${user.email}) deleted successfully.`
+          `Subscription for user ${user.id} (${user.email}) deleted successfully. Status: ${status}, SubscriptionId: ${deletedSubscription.id}`
         );
       } catch (error) {
         console.error("Error deleting subscription:", error);
