@@ -6,7 +6,7 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    let { customerId } = body as { customerId?: string };
+    const { customerId } = body as { customerId?: string };
 
     if (!customerId || typeof customerId !== "string") {
       console.warn("Brak customerId lub nieprawidłowy typ:", customerId);
