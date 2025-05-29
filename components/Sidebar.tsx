@@ -9,12 +9,16 @@ import {
   ChevronDown,
   Layout,
   BarChart2,
+  ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
 import { Avatar, AvatarFallback, AvatarImage } from "./ui/avatar";
 import { Skeleton } from "./ui/skeleton";
 import { useSubscription } from "@/hooks/useSubscription";
+import { loadStripe } from "@stripe/stripe-js";
+import { toast } from "sonner";
 
 const contentCreationItems = [
   { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
@@ -45,8 +49,9 @@ export function Sidebar({
   activeTab,
 }: SidebarProps) {
   const { data: session, status } = useSession();
-  const { type } = useSubscription();
+  const { type, isSubscribed } = useSubscription();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -68,6 +73,48 @@ export function Sidebar({
   const handleNavigation = (tab: string) => {
     onTabChange(tab);
     onClose();
+  };
+
+  const handleManageSubscription = async () => {
+    setIsLoading(true);
+    try {
+      if (!session?.user?.stripeCustomerId)
+        throw new Error("Nie udało się uzyskać ID klienta Stripe");
+
+      const stripe = await loadStripe(
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+      );
+
+      if (!stripe) throw new Error("Wystąpił błąd podczas ładowania Stripe");
+
+      setIsProfileOpen(false);
+
+      const portal = await fetch("/api/create-billing-portal-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          customerId: session.user.stripeCustomerId,
+        }),
+      });
+
+      if (!portal.ok)
+        throw new Error("Nie udało się utworzyć sesji billing portal");
+
+      const data = await portal.json();
+
+      if (!data.url)
+        throw new Error("Nie udało się utworzyć sesji billing portal");
+
+      window.location.href = data.url;
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        toast.error(error.message);
+        return;
+      }
+      toast.error("Wystąpił błąd podczas tworzenia sesji billing portal");
+    }
   };
 
   return (
@@ -235,8 +282,8 @@ export function Sidebar({
                     {session?.user?.subscriptionType === "BASIC"
                       ? "Plan Podstawowy"
                       : session?.user?.subscriptionType === "CREATOR"
-                      ? "Plan Twórca"
-                      : "Plan darmowy"}
+                        ? "Plan Twórca"
+                        : "Plan darmowy"}
                   </span>
                 </div>
                 <ChevronDown
@@ -263,21 +310,37 @@ export function Sidebar({
           >
             <Link
               href="/#pricing"
-              className="w-full px-4 py-3 flex items-center gap-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              className="w-full px-4 py-3 flex justify-between items-center gap-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
             >
-              <Layout className="h-4 w-4" />
               <span className="text-sm font-medium">Plany</span>
+              <Layout className="h-4 w-4" />
             </Link>
+            {isSubscribed && (
+              <div
+                className="w-full px-4 py-3 flex justify-between items-center gap-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors hover:cursor-pointer"
+                onClick={handleManageSubscription}
+              >
+                <span className="text-sm font-medium">
+                  Zarządzaj subskrypcją
+                </span>
+                <ExternalLink className="h-4 w-4" />
+              </div>
+            )}
             <button
               onClick={() => signOut()}
-              className="w-full px-4 py-3 flex items-center gap-3 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+              className="w-full px-4 py-3 flex justify-between items-center gap-3 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
             >
-              <LogOut className="h-4 w-4" />
               <span className="text-sm font-medium">Wyloguj się</span>
+              <LogOut className="h-4 w-4" />
             </button>
           </div>
         </div>
       </aside>
+      {isLoading && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80">
+          <Loader2 className="h-16 w-16 animate-spin text-blue-600" />
+        </div>
+      )}
     </>
   );
 }
