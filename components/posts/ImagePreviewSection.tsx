@@ -1,5 +1,4 @@
 import { AlertTriangle } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Dispatch, SetStateAction } from "react";
 
 interface ImageLimitWarning {

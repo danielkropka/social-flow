@@ -18,7 +18,6 @@ import {
   RotateCcw,
   Info,
   Send,
-  Search,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { pl } from "date-fns/locale";
@@ -172,7 +171,7 @@ export function PostCreationForm() {
         const data = await response.json();
         setAccounts(
           (Array.isArray(data) ? data : data.accounts || []).map(
-            (acc: any) => ({
+            (acc: SocialAccountWithUsername) => ({
               ...acc,
               provider: acc.provider ?? acc.platform ?? "",
               username: acc.username ?? "",
@@ -322,33 +321,6 @@ export function PostCreationForm() {
     setDragActive(false);
   };
 
-  const handleAccountSelection = (account: SocialAccountWithUsername) => {
-    const isSelected = selectedAccounts.some(
-      (selected) => (selected as SocialAccountWithUsername).id === account.id
-    );
-
-    if (isSelected) {
-      setSelectedAccounts(
-        selectedAccounts.filter(
-          (selected) =>
-            (selected as SocialAccountWithUsername).id !== account.id
-        )
-      );
-    } else {
-      setSelectedAccounts([...selectedAccounts, { ...account }]);
-    }
-  };
-
-  const handlePlatformToggle = (platform: string) => {
-    setSelectedPlatforms((prev) => {
-      if (prev.includes(platform)) {
-        return prev.filter((p) => p !== platform);
-      } else {
-        return [...prev, platform];
-      }
-    });
-  };
-
   const filteredAccounts = (accounts || []).filter(
     (account) =>
       (account.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -404,15 +376,6 @@ export function PostCreationForm() {
       limit,
       platform,
     }));
-
-  // Funkcja do obsługi zmiany kolejności zdjęć
-  const onDragEnd = (result: DropResult) => {
-    if (!result.destination) return;
-    const newFiles = Array.from(selectedFiles);
-    const [removed] = newFiles.splice(result.source.index, 1);
-    newFiles.splice(result.destination.index, 0, removed);
-    setSelectedFiles(newFiles);
-  };
 
   const getAvailablePlatforms = () => {
     const currentPostType = POST_TYPES.find((type) => type.id === postType);

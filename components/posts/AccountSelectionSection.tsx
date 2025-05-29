@@ -13,6 +13,7 @@ import Image from "next/image";
 import { PLATFORM_DISPLAY } from "@/constants";
 import React from "react";
 import type { SocialAccountWithUsername } from "@/types";
+import { IconType } from "react-icons";
 
 interface AccountSelectionSectionProps {
   accounts: SocialAccountWithUsername[];
@@ -22,7 +23,7 @@ interface AccountSelectionSectionProps {
   setSearchQuery: (q: string) => void;
   selectedPlatforms: string[];
   setSelectedPlatforms: (fn: (prev: string[]) => string[]) => void;
-  getAvailablePlatforms: () => { id: string; name: string; icon: any }[];
+  getAvailablePlatforms: () => { id: string; name: string; icon: IconType }[];
   groupedAccounts: Record<string, SocialAccountWithUsername[]>;
   isLoading: boolean;
 }

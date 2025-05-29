@@ -5,7 +5,6 @@ import { cn } from "@/lib/utils/utils";
 import { UseFormReturn } from "react-hook-form";
 import type { SocialAccount } from "@/types";
 import type { PostFormValues } from "./PostCreationForm";
-import { ReactNode } from "react";
 
 // Dodaj lokalnie typ rozszerzony:
 type SocialAccountWithExtraFields = SocialAccount & {
