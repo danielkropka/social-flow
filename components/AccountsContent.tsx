@@ -19,7 +19,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ConnectedAccount, Provider } from "@prisma/client";
+import { ConnectedAccount } from "@prisma/client";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SUPPORTED_PLATFORMS, PLATFORM_DISPLAY } from "@/constants";
