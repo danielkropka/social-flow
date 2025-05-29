@@ -47,7 +47,6 @@ import {
   SUPPORTED_PLATFORMS,
   PLATFORM_DISPLAY,
 } from "@/constants";
-import { DropResult } from "@hello-pangea/dnd";
 import { POST_TYPES } from "./PostTypeSelectionStep";
 import { AccountSelectionSection } from "@/components/posts/AccountSelectionSection";
 import { FileUploadSection } from "@/components/posts/FileUploadSection";
