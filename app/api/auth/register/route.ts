@@ -80,7 +80,6 @@ export async function POST(req: Request) {
             name: `${firstName} ${lastName}`,
             email,
             password: hashedPassword,
-            gotFreeTrial: false,
           },
         });
 
