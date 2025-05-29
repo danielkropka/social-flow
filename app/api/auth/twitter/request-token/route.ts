@@ -9,7 +9,7 @@ import { withRateLimit } from "@/middleware/rateLimit";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
-const REDIRECT_URI = process.env.TWITTER_REDIRECT_URI!;
+const REDIRECT_URI = process.env.TWITTER_REDIRECT_URI;
 
 export async function GET() {
   return withRateLimit(async () => {
@@ -25,7 +25,7 @@ export async function GET() {
       );
     }
 
-    if (!TWITTER_API_KEY || !TWITTER_API_SECRET) {
+    if (!TWITTER_API_KEY || !TWITTER_API_SECRET || !REDIRECT_URI) {
       console.error("Brak konfiguracji Twitter API");
       return NextResponse.json(
         {

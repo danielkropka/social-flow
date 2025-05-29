@@ -8,7 +8,7 @@ import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
 const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
-const REDIRECT_URI = "https://social-flow.pl/tiktok-callback/";
+const REDIRECT_URI = process.env.TIKTOK_REDIRECT_URI;
 
 export async function POST(request: NextRequest) {
   return withMiddlewareRateLimit(async (request: NextRequest) => {
@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!TIKTOK_CLIENT_KEY || !TIKTOK_CLIENT_SECRET) {
+      if (!TIKTOK_CLIENT_KEY || !TIKTOK_CLIENT_SECRET || !REDIRECT_URI) {
         console.error("Brak konfiguracji TikTok");
         return NextResponse.json(
           {

@@ -7,7 +7,7 @@ import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
-const REDIRECT_URI = "https://social-flow.pl/facebook-callback";
+const REDIRECT_URI = process.env.FACEBOOK_REDIRECT_URI;
 
 export async function POST(request: NextRequest) {
   return withMiddlewareRateLimit(async (request: NextRequest) => {
@@ -19,7 +19,7 @@ export async function POST(request: NextRequest) {
         throw new Error("Nie jesteś zalogowany");
       }
 
-      if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET) {
+      if (!FACEBOOK_APP_ID || !FACEBOOK_APP_SECRET || !REDIRECT_URI) {
         console.error("Brak konfiguracji Facebook");
         throw new Error("Brak wymaganej konfiguracji Facebook");
       }
