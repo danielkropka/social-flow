@@ -56,8 +56,7 @@ async function waitForMediaReady(
 }
 
 export async function POST(req: NextRequest) {
-  // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
-  const session = await getServerSession(req, authOptions);
+  const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
