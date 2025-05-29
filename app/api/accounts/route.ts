@@ -27,7 +27,20 @@ export async function GET() {
         },
       });
 
-      return NextResponse.json({ accounts });
+      // Mapowanie do formatu oczekiwanego przez frontend
+      const mappedAccounts = accounts.map((acc) => ({
+        id: acc.id,
+        avatar: acc.profileImage,
+        provider: acc.provider.toLowerCase(),
+        name: acc.name,
+        username: acc.username,
+        providerAccountId: acc.providerAccountId,
+        followersCount: acc.followersCount ?? 0,
+        postsCount: acc.postsCount ?? 0,
+        lastUpdate: acc.updatedAt,
+      }));
+
+      return NextResponse.json({ accounts: mappedAccounts });
     } catch (error) {
       console.error("Błąd podczas pobierania kont:", error);
       return NextResponse.json(

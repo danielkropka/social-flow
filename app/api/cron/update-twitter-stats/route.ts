@@ -3,11 +3,12 @@ import { db } from "@/lib/config/prisma";
 import { TwitterApi } from "twitter-api-v2";
 import { headers } from "next/headers";
 import { decryptToken } from "@/lib/utils/utils";
+import { withRateLimit } from "@/middleware/rateLimit";
 
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-async function updateTwitterStats() {
+export async function updateTwitterStats() {
   try {
     // Pobierz wszystkie aktywne konta Twitter
     const twitterAccounts = await db.connectedAccount.findMany({
@@ -61,12 +62,15 @@ async function updateTwitterStats() {
 }
 
 export async function GET() {
-  // Sprawdź secret key dla bezpieczeństwa
-  const headersList = await headers();
-  const authHeader = headersList.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  return withRateLimit(async () => {
+    // Sprawdź secret key dla bezpieczeństwa
+    const headersList = await headers();
+    const authHeader = headersList.get("authorization");
+    console.log(authHeader);
+    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-  return updateTwitterStats();
+    return updateTwitterStats();
+  });
 }
