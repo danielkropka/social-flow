@@ -3,12 +3,13 @@ import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 import { PLATFORM_LIMITS } from "@/constants";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/config/auth";
 
 export async function POST(req: NextRequest) {
-  // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
-  const session = await getServerSession(req, authOptions);
+  const session = await getServerSession(authOptions);
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -39,7 +40,7 @@ export async function POST(req: NextRequest) {
     throw new Error("Brak tokenów dostępu do Twittera");
   }
 
-  return withRateLimit(async (req: Request) => {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const oauth = new OAuth({
         consumer: {

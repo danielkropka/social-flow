@@ -1,12 +1,12 @@
 import { NextResponse, NextRequest } from "next/server";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/config/auth";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit, withRateLimit } from "@/middleware/rateLimit";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 import { ConnectedAccount } from "@prisma/client";
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   return withRateLimit(async () => {
     try {
       const session = await getServerSession(authOptions);
@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
         { status: 500 }
       );
     }
-  })(req);
+  });
 }
 
 async function refreshInstagramToken(accessToken: string) {
@@ -155,10 +155,9 @@ async function handleTokenRefresh(account: ConnectedAccount) {
 }
 
 export async function DELETE(request: NextRequest) {
-  return withRateLimit(async () => {
+  return withMiddlewareRateLimit(async (request: NextRequest) => {
     try {
-      // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
-      const session = await getServerSession(request, authOptions);
+      const session = await getServerSession(authOptions);
 
       if (!session?.user?.id) {
         return NextResponse.json(

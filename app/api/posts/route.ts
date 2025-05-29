@@ -3,10 +3,10 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/config/auth";
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma, Provider } from "@prisma/client";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 export async function GET(req: NextRequest) {
-  return withRateLimit(async (req: NextRequest) => {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) {

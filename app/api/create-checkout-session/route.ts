@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/config/prisma";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -24,8 +24,8 @@ async function hasUsedTrialBefore(customerId: string): Promise<boolean> {
   );
 }
 
-export async function POST(req: Request) {
-  return withRateLimit(async (req) => {
+export async function POST(req: NextRequest) {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const body = await req.json();
       const { priceId, email, customerId, isFreeTrial } =

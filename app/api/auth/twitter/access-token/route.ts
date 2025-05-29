@@ -5,10 +5,10 @@ import { db } from "@/lib/config/prisma";
 import { decryptToken, encryptToken } from "@/lib/utils/utils";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 export async function POST(request: NextRequest) {
-  return withRateLimit(async (request: NextRequest) => {
+  return withMiddlewareRateLimit(async (request: NextRequest) => {
     // Pobierz zalogowanego użytkownika
     const session = await getServerSession(authOptions);
 
