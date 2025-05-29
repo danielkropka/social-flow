@@ -1,4 +1,5 @@
-import { getServerSession, NextAuthOptions } from "next-auth";
+import { getServerSession } from "next-auth/next";
+import { type NextAuthOptions } from "next-auth";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import GoogleProvider from "next-auth/providers/google";
 import CredentialsProvider from "next-auth/providers/credentials";
@@ -7,6 +8,7 @@ import { db } from "@/lib/config/prisma";
 import { User } from "next-auth";
 import { PlanType, PlanStatus, PlanInterval } from "@prisma/client";
 import { checkRateLimit } from "@/middleware/rateLimit";
+import { type NextRequest } from "next/server";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -181,5 +183,3 @@ export const authOptions: NextAuthOptions = {
   },
   debug: process.env.NODE_ENV === "development",
 };
-
-export const getAuthSession = () => getServerSession(authOptions);

@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 
 // Inicjalizacja Redis
@@ -38,9 +38,9 @@ export async function checkRateLimit(
 
 // Middleware do obsługi rate limitingu
 export const withRateLimit = (
-  handler: (req: Request) => Promise<NextResponse>
+  handler: (req: NextRequest) => Promise<NextResponse>
 ) => {
-  return async (req: Request) => {
+  return async (req: NextRequest) => {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     const key = `rate-limit:${ip}`;
 
@@ -66,9 +66,9 @@ export const withRateLimit = (
 
 // Middleware do obsługi rate limitingu dla autoryzacji
 export const withAuthRateLimit = (
-  handler: (req: Request) => Promise<NextResponse>
+  handler: (req: NextRequest) => Promise<NextResponse>
 ) => {
-  return async (req: Request) => {
+  return async (req: NextRequest) => {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     const key = `auth-rate-limit:${ip}`;
 

@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import type { NextRequest } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import { cookies } from "next/headers";
 import { db } from "@/lib/config/prisma";
 import { withRateLimit } from "@/middleware/rateLimit";
@@ -8,11 +10,11 @@ const TIKTOK_CLIENT_KEY = process.env.TIKTOK_CLIENT_KEY;
 const TIKTOK_CLIENT_SECRET = process.env.TIKTOK_CLIENT_SECRET;
 const REDIRECT_URI = "https://social-flow.pl/tiktok-callback/";
 
-export async function POST(request: Request) {
-  return withRateLimit(async (request: Request) => {
+export async function POST(request: NextRequest) {
+  return withRateLimit(async (request: NextRequest) => {
     try {
       // Pobierz zalogowanego użytkownika
-      const session = await getAuthSession();
+      const session = await getServerSession(authOptions);
 
       if (!session?.user?.id) {
         return NextResponse.json(

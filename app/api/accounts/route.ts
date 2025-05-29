@@ -1,14 +1,15 @@
 import { NextResponse, NextRequest } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import { withRateLimit } from "@/middleware/rateLimit";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 import { ConnectedAccount } from "@prisma/client";
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) {
   return withRateLimit(async () => {
     try {
-      const session = await getAuthSession();
+      const session = await getServerSession(authOptions);
 
       if (!session?.user?.id) {
         return NextResponse.json(
@@ -156,7 +157,8 @@ async function handleTokenRefresh(account: ConnectedAccount) {
 export async function DELETE(request: NextRequest) {
   return withRateLimit(async () => {
     try {
-      const session = await getAuthSession();
+      // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
+      const session = await getServerSession(request, authOptions);
 
       if (!session?.user?.id) {
         return NextResponse.json(

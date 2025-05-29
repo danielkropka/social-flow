@@ -1,5 +1,4 @@
-import { getAuthSession } from "@/lib/config/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 import OAuth from "oauth-1.0a";
@@ -7,8 +6,9 @@ import crypto from "crypto";
 import { withRateLimit } from "@/middleware/rateLimit";
 import { PLATFORM_LIMITS } from "@/constants";
 
-export async function POST(req: Request) {
-  const session = await getAuthSession();
+export async function POST(req: NextRequest) {
+  // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
+  const session = await getServerSession(req, authOptions);
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

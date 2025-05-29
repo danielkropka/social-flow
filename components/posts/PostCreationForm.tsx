@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { usePostCreation } from "@/context/PostCreationContext";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import {
   Popover,
@@ -18,13 +17,8 @@ import {
   X,
   RotateCcw,
   Info,
-  CheckCircle2,
-  Upload,
-  Image as ImageIcon,
   Send,
   Search,
-  AlertTriangle,
-  Trash,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { pl } from "date-fns/locale";
@@ -47,27 +41,19 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ConnectedAccount } from "@prisma/client";
+import type { SocialAccountWithUsername } from "@/types";
 import { useVideoProcessing } from "@/hooks/useVideoProcessing";
 import {
   MAX_FILE_SIZE,
   SUPPORTED_PLATFORMS,
   PLATFORM_DISPLAY,
 } from "@/constants";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import Image from "next/image";
-import {
-  DragDropContext,
-  Droppable,
-  Draggable,
-  DropResult,
-} from "@hello-pangea/dnd";
+import { DropResult } from "@hello-pangea/dnd";
 import { POST_TYPES } from "./PostTypeSelectionStep";
-import { Skeleton } from "@/components/ui/skeleton";
-
-interface ConnectedAccountWithDetails extends ConnectedAccount {
-  accountType?: string;
-}
+import { AccountSelectionSection } from "@/components/posts/AccountSelectionSection";
+import { FileUploadSection } from "@/components/posts/FileUploadSection";
+import { ImagePreviewSection } from "@/components/posts/ImagePreviewSection";
+import { PostTextSection } from "@/components/posts/PostTextSection";
 
 const getMinScheduleTime = () => {
   const now = new Date();
@@ -90,7 +76,7 @@ const postSchema = z.object({
     }, "Post musi być zaplanowany minimum 5 minut w przyszłość"),
 });
 
-type PostFormValues = z.infer<typeof postSchema>;
+export type PostFormValues = z.infer<typeof postSchema>;
 
 export type MediaUrl = {
   data: number[];
@@ -134,7 +120,7 @@ export function PostCreationForm() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [accounts, setAccounts] = useState<ConnectedAccountWithDetails[]>([]);
+  const [accounts, setAccounts] = useState<SocialAccountWithUsername[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
@@ -184,7 +170,21 @@ export function PostCreationForm() {
           throw new Error("Nie udało się pobrać połączonych kont");
         }
         const data = await response.json();
-        setAccounts(Array.isArray(data) ? data : data.accounts || []);
+        setAccounts(
+          (Array.isArray(data) ? data : data.accounts || []).map(
+            (acc: any) => ({
+              ...acc,
+              provider: acc.provider ?? acc.platform ?? "",
+              username: acc.username ?? "",
+              providerAccountId: acc.providerAccountId ?? "",
+              platform: acc.platform ?? acc.provider ?? "",
+              name: acc.name ?? "",
+              avatar: acc.avatar ?? "",
+              accountType: acc.accountType ?? "",
+              id: acc.id,
+            })
+          )
+        );
       } catch (err) {
         setError(err instanceof Error ? err.message : "Wystąpił błąd");
         setAccounts([]);
@@ -322,25 +322,20 @@ export function PostCreationForm() {
     setDragActive(false);
   };
 
-  const handleAccountSelection = (account: ConnectedAccountWithDetails) => {
+  const handleAccountSelection = (account: SocialAccountWithUsername) => {
     const isSelected = selectedAccounts.some(
-      (selected) => selected.id === account.id
+      (selected) => (selected as SocialAccountWithUsername).id === account.id
     );
 
     if (isSelected) {
       setSelectedAccounts(
-        selectedAccounts.filter((selected) => selected.id !== account.id)
+        selectedAccounts.filter(
+          (selected) =>
+            (selected as SocialAccountWithUsername).id !== account.id
+        )
       );
     } else {
-      setSelectedAccounts([
-        ...selectedAccounts,
-        {
-          id: account.id,
-          name: account.name,
-          provider: account.provider,
-          username: account.username,
-        },
-      ]);
+      setSelectedAccounts([...selectedAccounts, { ...account }]);
     }
   };
 
@@ -362,14 +357,17 @@ export function PostCreationForm() {
         selectedPlatforms.includes(account.provider.toLowerCase()))
   );
 
-  const groupedAccounts = filteredAccounts.reduce((acc, account) => {
-    const platform = account.provider.toLowerCase();
-    if (!acc[platform]) {
-      acc[platform] = [];
-    }
-    acc[platform].push(account);
-    return acc;
-  }, {} as Record<string, ConnectedAccountWithDetails[]>);
+  const groupedAccounts = filteredAccounts.reduce(
+    (acc, account) => {
+      const platform = account.provider.toLowerCase();
+      if (!acc[platform]) {
+        acc[platform] = [];
+      }
+      acc[platform].push(account);
+      return acc;
+    },
+    {} as Record<string, SocialAccountWithUsername[]>
+  );
 
   const getAcceptedFileTypes = () => {
     if (isTextOnly) return "";
@@ -501,151 +499,21 @@ export function PostCreationForm() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
           {!isTextOnly && (
-            <div
-              className={cn(
-                "border-2 border-dashed rounded-xl bg-gray-50 w-full mx-auto p-4 flex flex-col items-center transition-all duration-300 min-h-[200px]",
-                dragActive
-                  ? "border-blue-500 bg-blue-50/50 scale-[1.02]"
-                  : "border-gray-200",
-                "hover:border-blue-500 hover:bg-blue-50/50"
-              )}
-              onDrop={handleDrop}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onClick={() => {
-                if (selectedFiles.length === 0) fileInputRef.current?.click();
-              }}
-              style={{ cursor: "pointer" }}
-            >
-              {selectedFiles.length > 0 ? (
-                <>
-                  <DragDropContext onDragEnd={onDragEnd}>
-                    <Droppable
-                      droppableId="images-droppable"
-                      direction="horizontal"
-                    >
-                      {(provided) => (
-                        <div
-                          className="flex items-center gap-3 overflow-x-auto w-full mb-4 pb-2 px-1 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent"
-                          ref={provided.innerRef}
-                          {...provided.droppableProps}
-                        >
-                          {selectedFiles.map((file, idx) => (
-                            <Draggable
-                              key={file.name + idx}
-                              draggableId={file.name + idx}
-                              index={idx}
-                            >
-                              {(provided, snapshot) => (
-                                <div
-                                  ref={provided.innerRef}
-                                  {...provided.draggableProps}
-                                  {...provided.dragHandleProps}
-                                  className={cn(
-                                    "w-24 h-24 flex-shrink-0 rounded-lg cursor-pointer relative group transition-all duration-200 mx-0.5 my-1",
-                                    selectedPreviewIndex === idx
-                                      ? "ring-2 ring-blue-400 scale-105"
-                                      : "hover:scale-105",
-                                    snapshot.isDragging &&
-                                      "z-50 shadow-lg scale-110"
-                                  )}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setSelectedPreviewIndex(idx);
-                                  }}
-                                >
-                                  <div className="w-full h-full rounded-lg overflow-hidden">
-                                    <img
-                                      src={URL.createObjectURL(file)}
-                                      alt={`Podgląd ${idx + 1}`}
-                                      className="w-full h-full object-cover"
-                                    />
-                                  </div>
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center rounded-lg">
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="text-red-600 hover:text-white hover:bg-red-600 absolute left-1 bottom-1 m-0 p-1"
-                                      style={{
-                                        position: "absolute",
-                                        left: 4,
-                                        bottom: 4,
-                                      }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setSelectedFiles(
-                                          selectedFiles.filter(
-                                            (_, i) => i !== idx
-                                          )
-                                        );
-                                      }}
-                                    >
-                                      <Trash className="h-5 w-5" />
-                                    </Button>
-                                  </div>
-                                </div>
-                              )}
-                            </Draggable>
-                          ))}
-                          {provided.placeholder}
-                        </div>
-                      )}
-                    </Droppable>
-                  </DragDropContext>
-                  <div className="flex w-full justify-center gap-3">
-                    <Button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        fileInputRef.current?.click();
-                      }}
-                      className="px-6 bg-blue-600 hover:bg-blue-700 text-white"
-                    >
-                      <Upload className="h-4 w-4 mr-2" />
-                      Dodaj więcej plików
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedFiles([]);
-                      }}
-                      className="px-6"
-                    >
-                      <X className="h-4 w-4 mr-2" />
-                      Wyczyść wszystkie
-                    </Button>
-                  </div>
-                </>
-              ) : (
-                <div className="flex flex-col items-center justify-center w-full h-full">
-                  <div className="w-24 h-24 rounded-full bg-blue-50 flex items-center justify-center mb-4 transition-transform duration-300 hover:scale-110">
-                    <ImageIcon className="w-12 h-12 text-blue-500" />
-                  </div>
-                  <p className="text-2xl font-medium text-gray-900 mb-2">
-                    Przeciągnij i upuść pliki
-                  </p>
-                  <p className="text-base text-gray-600 mb-4">
-                    lub kliknij, aby wybrać pliki
-                  </p>
-                  <div className="text-sm text-gray-500 space-y-3 bg-gray-50 p-6 rounded-lg max-w-md mx-auto">
-                    <div className="flex items-center justify-center gap-2">
-                      <span>Obsługiwane formaty:</span>
-                      <span className="font-medium text-gray-700">
-                        {getSupportedFormats().join(", ")}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-center gap-2">
-                      <span>Maksymalny rozmiar pliku:</span>
-                      <span className="font-medium text-gray-700">
-                        {(MAX_FILE_SIZE / (1024 * 1024)).toFixed(0)} MB
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
+            <FileUploadSection
+              dragActive={dragActive}
+              setDragActive={setDragActive}
+              selectedFiles={selectedFiles}
+              setSelectedFiles={setSelectedFiles}
+              selectedPreviewIndex={selectedPreviewIndex}
+              setSelectedPreviewIndex={setSelectedPreviewIndex}
+              fileInputRef={fileInputRef}
+              processFiles={processFiles}
+              handleDrop={handleDrop}
+              handleDragOver={handleDragOver}
+              handleDragLeave={handleDragLeave}
+              getSupportedFormats={getSupportedFormats}
+              MAX_FILE_SIZE={MAX_FILE_SIZE}
+            />
           )}
 
           <form
@@ -653,131 +521,12 @@ export function PostCreationForm() {
             className="space-y-6"
             noValidate
           >
-            {isTextOnly ? (
-              <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label className="text-base font-medium text-gray-900">
-                    Tekst posta
-                  </Label>
-                </div>
-                <div className="relative">
-                  <Textarea
-                    {...form.register("text")}
-                    placeholder={
-                      selectedAccounts.length === 0
-                        ? "Najpierw wybierz konto, aby dodać tekst..."
-                        : "Wpisz tekst posta..."
-                    }
-                    disabled={selectedAccounts.length === 0}
-                    readOnly={selectedAccounts.length === 0}
-                    className={cn(
-                      "min-h-[120px] text-base resize-none transition-all duration-200 bg-gray-50 border-gray-200",
-                      form.formState.errors.text
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500",
-                      selectedAccounts.length === 0 &&
-                        "cursor-not-allowed opacity-75 pointer-events-none"
-                    )}
-                  />
-                  {selectedAccounts.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 rounded-lg pointer-events-none">
-                      <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-full shadow-sm">
-                        <Info className="h-4 w-4" />
-                        <span>Wybierz konto, aby dodać tekst</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {form.formState.errors.text && (
-                  <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded-md animate-fade-in mt-2">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <p>{form.formState.errors.text.message}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-shadow duration-200">
-                <div className="flex items-center justify-between mb-3">
-                  <Label
-                    htmlFor="text"
-                    className="text-base font-medium text-gray-900"
-                  >
-                    Tekst posta
-                  </Label>
-                  {selectedAccounts.length > 0 && (
-                    <div className="flex items-center gap-2">
-                      <div className="flex items-center gap-1 text-sm text-gray-500">
-                        <span
-                          className={cn(
-                            "font-medium",
-                            form.watch("text")?.length >
-                              Math.min(
-                                ...selectedAccounts.map((account) => {
-                                  const platform = getAvailablePlatforms().find(
-                                    (p) =>
-                                      p.id === account.provider.toLowerCase()
-                                  );
-                                  return platform?.maxChars || Infinity;
-                                })
-                              )
-                              ? "text-red-500"
-                              : "text-gray-700"
-                          )}
-                        >
-                          {form.watch("text")?.length || 0}
-                        </span>
-                        <span>/</span>
-                        <span className="font-medium text-gray-700">
-                          {Math.min(
-                            ...selectedAccounts.map((account) => {
-                              const platform = getAvailablePlatforms().find(
-                                (p) => p.id === account.provider.toLowerCase()
-                              );
-                              return platform?.maxChars || Infinity;
-                            })
-                          )}
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-500">znaków</span>
-                    </div>
-                  )}
-                </div>
-                <div className="relative">
-                  <Textarea
-                    {...form.register("text")}
-                    placeholder={
-                      selectedAccounts.length === 0
-                        ? "Najpierw wybierz konto, aby dodać tekst..."
-                        : "Wpisz tekst posta..."
-                    }
-                    disabled={selectedAccounts.length === 0}
-                    readOnly={selectedAccounts.length === 0}
-                    className={cn(
-                      "min-h-[120px] text-base resize-none transition-all duration-200 bg-gray-50 border-gray-200",
-                      form.formState.errors.text
-                        ? "border-red-500 focus-visible:ring-red-500"
-                        : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500",
-                      selectedAccounts.length === 0 &&
-                        "cursor-not-allowed opacity-75 pointer-events-none"
-                    )}
-                  />
-                  {selectedAccounts.length === 0 && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-50/50 rounded-lg pointer-events-none">
-                      <div className="flex items-center gap-2 text-sm text-gray-500 bg-white px-3 py-1.5 rounded-full shadow-sm">
-                        <Info className="h-4 w-4" />
-                        <span>Wybierz konto, aby dodać tekst</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-                {form.formState.errors.text && (
-                  <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded-md animate-fade-in mt-2">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <p>{form.formState.errors.text.message}</p>
-                  </div>
-                )}
-              </div>
-            )}
+            <PostTextSection
+              isTextOnly={isTextOnly}
+              form={form}
+              selectedAccounts={selectedAccounts as SocialAccountWithUsername[]}
+              getAvailablePlatforms={getAvailablePlatforms}
+            />
 
             <div className="mt-6 pt-6 border-t border-gray-100">
               <Button
@@ -836,261 +585,34 @@ export function PostCreationForm() {
 
         <div className="lg:col-span-1 space-y-6">
           {!isTextOnly && selectedFiles.length > 0 && (
-            <div className="mb-4">
-              <div className="bg-white rounded-xl p-4 border border-gray-100 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <h3 className="text-lg font-medium text-gray-900">
-                    Podgląd obrazu
-                  </h3>
-                  <span className="text-sm text-gray-500">
-                    {selectedPreviewIndex + 1} z {selectedFiles.length}
-                  </span>
-                </div>
-                {imageLimitWarnings.length > 0 && (
-                  <div className="space-y-2 mb-4">
-                    {imageLimitWarnings.map((warning) => (
-                      <div
-                        key={warning.platform}
-                        className="flex items-center gap-2 bg-yellow-100 text-yellow-800 rounded-md px-3 py-2 text-sm"
-                      >
-                        <AlertTriangle className="w-5 h-5 text-yellow-600" />
-                        <span>
-                          Tylko pierwsze <b>{warning.limit}</b> zdjęć zostanie
-                          opublikowanych na platformie <b>{warning.name}</b>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="relative">
-                  <div className="flex items-center justify-center bg-gray-50 rounded-lg w-full aspect-[4/3] overflow-hidden">
-                    {selectedFiles[selectedPreviewIndex] && (
-                      <img
-                        src={URL.createObjectURL(
-                          selectedFiles[selectedPreviewIndex]
-                        )}
-                        alt="Pełny obraz"
-                        className="w-full h-full object-contain"
-                      />
-                    )}
-                  </div>
-                  {selectedFiles.length > 1 && (
-                    <div className="flex justify-between items-center gap-4 mt-4">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedPreviewIndex((prev) =>
-                            prev === 0 ? selectedFiles.length - 1 : prev - 1
-                          )
-                        }
-                        className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-6 h-6 text-blue-600"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M15.75 19.5L8.25 12l7.5-7.5"
-                          />
-                        </svg>
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        {selectedFiles.map((_, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedPreviewIndex(index)}
-                            className={`h-2 rounded-full transition-all duration-500 ease-in-out transform ${
-                              selectedPreviewIndex === index
-                                ? "bg-blue-600 w-8 scale-110"
-                                : "bg-gray-300 hover:bg-gray-400 w-2 hover:scale-110"
-                            }`}
-                          />
-                        ))}
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setSelectedPreviewIndex((prev) =>
-                            prev === selectedFiles.length - 1 ? 0 : prev + 1
-                          )
-                        }
-                        className="p-2 rounded-full bg-gray-100 hover:bg-blue-100 transition-colors"
-                      >
-                        <svg
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          strokeWidth={2}
-                          stroke="currentColor"
-                          className="w-6 h-6 text-blue-600"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            d="M8.25 4.5l7.5 7.5-7.5 7.5"
-                          />
-                        </svg>
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
+            <ImagePreviewSection
+              selectedFiles={selectedFiles}
+              selectedPreviewIndex={selectedPreviewIndex}
+              setSelectedPreviewIndex={setSelectedPreviewIndex}
+              imageLimitWarnings={imageLimitWarnings}
+            />
           )}
 
           <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-shadow duration-200 sticky top-6">
-            <div className="flex items-center gap-4 mb-4">
-              <div className="flex-1 relative">
-                <Input
-                  type="text"
-                  placeholder="Szukaj kont..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9"
-                />
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              </div>
-              <div className="flex items-center gap-2">
-                {getAvailablePlatforms().map((platform) => {
-                  const { icon: Icon } =
-                    PLATFORM_DISPLAY[
-                      platform.id as keyof typeof PLATFORM_DISPLAY
-                    ];
-                  return (
-                    <TooltipProvider key={platform.id}>
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handlePlatformToggle(platform.id)}
-                            className={cn(
-                              "text-gray-500 hover:text-gray-700 transition-colors duration-200",
-                              selectedPlatforms.includes(platform.id) &&
-                                "bg-gray-100 text-gray-900"
-                            )}
-                          >
-                            <Icon className="h-5 w-5" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{platform.name}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    </TooltipProvider>
-                  );
-                })}
-              </div>
-            </div>
-
             <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              {isLoading ? (
-                <>
-                  {[1, 2, 3].map((idx: number) => (
-                    <div
-                      key={idx}
-                      className="flex items-center gap-3 p-3 rounded-lg border border-gray-100"
-                    >
-                      <Skeleton className="w-10 h-10 rounded-full" />
-                      <div className="flex-1">
-                        <Skeleton className="h-4 w-32 mb-2" />
-                        <Skeleton className="h-3 w-20" />
-                      </div>
-                    </div>
-                  ))}
-                </>
-              ) : (
-                Object.entries(groupedAccounts).map(
-                  ([platform, accounts]: [
-                    string,
-                    ConnectedAccountWithDetails[]
-                  ]) => {
-                    const { icon: Icon } =
-                      PLATFORM_DISPLAY[
-                        platform as keyof typeof PLATFORM_DISPLAY
-                      ];
-                    return (
-                      <div key={platform} className="space-y-2">
-                        <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
-                          <Icon className="h-5 w-5" />
-                          {
-                            getAvailablePlatforms().find(
-                              (p) => p.id === platform
-                            )?.name
-                          }
-                          <span className="text-xs text-gray-500">
-                            ({accounts.length})
-                          </span>
-                        </h3>
-                        <div className="grid gap-2">
-                          {accounts.map(
-                            (account: ConnectedAccountWithDetails) => (
-                              <button
-                                key={account.id}
-                                onClick={() => handleAccountSelection(account)}
-                                className={cn(
-                                  "flex items-center gap-3 p-3 rounded-lg border transition-all duration-300",
-                                  selectedAccounts.some(
-                                    (selected) => selected.id === account.id
-                                  )
-                                    ? "border-blue-500 bg-blue-50"
-                                    : "border-gray-200 hover:border-blue-300 hover:bg-gray-50"
-                                )}
-                              >
-                                <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
-                                  <Avatar className="w-10 h-10">
-                                    {account.profileImage ? (
-                                      <Image
-                                        src={account.profileImage}
-                                        alt={account.name}
-                                        fill
-                                        className="object-cover"
-                                        sizes="40px"
-                                      />
-                                    ) : (
-                                      <AvatarFallback className="text-sm font-medium">
-                                        {account.name
-                                          .substring(0, 2)
-                                          .toUpperCase()}
-                                      </AvatarFallback>
-                                    )}
-                                  </Avatar>
-                                </div>
-                                <div className="flex-1 text-left">
-                                  <p className="font-medium text-gray-900">
-                                    {account.name}
-                                  </p>
-                                  <p className="text-sm text-gray-500">
-                                    @{account.username}
-                                  </p>
-                                </div>
-                                {selectedAccounts.some(
-                                  (selected) => selected.id === account.id
-                                ) && (
-                                  <div className="flex items-center gap-2">
-                                    <CheckCircle2 className="w-5 h-5 text-blue-500" />
-                                    <span className="text-sm text-blue-500 font-medium">
-                                      Wybrane
-                                    </span>
-                                  </div>
-                                )}
-                              </button>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    );
-                  }
-                )
-              )}
+              <AccountSelectionSection
+                accounts={accounts}
+                selectedAccounts={
+                  selectedAccounts as SocialAccountWithUsername[]
+                }
+                setSelectedAccounts={
+                  setSelectedAccounts as (
+                    accounts: SocialAccountWithUsername[]
+                  ) => void
+                }
+                searchQuery={searchQuery}
+                setSearchQuery={setSearchQuery}
+                selectedPlatforms={selectedPlatforms}
+                setSelectedPlatforms={setSelectedPlatforms}
+                getAvailablePlatforms={getAvailablePlatforms}
+                groupedAccounts={groupedAccounts}
+                isLoading={isLoading}
+              />
             </div>
 
             <div className="mt-6 pt-6 border-t border-gray-100">

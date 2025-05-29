@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
+import type { NextRequest } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { encryptToken } from "@/lib/utils/utils";
 
@@ -7,10 +9,10 @@ const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
 const REDIRECT_URI = "https://social-flow.pl/instagram-callback";
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
-    // Pobierz zalogowanego użytkownika
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
+    console.log(session);
 
     if (!session?.user?.id) {
       return NextResponse.json(

@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const REDIRECT_URI = "https://social-flow.pl/instagram-callback";
 
 export async function GET() {
   try {
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json(

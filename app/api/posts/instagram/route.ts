@@ -1,5 +1,7 @@
-import { getAuthSession } from "@/lib/config/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 import { withRateLimit } from "@/middleware/rateLimit";
@@ -53,8 +55,9 @@ async function waitForMediaReady(
   throw new Error("Media nie są gotowe do publikacji po wielu próbach.");
 }
 
-export async function POST(req: Request) {
-  const session = await getAuthSession();
+export async function POST(req: NextRequest) {
+  // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
+  const session = await getServerSession(req, authOptions);
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

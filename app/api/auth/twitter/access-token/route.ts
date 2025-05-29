@@ -1,15 +1,16 @@
-import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import { NextResponse, NextRequest } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
 import { decryptToken, encryptToken } from "@/lib/utils/utils";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import { withRateLimit } from "@/middleware/rateLimit";
 
-export async function POST(req: Request) {
-  return withRateLimit(async (req: Request) => {
+export async function POST(request: NextRequest) {
+  return withRateLimit(async (request: NextRequest) => {
     // Pobierz zalogowanego użytkownika
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -21,7 +22,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const { oauth_token, oauth_verifier } = await req.json();
+    const { oauth_token, oauth_verifier } = await request.json();
 
     const requestToken = await db.connectedAccount.findFirst({
       where: {
@@ -155,5 +156,5 @@ export async function POST(req: Request) {
         { status: 500 }
       );
     }
-  })(req);
+  })(request);
 }

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSession, signOut } from "next-auth/react";
 
-const SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 godziny
 const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before expiration
 
 export function useSessionTimeout() {
