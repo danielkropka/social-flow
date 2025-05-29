@@ -281,10 +281,11 @@ function ContentStudioContent() {
                                             [platform]: acc.id,
                                           }));
                                           setOpenDialogPlatform(null);
-                                          document.activeElement &&
+                                          if (document.activeElement) {
                                             (
                                               document.activeElement as HTMLElement
                                             ).blur();
+                                          }
                                         }}
                                       >
                                         <div className="flex items-center gap-3">
@@ -421,10 +422,11 @@ function ContentStudioContent() {
                                                 [platform]: acc.id,
                                               }));
                                               setOpenDialogPlatform(null);
-                                              document.activeElement &&
+                                              if (document.activeElement) {
                                                 (
                                                   document.activeElement as HTMLElement
                                                 ).blur();
+                                              }
                                             }}
                                           >
                                             {acc.avatar ? (
