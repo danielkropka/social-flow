@@ -183,8 +183,7 @@ export async function DELETE(request: NextRequest) {
         );
       }
 
-      const body = await request.json();
-      const id = body.id;
+      const { id } = await request.json();
 
       if (!id) {
         return NextResponse.json(

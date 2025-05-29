@@ -27,6 +27,7 @@ import { cn } from "@/lib/utils/utils";
 
 interface ConnectedAccountWithDetails extends ConnectedAccount {
   isLoading?: boolean;
+  avatar?: string;
 }
 
 const fetchAccounts = async () => {
@@ -124,10 +125,11 @@ export default function AccountsContent() {
 
   const getConnectedAccounts = (platform: string) => {
     return accounts.filter(
-      (account: ConnectedAccountWithDetails) =>
-        account.provider === (platform.toUpperCase() as Provider)
+      (account: ConnectedAccountWithDetails) => account.provider === platform
     );
   };
+
+  console.log(accounts);
 
   if (isLoading) {
     return (
@@ -235,10 +237,10 @@ export default function AccountsContent() {
                           {account.isLoading && (
                             <Loader2 className="animate-spin h-4 w-4 text-blue-500" />
                           )}
-                          {account.profileImage && (
+                          {"avatar" in account && account.avatar && (
                             <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
                               <Image
-                                src={account.profileImage}
+                                src={account.avatar}
                                 alt={account.name}
                                 fill
                                 className="object-cover"
