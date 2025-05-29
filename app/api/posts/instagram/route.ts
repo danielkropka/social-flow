@@ -4,14 +4,14 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 import { PLATFORM_LIMITS } from "@/constants";
 
 // --- Funkcja pomocnicza do uploadu do S3 ---
 async function uploadMediaToS3(
   binaryData: Uint8Array,
   mediaType: string,
-  req: Request
+  req: NextRequest
 ): Promise<string> {
   const mediaBlob = new Blob([binaryData], { type: mediaType });
   const baseUrl =
@@ -99,7 +99,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  return withRateLimit(async (req: Request) => {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const mediaIds: { mediaId: string; url: string; type: string }[] = [];
 
