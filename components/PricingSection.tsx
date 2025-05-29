@@ -44,6 +44,10 @@ export default function PricingSection() {
           }),
         });
 
+        if (!response.ok) {
+          throw new Error("Nie udało się utworzyć sesji checkout");
+        }
+
         const checkoutSession = await response.json();
 
         if (checkoutSession.error) throw new Error(checkoutSession.error);

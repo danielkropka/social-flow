@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, type NextRequest } from "next/server";
 import { Redis } from "@upstash/redis";
 
 // Inicjalizacja Redis
@@ -36,11 +36,11 @@ export async function checkRateLimit(
   return count <= limit;
 }
 
-// Middleware do obsługi rate limitingu
-export const withRateLimit = (
-  handler: (req: Request) => Promise<NextResponse>
+// Middleware do obsługi rate limitingu dla middleware
+export const withMiddlewareRateLimit = (
+  handler: (req: NextRequest) => Promise<NextResponse>
 ) => {
-  return async (req: Request) => {
+  return async (req: NextRequest) => {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     const key = `rate-limit:${ip}`;
 
@@ -64,11 +64,34 @@ export const withRateLimit = (
   };
 };
 
+// Middleware do obsługi rate limitingu dla Route Handlers
+export const withRateLimit = async (handler: () => Promise<NextResponse>) => {
+  const key = `rate-limit:api`;
+
+  const isAllowed = await checkRateLimit(
+    key,
+    apiLimiter.max,
+    apiLimiter.windowMs
+  );
+
+  if (!isAllowed) {
+    return NextResponse.json(
+      {
+        error: "TooManyRequests",
+        message: "Zbyt wiele prób dostępu. Spróbuj ponownie później.",
+      },
+      { status: 429 }
+    );
+  }
+
+  return handler();
+};
+
 // Middleware do obsługi rate limitingu dla autoryzacji
 export const withAuthRateLimit = (
-  handler: (req: Request) => Promise<NextResponse>
+  handler: (req: NextRequest) => Promise<NextResponse>
 ) => {
-  return async (req: Request) => {
+  return async (req: NextRequest) => {
     const ip = req.headers.get("x-forwarded-for") || "unknown";
     const key = `auth-rate-limit:${ip}`;
 

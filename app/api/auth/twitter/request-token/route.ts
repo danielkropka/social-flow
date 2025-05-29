@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import { db } from "@/lib/config/prisma";
@@ -10,9 +11,9 @@ const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
 const REDIRECT_URI = process.env.TWITTER_REDIRECT_URI!;
 
-export async function GET(req: Request) {
+export async function GET() {
   return withRateLimit(async () => {
-    const session = await getAuthSession();
+    const session = await getServerSession(authOptions);
 
     if (!session?.user?.id) {
       return NextResponse.json(
@@ -111,5 +112,5 @@ export async function GET(req: Request) {
         { status: 500 }
       );
     }
-  })(req);
+  });
 }

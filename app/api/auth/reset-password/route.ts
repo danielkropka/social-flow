@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/lib/config/prisma";
 import crypto from "crypto";
 import { hash } from "bcryptjs";
@@ -6,7 +6,7 @@ import { Resend } from "resend";
 
 const RESET_TOKEN_EXPIRATION_MINUTES = 60; // 1h
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
   try {
     const { email } = await req.json();
     if (!email || typeof email !== "string") {

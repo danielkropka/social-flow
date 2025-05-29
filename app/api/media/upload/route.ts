@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
@@ -10,8 +10,8 @@ const s3 = new S3Client({
   },
 });
 
-export async function POST(req: Request) {
-  return withRateLimit(async (req: Request) => {
+export async function POST(req: NextRequest) {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const fileName = req.headers.get("X-File-Name") || `${Date.now()}-file`;
       const contentType =

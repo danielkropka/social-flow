@@ -1,12 +1,12 @@
 import { db } from "@/lib/config/prisma";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/config/auth";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { Prisma, Provider } from "@prisma/client";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
-export async function GET(req: Request) {
-  return withRateLimit(async (req: Request) => {
+export async function GET(req: NextRequest) {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const session = await getServerSession(authOptions);
       if (!session?.user?.id) {

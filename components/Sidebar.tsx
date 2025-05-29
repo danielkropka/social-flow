@@ -104,8 +104,7 @@ export function Sidebar({
 
       const data = await portal.json();
 
-      if (!data.url)
-        throw new Error("Nie udało się utworzyć sesji billing portal");
+      if (data.error) throw new Error(data.error);
 
       window.location.href = data.url;
     } catch (error: unknown) {

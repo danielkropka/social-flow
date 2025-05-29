@@ -1,12 +1,12 @@
-import { NextResponse } from "next/server";
+import { NextResponse, NextRequest } from "next/server";
 import { hash } from "bcryptjs";
 import { db } from "@/lib/config/prisma";
 import { registerSchema } from "@/lib/validations/auth";
 import { withAuthRateLimit } from "@/middleware/rateLimit";
 import { Resend } from "resend";
 
-export async function POST(req: Request) {
-  return withAuthRateLimit(async (req: Request) => {
+export async function POST(req: NextRequest) {
+  return withAuthRateLimit(async (req: NextRequest) => {
     try {
       let body;
       try {

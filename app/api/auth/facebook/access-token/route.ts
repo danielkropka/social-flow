@@ -1,17 +1,19 @@
 import { NextResponse } from "next/server";
-import { getAuthSession } from "@/lib/config/auth";
+import type { NextRequest } from "next/server";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const FACEBOOK_APP_ID = process.env.FACEBOOK_APP_ID;
 const FACEBOOK_APP_SECRET = process.env.FACEBOOK_APP_SECRET;
 const REDIRECT_URI = "https://social-flow.pl/facebook-callback";
 
-export async function POST(request: Request) {
-  return withRateLimit(async (request: Request) => {
+export async function POST(request: NextRequest) {
+  return withMiddlewareRateLimit(async (request: NextRequest) => {
     try {
       // Pobierz zalogowanego użytkownika
-      const session = await getAuthSession();
+      const session = await getServerSession(authOptions);
 
       if (!session?.user?.id) {
         throw new Error("Nie jesteś zalogowany");

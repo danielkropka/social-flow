@@ -1,6 +1,7 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import Stripe from "stripe";
 import { db } from "@/lib/config/prisma";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
@@ -23,61 +24,67 @@ async function hasUsedTrialBefore(customerId: string): Promise<boolean> {
   );
 }
 
-export async function POST(req: Request) {
-  try {
-    const body = await req.json();
-    const { priceId, email, customerId, isFreeTrial } =
-      body as CreateCheckoutSessionBody;
+export async function POST(req: NextRequest) {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
+    try {
+      const body = await req.json();
+      const { priceId, email, customerId, isFreeTrial } =
+        body as CreateCheckoutSessionBody;
 
-    const sessionOptions: Stripe.Checkout.SessionCreateParams = {
-      payment_method_types: ["card"],
-      line_items: [{ price: priceId, quantity: 1 }],
-      allow_promotion_codes: true,
-      tax_id_collection: {
-        enabled: true,
-      },
-      mode: "subscription",
-      success_url: `${req.headers.get(
-        "origin"
-      )}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: `${req.headers.get("origin")}/?cancel`,
-    };
+      const sessionOptions: Stripe.Checkout.SessionCreateParams = {
+        payment_method_types: ["card"],
+        line_items: [{ price: priceId, quantity: 1 }],
+        allow_promotion_codes: true,
+        tax_id_collection: {
+          enabled: true,
+        },
+        mode: "subscription",
+        success_url: `${req.headers.get(
+          "origin"
+        )}/success?session_id={CHECKOUT_SESSION_ID}`,
+        cancel_url: `${req.headers.get("origin")}/?cancel`,
+      };
 
-    if (isFreeTrial) {
-      if (customerId) {
-        const user = await db.user.findFirst({
-          where: { stripeCustomerId: customerId },
-        });
+      if (isFreeTrial) {
+        if (customerId) {
+          const user = await db.user.findFirst({
+            where: { stripeCustomerId: customerId },
+          });
 
-        if (user && (await hasUsedTrialBefore(customerId))) {
-          throw new Error("Już korzystałeś z bezpłatnego okresu próbnego.");
+          if (user && (await hasUsedTrialBefore(customerId))) {
+            throw new Error("Już korzystałeś z bezpłatnego okresu próbnego.");
+          }
+
+          sessionOptions.customer = customerId;
+          sessionOptions.customer_update = { name: "auto" };
+        } else {
+          sessionOptions.customer_email = email;
         }
 
-        sessionOptions.customer = customerId;
-        sessionOptions.customer_update = { name: "auto" };
+        sessionOptions.subscription_data = {
+          trial_period_days: 7,
+        };
       } else {
         sessionOptions.customer_email = email;
       }
 
-      sessionOptions.subscription_data = {
-        trial_period_days: 7,
-      };
-    } else {
-      sessionOptions.customer_email = email;
-    }
+      const session = await stripe.checkout.sessions.create(sessionOptions);
 
-    const session = await stripe.checkout.sessions.create(sessionOptions);
-
-    return NextResponse.json({ id: session.id });
-  } catch (error) {
-    console.error("Error creating checkout session:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      {
-        status: 500,
+      if (!session.id) {
+        throw new Error("Nie udało się utworzyć sesji checkout");
       }
-    );
-  }
+
+      return NextResponse.json({ id: session.id });
+    } catch (error) {
+      console.error("Error creating checkout session:", error);
+      return NextResponse.json(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+  })(req);
 }

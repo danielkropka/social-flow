@@ -5,3 +5,9 @@ export type SocialAccount = {
   avatar: string;
   accountType: string;
 };
+
+export type SocialAccountWithUsername = SocialAccount & {
+  username: string;
+  provider: string;
+  providerAccountId: string;
+};

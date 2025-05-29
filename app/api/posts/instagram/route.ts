@@ -1,15 +1,17 @@
-import { getAuthSession } from "@/lib/config/auth";
+import { getServerSession } from "next-auth/next";
+import { authOptions } from "@/lib/config/auth";
 import { NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
-import { withRateLimit } from "@/middleware/rateLimit";
+import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 import { PLATFORM_LIMITS } from "@/constants";
 
 // --- Funkcja pomocnicza do uploadu do S3 ---
 async function uploadMediaToS3(
   binaryData: Uint8Array,
   mediaType: string,
-  req: Request
+  req: NextRequest
 ): Promise<string> {
   const mediaBlob = new Blob([binaryData], { type: mediaType });
   const baseUrl =
@@ -53,8 +55,9 @@ async function waitForMediaReady(
   throw new Error("Media nie są gotowe do publikacji po wielu próbach.");
 }
 
-export async function POST(req: Request) {
-  const session = await getAuthSession();
+export async function POST(req: NextRequest) {
+  // @ts-expect-error next-auth v4: poprawne wywołanie w app routerze
+  const session = await getServerSession(req, authOptions);
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -96,7 +99,7 @@ export async function POST(req: Request) {
     );
   }
 
-  return withRateLimit(async (req: Request) => {
+  return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const mediaIds: { mediaId: string; url: string; type: string }[] = [];
 
