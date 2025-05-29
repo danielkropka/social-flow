@@ -36,8 +36,8 @@ export async function checkRateLimit(
   return count <= limit;
 }
 
-// Middleware do obsługi rate limitingu
-export const withRateLimit = (
+// Middleware do obsługi rate limitingu dla middleware
+export const withMiddlewareRateLimit = (
   handler: (req: NextRequest) => Promise<NextResponse>
 ) => {
   return async (req: NextRequest) => {
@@ -62,6 +62,29 @@ export const withRateLimit = (
 
     return handler(req);
   };
+};
+
+// Middleware do obsługi rate limitingu dla Route Handlers
+export const withRateLimit = async (handler: () => Promise<NextResponse>) => {
+  const key = `rate-limit:api`;
+
+  const isAllowed = await checkRateLimit(
+    key,
+    apiLimiter.max,
+    apiLimiter.windowMs
+  );
+
+  if (!isAllowed) {
+    return NextResponse.json(
+      {
+        error: "TooManyRequests",
+        message: "Zbyt wiele prób dostępu. Spróbuj ponownie później.",
+      },
+      { status: 429 }
+    );
+  }
+
+  return handler();
 };
 
 // Middleware do obsługi rate limitingu dla autoryzacji
