@@ -8,7 +8,7 @@ import { withRateLimit } from "@/middleware/rateLimit";
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-export async function updateTwitterStats() {
+async function updateTwitterStats() {
   try {
     // Pobierz wszystkie aktywne konta Twitter
     const twitterAccounts = await db.connectedAccount.findMany({
@@ -61,16 +61,18 @@ export async function updateTwitterStats() {
   }
 }
 
-export default async function GET() {
+export default async function handler(request: Request) {
+  if (request.method !== "GET") {
+    return NextResponse.json({ error: "Method Not Allowed" }, { status: 405 });
+  }
+
   return withRateLimit(async () => {
     // Sprawdź secret key dla bezpieczeństwa
     const headersList = await headers();
     const authHeader = headersList.get("authorization");
-    console.log(authHeader);
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
-
     return updateTwitterStats();
   });
 }
