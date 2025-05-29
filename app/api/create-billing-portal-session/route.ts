@@ -5,8 +5,8 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 export async function POST(req: Request) {
-  try {
-    withRateLimit(async (req) => {
+  return withRateLimit(async (req) => {
+    try {
       const body = await req.json();
       const { customerId } = body as { customerId?: string };
 
@@ -52,17 +52,20 @@ export async function POST(req: Request) {
         `Utworzono sesję billing portal dla klienta: ${customerId}, url: ${session.url}`
       );
 
-      return NextResponse.json({ url: session.url, sessionId: session.id });
-    });
-  } catch (error) {
-    console.error("Błąd podczas tworzenia sesji billing portal:", error);
-    return NextResponse.json(
-      {
-        error: error instanceof Error ? error.message : "Unknown error",
-      },
-      {
-        status: 500,
-      }
-    );
-  }
+      return NextResponse.json(
+        { url: session.url, sessionId: session.id },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error("Błąd podczas tworzenia sesji billing portal:", error);
+      return NextResponse.json(
+        {
+          error: error instanceof Error ? error.message : "Unknown error",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+  })(req);
 }

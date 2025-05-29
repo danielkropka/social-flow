@@ -109,6 +109,7 @@ export function Sidebar({
 
       window.location.href = data.url;
     } catch (error: unknown) {
+      setIsLoading(false);
       if (error instanceof Error) {
         toast.error(error.message);
         return;
