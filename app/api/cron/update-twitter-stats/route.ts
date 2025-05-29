@@ -61,7 +61,7 @@ export async function updateTwitterStats() {
   }
 }
 
-export async function GET() {
+export default async function GET() {
   return withRateLimit(async () => {
     // Sprawdź secret key dla bezpieczeństwa
     const headersList = await headers();
