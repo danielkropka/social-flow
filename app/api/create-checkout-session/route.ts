@@ -4,6 +4,7 @@ import { db } from "@/lib/config/prisma";
 import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
+console.log(process.env.STRIPE_SECRET_KEY);
 
 type CreateCheckoutSessionBody = {
   priceId: string;

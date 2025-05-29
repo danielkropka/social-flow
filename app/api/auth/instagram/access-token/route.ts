@@ -8,7 +8,7 @@ import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const INSTAGRAM_APP_ID = process.env.INSTAGRAM_APP_ID;
 const INSTAGRAM_APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
-const REDIRECT_URI = "https://social-flow.pl/instagram-callback";
+const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
 
 export async function POST(request: NextRequest) {
   return withMiddlewareRateLimit(async (request: NextRequest) => {
@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET) {
+      if (!INSTAGRAM_APP_ID || !INSTAGRAM_APP_SECRET || !REDIRECT_URI) {
         console.error("Brak konfiguracji Instagram");
         return NextResponse.json(
           {
