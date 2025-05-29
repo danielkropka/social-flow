@@ -146,9 +146,6 @@ export async function POST(req: Request) {
             subscriptionEnd: new Date(
               stripeSubscription.current_period_end * 1000
             ),
-            gotFreeTrial: stripeSubscription.trial_start
-              ? true
-              : user.gotFreeTrial,
           };
         } else if (
           status === PlanStatus.PAST_DUE ||
@@ -242,9 +239,6 @@ export async function POST(req: Request) {
             subscriptionEnd: new Date(
               updatedSubscription.current_period_end * 1000
             ),
-            gotFreeTrial: updatedSubscription.trial_start
-              ? true
-              : user.gotFreeTrial,
           };
         } else if (
           status === PlanStatus.PAST_DUE ||
