@@ -10,14 +10,7 @@ import {
 } from "@/components/ui/dialog";
 import Image from "next/image";
 import { Loader2, X, Plus } from "lucide-react";
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
