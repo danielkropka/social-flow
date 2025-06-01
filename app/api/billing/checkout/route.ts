@@ -4,7 +4,6 @@ import { db } from "@/lib/config/prisma";
 import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
-console.log(process.env.STRIPE_SECRET_KEY);
 
 type CreateCheckoutSessionBody = {
   priceId: string;
@@ -29,6 +28,7 @@ export async function POST(req: NextRequest) {
   return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const body = await req.json();
+      console.log(body);
       const { priceId, email, customerId, isFreeTrial } =
         body as CreateCheckoutSessionBody;
 
