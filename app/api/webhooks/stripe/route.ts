@@ -6,8 +6,8 @@ import Stripe from "stripe";
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!);
 
 const STRIPE_PRODUCTS = {
-  CREATOR: process.env.STRIPE_CREATOR_PRODUCT_ID,
-  BASIC: process.env.STRIPE_BASIC_PRODUCT_ID,
+  CREATOR: process.env.NEXT_PUBLIC_STRIPE_CREATOR_PRODUCT_ID,
+  BASIC: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRODUCT_ID,
 } as const;
 
 const getSubscriptionType = (

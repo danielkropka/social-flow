@@ -89,7 +89,7 @@ export function Sidebar({
 
       setIsProfileOpen(false);
 
-      const portal = await fetch("/api/create-billing-portal-session", {
+      const portal = await fetch("/api/billing/portal", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

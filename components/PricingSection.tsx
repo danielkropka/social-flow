@@ -31,7 +31,7 @@ export default function PricingSection() {
 
         if (!stripe) throw new Error("Wystąpił błąd podczas ładowania Stripe.");
 
-        const response = await fetch("/api/create-checkout-session", {
+        const response = await fetch("/api/billing/checkout", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
