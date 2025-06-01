@@ -25,9 +25,6 @@ export default function InstagramCallbackContent() {
     if (code) {
       handleInstagramCallback(code);
     }
-
-    router.push("/dashboard/");
-    setActiveTab("accounts");
   }, [searchParams]);
 
   const handleInstagramError = (error: string) => {
