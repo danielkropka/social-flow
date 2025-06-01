@@ -111,8 +111,6 @@ export default function AccountsContent() {
     );
   };
 
-  console.log(accounts);
-
   if (isLoading) {
     return (
       <div className="space-y-8">

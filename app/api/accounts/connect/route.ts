@@ -352,7 +352,13 @@ export async function POST(request: NextRequest) {
         postsCount: userInfo.media_count,
       },
     });
-    return NextResponse.json({ success: true, account: connectedAccount });
+    return NextResponse.json({
+      success: true,
+      account: {
+        name: connectedAccount.name,
+        username: connectedAccount.username,
+      },
+    });
   }
   // TIKTOK
   if (body.provider === "tiktok") {
