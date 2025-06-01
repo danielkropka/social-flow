@@ -19,6 +19,7 @@ import { Skeleton } from "./ui/skeleton";
 import { useSubscription } from "@/hooks/useSubscription";
 import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "sonner";
+import { TabContextType } from "@/context/TabContext";
 
 const contentCreationItems = [
   { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
@@ -38,8 +39,8 @@ const configurationItems = [
 interface SidebarProps {
   isOpen: boolean;
   onClose: () => void;
-  onTabChange: (tab: string) => void;
-  activeTab: string;
+  onTabChange: TabContextType["setActiveTab"];
+  activeTab: TabContextType["activeTab"];
 }
 
 export function Sidebar({
@@ -70,7 +71,7 @@ export function Sidebar({
     };
   }, []);
 
-  const handleNavigation = (tab: string) => {
+  const handleNavigation = (tab: TabContextType["activeTab"]) => {
     onTabChange(tab);
     onClose();
   };
@@ -89,7 +90,7 @@ export function Sidebar({
 
       setIsProfileOpen(false);
 
-      const portal = await fetch("/api/create-billing-portal-session", {
+      const portal = await fetch("/api/billing/portal", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -161,7 +162,9 @@ export function Sidebar({
               return (
                 <button
                   key={item.href}
-                  onClick={() => handleNavigation(item.href)}
+                  onClick={() =>
+                    handleNavigation(item.href as TabContextType["activeTab"])
+                  }
                   className={`
                     group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
                     rounded-xl transition-all duration-200 relative
@@ -208,7 +211,9 @@ export function Sidebar({
               return (
                 <button
                   key={item.href}
-                  onClick={() => handleNavigation(item.href)}
+                  onClick={() =>
+                    handleNavigation(item.href as TabContextType["activeTab"])
+                  }
                   className={`
                     group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
                     rounded-xl transition-all duration-200 relative

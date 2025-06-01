@@ -1,13 +1,13 @@
 export const STRIPE_PLANS = {
   basic: {
     key: "basic",
-    id: "prod_SLL644LgxEPvXa",
+    id: process.env.NEXT_PUBLIC_STRIPE_BASIC_PRODUCT_ID,
     name: "Podstawowy",
     monthlyPrice: 30,
     yearlyPrice: 288,
     priceId: {
-      monthly: "price_1RQePvBwgdNuxyCVjZGHv9xz",
-      yearly: "price_1RQeQwBwgdNuxyCV7AHluvwm",
+      monthly: process.env.NEXT_PUBLIC_STRIPE_BASIC_MONTHLY_ID,
+      yearly: process.env.NEXT_PUBLIC_STRIPE_BASIC_YEARLY_ID,
     },
     description:
       "Idealne rozwiązanie dla początkujących twórców i małych firm, które chcą efektywnie zarządzać swoją obecnością w social mediach.",
@@ -19,13 +19,13 @@ export const STRIPE_PLANS = {
   },
   creator: {
     key: "creator",
-    id: "prod_SLL8g888ONmTYg",
+    id: process.env.NEXT_PUBLIC_STRIPE_CREATOR_PRODUCT_ID,
     name: "Twórca",
     monthlyPrice: 60,
     yearlyPrice: 576,
     priceId: {
-      monthly: "price_1RQeS9BwgdNuxyCVTxC74BLt",
-      yearly: "price_1RQeS9BwgdNuxyCVJZhzOlgY",
+      monthly: process.env.NEXT_PUBLIC_STRIPE_CREATOR_MONTHLY_ID,
+      yearly: process.env.NEXT_PUBLIC_STRIPE_CREATOR_YEARLY_ID,
     },
     description:
       "Zaawansowane narzędzie dla profesjonalistów i firm, które chcą maksymalizować zasięgi i engagement swojego contentu.",

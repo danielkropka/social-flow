@@ -1,3 +1,43 @@
+export const metadata = {
+  title: "Polityka Prywatności | Social Flow",
+  description:
+    "Dowiedz się, jak Social Flow przetwarza i chroni Twoje dane osobowe. Przeczytaj naszą politykę prywatności, aby poznać swoje prawa i zasady korzystania z serwisu.",
+  alternates: {
+    canonical: "https://social-flow.pl/privacy-policy",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+      maxVideoPreview: -1,
+      maxImagePreview: "large",
+      maxSnippet: -1,
+    },
+  },
+  openGraph: {
+    title: "Polityka Prywatności | Social Flow",
+    description:
+      "Dowiedz się, jak Social Flow przetwarza i chroni Twoje dane osobowe. Przeczytaj naszą politykę prywatności, aby poznać swoje prawa i zasady korzystania z serwisu.",
+    url: "https://social-flow.pl/privacy-policy",
+    siteName: "Social Flow",
+    locale: "pl_PL",
+    type: "article",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Polityka Prywatności | Social Flow",
+    description:
+      "Dowiedz się, jak Social Flow przetwarza i chroni Twoje dane osobowe. Przeczytaj naszą politykę prywatności, aby poznać swoje prawa i zasady korzystania z serwisu.",
+    site: "@socialflowpl",
+  },
+  metadataBase: new URL("https://social-flow.pl"),
+  language: "pl",
+};
+
 export default function PrivacyPolicy() {
   return (
     <div className="min-h-screen bg-gray-50">

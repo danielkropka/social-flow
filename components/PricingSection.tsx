@@ -4,7 +4,7 @@ import { Button } from "./ui/button";
 import { useState, useTransition } from "react";
 import { Check, Loader2, Shield, ArrowRight } from "lucide-react";
 import { useSession } from "next-auth/react";
-import { STRIPE_PLANS } from "@/config/stripe";
+import { STRIPE_PLANS } from "@/lib/config/stripe";
 import { loadStripe } from "@stripe/stripe-js";
 import { Switch } from "./ui/switch";
 import { toast } from "sonner";
@@ -31,7 +31,7 @@ export default function PricingSection() {
 
         if (!stripe) throw new Error("Wystąpił błąd podczas ładowania Stripe.");
 
-        const response = await fetch("/api/create-checkout-session", {
+        const response = await fetch("/api/billing/checkout", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

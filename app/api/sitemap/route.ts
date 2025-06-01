@@ -2,14 +2,7 @@ import { NextResponse } from "next/server";
 
 export async function GET() {
   const baseUrl = "https://www.social-flow.pl";
-  // Tutaj możesz dodać dynamiczne pobieranie ścieżek np. z bazy danych lub plików
-  const staticPaths = [
-    "/",
-    "/dashboard",
-    "/privacy-policy",
-    "/terms-of-service",
-    "/success",
-  ];
+  const staticPaths = ["/", "/privacy-policy", "/terms-of-service"];
 
   const urls = staticPaths
     .map(

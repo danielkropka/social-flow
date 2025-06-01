@@ -2,15 +2,16 @@
 
 import { createContext, useContext, useState, ReactNode } from "react";
 
-type TabContextType = {
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
+export type TabContextType = {
+  activeTab: "dashboard" | "accounts" | "posts" | "content-studio";
+  setActiveTab: (tab: TabContextType["activeTab"]) => void;
 };
 
 const TabContext = createContext<TabContextType | undefined>(undefined);
 
 export function TabProvider({ children }: { children: ReactNode }) {
-  const [activeTab, setActiveTab] = useState("dashboard");
+  const [activeTab, setActiveTab] =
+    useState<TabContextType["activeTab"]>("dashboard");
 
   return (
     <TabContext.Provider value={{ activeTab, setActiveTab }}>

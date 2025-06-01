@@ -1,127 +1,69 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import {
-  Card,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-  CardContent,
-  CardFooter,
-} from "@/components/ui/card";
-import { Alert, AlertTitle, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Check } from "@/components/icons/Check";
+import { Suspense } from "react";
+import VerifyEmailContent from "./VerifyEmailContent";
+import { Card, CardContent } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import { EyeIcon } from "@/components/icons/Eye";
-import Link from "next/link";
 
-export default function VerifyEmailPage() {
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
-  const uid = searchParams.get("uid");
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
-  const [message, setMessage] = useState<string>("");
+export const metadata = {
+  title: "Weryfikacja adresu e-mail | Social Flow",
+  description:
+    "Zweryfikuj swój adres e-mail, aby korzystać z Social Flow. Kliknij w link weryfikacyjny przesłany na Twój adres e-mail.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+  openGraph: {
+    title: "Weryfikacja adresu e-mail | Social Flow",
+    description: "Zweryfikuj swój adres e-mail, aby korzystać z Social Flow.",
+    url: "https://social-flow.pl/verify-email",
+    siteName: "Social Flow",
+    type: "website",
+  },
+};
 
-  useEffect(() => {
-    const verify = async () => {
-      if (!token || !uid) {
-        setStatus("error");
-        setMessage("Brak wymaganych danych do weryfikacji.");
-        return;
-      }
-      try {
-        const res = await fetch("/api/auth/verify-email", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token, uid }),
-        });
-        const data = await res.json();
-        if (res.ok) {
-          setStatus("success");
-          setMessage(
-            data.message ||
-              "Email został zweryfikowany. Możesz się teraz zalogować."
-          );
-        } else {
-          setStatus("error");
-          setMessage(data.error || "Weryfikacja nie powiodła się.");
-        }
-      } catch (error: unknown) {
-        setStatus("error");
-        setMessage(
-          error instanceof Error
-            ? error.message
-            : "Wystąpił błąd połączenia z serwerem."
-        );
-      }
-    };
-    verify();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+export default async function VerifyEmailPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const params = await searchParams;
+  const token = typeof params.token === "string" ? params.token : null;
+  const uid = typeof params.uid === "string" ? params.uid : null;
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
-      <Card className="w-full max-w-md mx-auto animate-fade-in-up">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-center">
-            Weryfikacja adresu e-mail
-          </CardTitle>
-          <CardDescription className="text-center">
-            {status === "loading"
-              ? "Trwa weryfikacja Twojego adresu e-mail. Prosimy o chwilę cierpliwości."
-              : status === "success"
-                ? "Twój adres e-mail został zweryfikowany. Możesz się teraz zalogować."
-                : "Weryfikacja nie powiodła się. Sprawdź link lub spróbuj ponownie."}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {status === "loading" && (
-            <div className="flex flex-col items-center gap-4">
-              <Skeleton className="h-12 w-12 rounded-full" />
-              <Alert>
-                <AlertTitle>Weryfikacja trwa...</AlertTitle>
-                <AlertDescription>
-                  Sprawdzamy Twój link weryfikacyjny.
-                </AlertDescription>
-              </Alert>
+    <Suspense
+      fallback={
+        <div className="flex items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-white px-4 py-12">
+          <Card className="w-full max-w-md relative overflow-hidden shadow-xl">
+            <div className="absolute top-0 left-0 w-full h-1.5">
+              <div className="h-full bg-gradient-to-r from-green-400 via-green-500 to-green-400 animate-gradient" />
             </div>
-          )}
-          {status === "success" && (
-            <div className="flex flex-col items-center gap-4">
-              <Alert>
-                <Check className="w-6 h-6 text-green-500" />
-                <AlertTitle className="text-green-700">Sukces!</AlertTitle>
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-            </div>
-          )}
-          {status === "error" && (
-            <div className="flex flex-col items-center gap-4">
-              <Alert variant="destructive">
-                <EyeIcon className="w-6 h-6 text-red-500" />
-                <AlertTitle className="text-red-700">
-                  Błąd weryfikacji
-                </AlertTitle>
-                <AlertDescription>{message}</AlertDescription>
-              </Alert>
-              <p className="text-xs text-gray-400 text-center">
-                Jeśli problem się powtarza, skontaktuj się z pomocą techniczną
-                lub spróbuj ponownie później.
-              </p>
-            </div>
-          )}
-        </CardContent>
-        <CardFooter className="flex flex-col gap-2">
-          {(status === "success" || status === "error") && (
-            <Button asChild className="w-full">
-              <Link href="/sign-in">Powrót do logowania</Link>
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
-    </div>
+            <CardContent className="flex flex-col items-center gap-6 py-12">
+              <div className="mb-4 relative">
+                <div className="absolute -inset-2 rounded-full bg-gradient-to-r from-green-400 to-green-500 opacity-75 blur-lg animate-pulse" />
+                <div className="relative bg-white rounded-full p-5 shadow-xl">
+                  <EyeIcon className="h-14 w-14 text-green-500" />
+                </div>
+              </div>
+              <div className="text-center space-y-4">
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Weryfikacja adresu e-mail
+                </h1>
+                <p className="text-base text-gray-700">
+                  Trwa weryfikacja Twojego adresu e-mail. Prosimy o chwilę
+                  cierpliwości.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-4 text-green-500 bg-green-50/50 px-6 py-3 rounded-full">
+                <Loader2 className="h-6 w-6 animate-spin" />
+                <span className="font-medium text-base">Przetwarzanie...</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      }
+    >
+      <VerifyEmailContent token={token} uid={uid} />
+    </Suspense>
   );
 }
