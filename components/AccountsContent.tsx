@@ -296,6 +296,48 @@ export default function AccountsContent() {
           </DialogContent>
         </Dialog>
       )}
+
+      {accountToRemove && (
+        <Dialog
+          open={!!accountToRemove}
+          onOpenChange={() => setAccountToRemove(null)}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Potwierdzenie usunięcia</DialogTitle>
+              <DialogDescription>
+                Czy na pewno chcesz usunąć konto{" "}
+                <strong>{accountToRemove.name}</strong>?
+              </DialogDescription>
+              <div className="mt-2 p-3 bg-destructive/10 rounded-lg">
+                <span className="text-sm text-destructive">
+                  Uwaga: Wszystkie zaplanowane posty dla tego konta zostaną
+                  anulowane.
+                </span>
+              </div>
+            </DialogHeader>
+            <DialogFooter className="gap-2">
+              <Button
+                onClick={() => setAccountToRemove(null)}
+                variant="outline"
+              >
+                Anuluj
+              </Button>
+              <Button
+                onClick={() => {
+                  if (accountToRemove) {
+                    removeAccountMutation.mutate(accountToRemove);
+                    setAccountToRemove(null);
+                  }
+                }}
+                variant="destructive"
+              >
+                Usuń konto
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
