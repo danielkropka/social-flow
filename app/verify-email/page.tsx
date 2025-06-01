@@ -21,24 +21,15 @@ export const metadata = {
   },
 };
 
-function getSearchParams(searchParams: string): {
-  token: string | null;
-  uid: string | null;
-} {
-  const params = new URLSearchParams(searchParams);
-  return {
-    token: params.get("token"),
-    uid: params.get("uid"),
-  };
-}
-
 export default function VerifyEmailPage({
   searchParams,
 }: {
-  searchParams: string;
+  searchParams: { [key: string]: string | string[] | undefined };
 }) {
   // Pobieram token i uid z searchParams (Next.js przekazuje je do propsów strony serwerowej)
-  const { token, uid } = getSearchParams(searchParams);
+  const token =
+    typeof searchParams.token === "string" ? searchParams.token : null;
+  const uid = typeof searchParams.uid === "string" ? searchParams.uid : null;
 
   return (
     <Suspense
