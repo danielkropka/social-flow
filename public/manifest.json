@@ -1,0 +1,9 @@
+{
+  "name": "Social Flow",
+  "short_name": "SocialFlow",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "description": "Social Flow to platforma do automatyzacji publikowania postów na social media."
+} 

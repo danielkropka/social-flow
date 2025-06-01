@@ -1,3 +1,60 @@
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Social Flow - Regulamin",
+  description:
+    "Regulamin korzystania z platformy Social Flow. Poznaj zasady, warunki i odpowiedzialność użytkowników serwisu do zarządzania mediami społecznościowymi.",
+  keywords: [
+    "regulamin",
+    "social flow",
+    "zasady korzystania",
+    "media społecznościowe",
+    "platforma",
+    "warunki",
+    "odpowiedzialność",
+    "kontakt",
+    "polityka",
+    "serwis",
+  ],
+  robots: {
+    index: true,
+    follow: true,
+    nocache: false,
+    googleBot: {
+      index: true,
+      follow: true,
+      noimageindex: false,
+    },
+  },
+  alternates: {
+    canonical: "https://social-flow.pl/terms-of-service",
+    languages: {
+      "pl-PL": "https://social-flow.pl/terms-of-service",
+    },
+  },
+  openGraph: {
+    title: "Social Flow - Regulamin",
+    description:
+      "Regulamin korzystania z platformy Social Flow. Poznaj zasady, warunki i odpowiedzialność użytkowników serwisu do zarządzania mediami społecznościowymi.",
+    url: "https://social-flow.pl/terms-of-service",
+    siteName: "Social Flow",
+    locale: "pl_PL",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Social Flow - Regulamin",
+    description:
+      "Regulamin korzystania z platformy Social Flow. Poznaj zasady, warunki i odpowiedzialność użytkowników serwisu do zarządzania mediami społecznościowymi.",
+    site: "@socialflowpl",
+  },
+  metadataBase: new URL("https://social-flow.pl"),
+  // język strony
+  other: {
+    language: "pl-PL",
+  },
+};
+
 export default function TermsOfService() {
   return (
     <div className="min-h-screen bg-gray-50">

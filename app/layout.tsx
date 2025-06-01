@@ -10,12 +10,22 @@ import { headers } from "next/headers";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Social-flow",
+  title: "Social Flow",
   description:
-    "Social-flow to platforma do automatyzacji publikowania postów na social media",
-  icons: {
-    icon: "/favicon.ico",
-  },
+    "Social Flow to platforma do automatyzacji publikowania postów na social media",
+  keywords: [
+    "social media",
+    "automatyzacja",
+    "publikowanie postów",
+    "media społecznościowe",
+    "planowanie postów",
+    "social-flow",
+    "marketing",
+    "zarządzanie social media",
+    "automatyzacja marketingu",
+  ],
+  authors: [{ name: "Social Flow", url: "https://social-flow.pl" }],
+  manifest: "/manifest.json",
   robots: {
     index: true,
     follow: true,
@@ -24,11 +34,13 @@ export const metadata: Metadata = {
     nosnippet: true,
   },
   openGraph: {
-    title: "Social-flow",
+    title: "Social Flow",
     description:
-      "Social-flow to platforma do automatyzacji publikowania postów na social media",
+      "Social Flow to platforma do automatyzacji publikowania postów na social media",
     url: "https://social-flow.pl",
-    siteName: "Social-flow",
+    siteName: "Social Flow",
+    locale: "pl_PL",
+    type: "website",
   },
 };
 
@@ -44,6 +56,7 @@ export default async function RootLayout({
     <html lang="pl">
       <head>
         <link rel="canonical" href={canonicalUrl} />
+        <meta property="og:url" content={canonicalUrl} />
       </head>
       <body className={cn("bg-white relative", inter.className)}>
         <Providers>
