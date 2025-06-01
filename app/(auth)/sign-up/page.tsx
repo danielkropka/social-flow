@@ -35,38 +35,25 @@ export default function SignUp() {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch("/api/auth/credentials", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(data),
+        body: JSON.stringify({ data, action: "register" }),
       });
 
-      let result;
-      try {
-        const responseText = await response.text();
-        if (!responseText) {
-          throw new Error("Pusta odpowiedź z serwera");
-        }
-        result = JSON.parse(responseText);
-      } catch (error) {
-        console.error("Error parsing response:", error);
-        throw new Error("Nieprawidłowa odpowiedź z serwera");
-      }
+      const result = await response.json();
 
       if (!response.ok) {
         if (
           result.error === "ValidationError" &&
           Array.isArray(result.details)
         ) {
-          // Mapowanie błędów walidacji na odpowiednie pola formularza
           const fieldErrors: Record<string, string> = {
             firstName: "Imię jest wymagane",
             lastName: "Nazwisko jest wymagane",
             email: "Email jest wymagany",
             password: "Hasło jest wymagane",
             confirmPassword: "Potwierdzenie hasła jest wymagane",
+            terms: "Musisz zaakceptować regulamin",
           };
 
           // Ustawiamy błędy dla każdego pola
@@ -77,36 +64,31 @@ export default function SignUp() {
             });
           });
           return;
-        }
-
-        if (result.error === "EmailExists") {
+        } else if (result.error === "UserAlreadyExists") {
           setError("email", {
             type: "manual",
-            message: "Ten adres email jest już zarejestrowany",
+            message: "Użytkownik o podanym adresie e-mail już istnieje",
           });
           return;
         }
 
-        if (result.error === "WeakPassword") {
-          setError("password", {
-            type: "manual",
-            message: result.message || "Hasło jest zbyt słabe",
-          });
-          return;
-        }
-
-        throw new Error(result.message || "Wystąpił błąd podczas rejestracji");
+        toast.error("Wystąpił błąd podczas rejestracji", {
+          description: result.message,
+        });
+        return;
       }
 
-      // Rejestracja udana
-      toast.success("Konto zostało utworzone! Sprawdź swoją skrzynkę email.");
-      router.push("/sign-in");
+      if (result.success) {
+        toast.success("Rejestracja przebiegła pomyślnie", {
+          description: "Sprawdź swoją skrzynkę pocztową, aby aktywować konto",
+        });
+        router.push("/sign-in");
+      }
     } catch (error) {
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Wystąpił błąd podczas rejestracji"
-      );
+      console.error("Error signing up:", error);
+      toast.error("Wystąpił błąd podczas rejestracji", {
+        description: error instanceof Error ? error.message : "Nieznany błąd",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -117,8 +99,10 @@ export default function SignUp() {
     try {
       await signIn("google", { callbackUrl: "/dashboard" });
     } catch (error) {
-      console.error("Google sign up error:", error);
-      toast.error("Wystąpił błąd podczas rejestracji przez Google");
+      console.error("Error signing up with Google:", error);
+      toast.error("Wystąpił błąd podczas rejestracji z Google", {
+        description: error instanceof Error ? error.message : "Nieznany błąd",
+      });
     } finally {
       setIsLoading(false);
     }
@@ -126,7 +110,6 @@ export default function SignUp() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-gray-50 to-white p-4">
-      {/* Background */}
       <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50/50 to-white">
         <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
       </div>
