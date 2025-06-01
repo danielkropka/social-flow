@@ -105,13 +105,6 @@ export default function AccountsContent() {
     setShowModal(platform);
   };
 
-  const handleRemoveAccount = async () => {
-    if (accountToRemove) {
-      removeAccountMutation.mutate(accountToRemove);
-      setAccountToRemove(null);
-    }
-  };
-
   const getConnectedAccounts = (platform: string) => {
     return accounts.filter(
       (account: ConnectedAccountWithDetails) => account.provider === platform
@@ -289,6 +282,7 @@ export default function AccountsContent() {
                     const data = await response.json();
                     router.push(data.authUrl);
                   } catch (error) {
+                    console.error(error);
                     toast.error(
                       `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`
                     );
