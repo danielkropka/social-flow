@@ -60,12 +60,12 @@ function InstagramCallbackContent() {
 
   const handleInstagramCallback = async (code: string) => {
     try {
-      const response = await fetch(`/api/accounts/connect?provider=instagram`, {
+      const response = await fetch(`/api/accounts/connect`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ code, provider: "instagram" }),
       });
 
       const data = await response.json();
