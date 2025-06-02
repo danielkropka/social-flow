@@ -233,13 +233,23 @@ export function PostCreationForm() {
                       name: file.name,
                     });
                   } else {
+                    console.error(
+                      `[onSubmit] Błąd uploadu pliku ${file.name}:`,
+                      xhr.status,
+                      xhr.response
+                    );
                     reject(
-                      new Error(`Nie udało się wrzucić pliku ${file.name}`)
+                      new Error(
+                        `Nie udało się wrzucić pliku ${file.name} (kod: ${xhr.status})`
+                      )
                     );
                   }
                 };
 
                 xhr.onerror = function () {
+                  console.error(
+                    `[onSubmit] Błąd sieci podczas uploadu pliku ${file.name}`
+                  );
                   reject(
                     new Error(`Błąd sieci podczas uploadu pliku ${file.name}`)
                   );
@@ -259,6 +269,7 @@ export function PostCreationForm() {
       );
       setIsPublishingModalOpen(false);
       setIsPublishing(false);
+      console.error("[onSubmit] Błąd:", error);
     }
   };
 
@@ -270,7 +281,9 @@ export function PostCreationForm() {
 
   const processFiles = async (files: File[]) => {
     try {
+      console.log("[processFiles] Otrzymane pliki:", files);
       if (isTextOnly) {
+        console.error("[processFiles] Tryb tekstowy - pliki nie są dozwolone");
         throw new Error("Tryb tekstowy nie obsługuje plików");
       }
 
@@ -287,6 +300,9 @@ export function PostCreationForm() {
         !isTextOnly &&
         ((hasVideos && currentHasImages) || (hasImages && currentHasVideos))
       ) {
+        console.error(
+          "[processFiles] Próba dodania zdjęć i filmów jednocześnie"
+        );
         throw new Error("Nie można dodać jednocześnie zdjęć i filmów");
       }
 
@@ -294,11 +310,16 @@ export function PostCreationForm() {
         (hasVideos && files.length > 1) ||
         (currentHasVideos && files.length > 0)
       ) {
+        console.error("[processFiles] Próba dodania więcej niż jednego filmu");
         throw new Error("Można dodać tylko jeden film");
       }
 
       const oversizedFiles = files.filter((file) => file.size > MAX_FILE_SIZE);
       if (oversizedFiles.length > 0) {
+        console.error(
+          "[processFiles] Pliki przekraczają maksymalny rozmiar:",
+          oversizedFiles
+        );
         throw new Error(
           `Pliki przekraczają maksymalny rozmiar ${
             MAX_FILE_SIZE / (1024 * 1024)
@@ -320,9 +341,11 @@ export function PostCreationForm() {
     } catch (error) {
       if (error instanceof Error) {
         toast.error(error.message);
+        console.error("[processFiles] Błąd:", error.message);
         return;
       }
       toast.error("Wystąpił nieznany błąd podczas przetwarzania plików.");
+      console.error("[processFiles] Nieznany błąd:", error);
     } finally {
       if (fileInputRef.current) {
         fileInputRef.current.value = "";
