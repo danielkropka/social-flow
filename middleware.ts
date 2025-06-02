@@ -10,6 +10,10 @@ export async function middleware(request: NextRequest) {
 
   const { pathname } = request.nextUrl;
 
+  if (request.nextUrl.pathname.startsWith("/api/billing/webhooks/stripe")) {
+    return NextResponse.next();
+  }
+
   // Przekieruj zalogowanych użytkowników z auth routes do dashboardu
   if (token && (pathname === "/sign-in" || pathname === "/sign-up")) {
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
