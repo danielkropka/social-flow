@@ -207,26 +207,48 @@ export function PostCreationForm() {
 
       // Upload plików do S3 i zbierz URL-e
       const mediaUrls = await Promise.all(
-        selectedFiles.map(async (file) => {
-          const uploadRes = await fetch("/api/media/upload", {
-            method: "POST",
-            headers: {
-              "Content-Type": file.type,
-              "X-File-Name": encodeURIComponent(file.name),
-              "X-File-Type": file.type,
-            },
-            body: file,
-          });
-          if (!uploadRes.ok) {
-            throw new Error(`Nie udało się wrzucić pliku ${file.name}`);
-          }
-          const { url } = await uploadRes.json();
-          return {
-            url,
-            type: file.type,
-            name: file.name,
-          };
-        })
+        selectedFiles.map(
+          (file) =>
+            new Promise<{ url: string; type: string; name: string }>(
+              (resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open("POST", "/api/media/upload", true);
+                xhr.responseType = "json";
+                xhr.setRequestHeader("Content-Type", file.type);
+                xhr.setRequestHeader(
+                  "X-File-Name",
+                  encodeURIComponent(file.name)
+                );
+                xhr.setRequestHeader("X-File-Type", file.type);
+
+                xhr.onload = function () {
+                  if (xhr.status >= 200 && xhr.status < 300) {
+                    const response =
+                      typeof xhr.response === "string"
+                        ? JSON.parse(xhr.response)
+                        : xhr.response;
+                    resolve({
+                      url: response.url,
+                      type: file.type,
+                      name: file.name,
+                    });
+                  } else {
+                    reject(
+                      new Error(`Nie udało się wrzucić pliku ${file.name}`)
+                    );
+                  }
+                };
+
+                xhr.onerror = function () {
+                  reject(
+                    new Error(`Błąd sieci podczas uploadu pliku ${file.name}`)
+                  );
+                };
+
+                xhr.send(file);
+              }
+            )
+        )
       );
 
       setMediaUrls(mediaUrls);
