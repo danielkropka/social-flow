@@ -68,7 +68,6 @@ export async function POST(req: NextRequest) {
             type: media.type,
           })),
           account,
-          userId: session.user.id,
           baseUrl,
         });
         break;
@@ -80,7 +79,6 @@ export async function POST(req: NextRequest) {
             type: media.type,
           })),
           account,
-          userId: session.user.id,
           baseUrl,
         });
         break;
