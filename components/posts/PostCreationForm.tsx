@@ -296,15 +296,20 @@ export function PostCreationForm() {
         file.type.startsWith("image/")
       );
 
-      // Blokada plików HEIC
-      const hasHeic = files.some(
-        (file) =>
+      // Blokada plików HEIC/HEIF (lepsze wykrywanie)
+      const hasHeic = files.some((file) => {
+        const ext = file.name.toLowerCase().split(".").pop();
+        return (
+          ["heic", "heif"].includes(ext || "") ||
           file.type === "image/heic" ||
-          file.name.toLowerCase().endsWith(".heic")
-      );
+          file.type === "image/heif" ||
+          ((file.type === "application/octet-stream" || file.type === "") &&
+            ["heic", "heif"].includes(ext || ""))
+        );
+      });
       if (hasHeic) {
         toast.error(
-          "Format HEIC nie jest obsługiwany. Przekonwertuj zdjęcie do JPG lub PNG."
+          "Format HEIC/HEIF nie jest obsługiwany. Przekonwertuj zdjęcie do JPG lub PNG."
         );
         return;
       }
