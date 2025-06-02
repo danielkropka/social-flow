@@ -74,12 +74,12 @@ export async function refreshAllStats(userId: string) {
           break;
         }
       }
-    } catch (error: any) {
+    } catch (error) {
       results.push({
         provider: account.provider,
         accountId: account.id,
         status: "error",
-        error: error.message,
+        error: error instanceof Error ? error.message : "Nieznany błąd",
       });
     }
   }

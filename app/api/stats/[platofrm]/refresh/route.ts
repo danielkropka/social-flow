@@ -6,9 +6,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/config/auth";
 import { Provider } from "@prisma/client";
 
-// Funkcja symulująca odświeżenie statystyk dla pojedynczej platformy
 async function refreshSingleStat(userId: string, platform: string) {
-  // Pobierz aktywne konto użytkownika dla danej platformy
   const provider = platform.toUpperCase() as Provider;
   const account = await db.connectedAccount.findFirst({
     where: {
@@ -83,9 +81,14 @@ export async function POST(request: Request) {
     return NextResponse.json({
       message: `Statystyki dla platformy ${platform} zostały odświeżone.`,
     });
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: error.message || "Błąd podczas odświeżania statystyk." },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Błąd podczas odświeżania statystyk.",
+      },
       { status: 500 }
     );
   }

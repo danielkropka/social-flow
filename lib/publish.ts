@@ -1,11 +1,8 @@
-// Funkcje do publikacji postów na Instagramie i Twitterze
-// Przeniesione z app/api/posts/instagram/route.ts oraz app/api/posts/twitter/route.ts
-
-import { db } from "@/lib/config/prisma";
 import { decryptToken } from "@/lib/utils/utils";
 import { PLATFORM_LIMITS } from "@/constants";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
+import { ConnectedAccount } from "@prisma/client";
 
 // --- Funkcja pomocnicza do uploadu do S3 ---
 async function uploadMediaToS3(
@@ -56,13 +53,11 @@ export async function publishInstagramPost({
   content,
   mediaUrls,
   account,
-  userId,
   baseUrl,
 }: {
   content: string;
   mediaUrls: Array<{ data: string | number[]; type: string }>;
-  account: any;
-  userId: string;
+  account: ConnectedAccount;
   baseUrl: string;
 }): Promise<{ success: boolean; message: string; postUrl?: string }> {
   if (!account || !account.accessToken) {
@@ -257,7 +252,9 @@ export async function publishInstagramPost({
       const errorText = await publishResponse.text();
       throw new Error(`Błąd podczas publikacji posta: ${errorText}`);
     }
-    const publishData = await publishResponse.json();
+
+    await publishResponse.json();
+
     const postUrl = `https://instagram.com/${account.username}`;
     return { success: true, message: "Opublikowano na Instagramie", postUrl };
   } catch (error) {
@@ -273,13 +270,11 @@ export async function publishTwitterPost({
   content,
   mediaUrls,
   account,
-  userId,
   baseUrl,
 }: {
   content: string;
   mediaUrls: Array<{ data: string | number[]; type: string }>;
-  account: any;
-  userId: string;
+  account: ConnectedAccount;
   baseUrl: string;
 }): Promise<{ success: boolean; message: string; postUrl?: string }> {
   if (!account || !account.accessToken || !account.accessTokenSecret) {
