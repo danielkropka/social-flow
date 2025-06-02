@@ -296,6 +296,19 @@ export function PostCreationForm() {
         file.type.startsWith("image/")
       );
 
+      // Blokada plików HEIC
+      const hasHeic = files.some(
+        (file) =>
+          file.type === "image/heic" ||
+          file.name.toLowerCase().endsWith(".heic")
+      );
+      if (hasHeic) {
+        toast.error(
+          "Format HEIC nie jest obsługiwany. Przekonwertuj zdjęcie do JPG lub PNG."
+        );
+        return;
+      }
+
       if (
         !isTextOnly &&
         ((hasVideos && currentHasImages) || (hasImages && currentHasVideos))
