@@ -191,27 +191,6 @@ model ConnectedAccount {
     @@index([requestTokenExpiresAt])
 }
 
-model PostConnectedAccount {
-    id                 String           @id @default(auto()) @map("_id") @db.ObjectId
-    postId             String           @db.ObjectId
-    connectedAccountId String           @db.ObjectId
-    status             PublishingStatus @default(PENDING)
-    publishedAt        DateTime?
-    errorMessage       String?          @db.String
-    postUrl            String?          @db.String
-    post               Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
-    connectedAccount   ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
-    createdAt          DateTime         @default(now())
-    updatedAt          DateTime         @updatedAt
-    deletedAt          DateTime?
-
-    @@unique([postId, connectedAccountId])
-    @@index([postId])
-    @@index([connectedAccountId])
-    @@index([status])
-    @@index([deletedAt])
-}
-
 model PasswordResetToken {
     id        String   @id @default(auto()) @map("_id") @db.ObjectId
     userId    String   @db.ObjectId
@@ -236,4 +215,24 @@ model EmailVerificationToken {
 
     @@index([userId])
     @@index([expiresAt])
+}
+
+model PostConnectedAccount {
+    id                 String           @id @default(auto()) @map("_id") @db.ObjectId
+    postId             String           @db.ObjectId
+    connectedAccountId String           @db.ObjectId
+    status             PublishingStatus @default(PENDING)
+    postUrl            String?          @db.String
+    publishedAt        DateTime?
+    createdAt          DateTime         @default(now())
+    updatedAt          DateTime         @updatedAt
+    deletedAt          DateTime?
+
+    post             Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+    connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+
+    @@index([postId])
+    @@index([connectedAccountId])
+    @@index([status])
+    @@index([deletedAt])
 }

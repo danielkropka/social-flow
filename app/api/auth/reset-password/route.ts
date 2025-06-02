@@ -16,20 +16,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Szukamy usera po emailu
     const user = await db.user.findUnique({ where: { email } });
     if (user) {
-      // Usuwamy stare tokeny
       await db.passwordResetToken.deleteMany({ where: { userId: user.id } });
 
-      // Generujemy silny token
       const rawToken = crypto.randomBytes(32).toString("hex");
       const hashedToken = await hash(rawToken, 12);
       const expires = new Date(
         Date.now() + RESET_TOKEN_EXPIRATION_MINUTES * 60 * 1000
       );
 
-      // Zapisujemy token do bazy
       await db.passwordResetToken.create({
         data: {
           userId: user.id,
@@ -38,11 +34,9 @@ export async function POST(req: NextRequest) {
         },
       });
 
-      // Wysyłka maila z linkiem (tu: log do konsoli)
       const resetUrl = `${
-        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        process.env.NEXT_PUBLIC_APP_URL
       }/reset-password?token=${encodeURIComponent(rawToken)}&uid=${user.id}`;
-      // Wysyłka maila przez Resend
       const resend = new Resend(process.env.RESEND_API_KEY);
       await resend.emails.send({
         from: "no-reply@" + process.env.NEXT_PUBLIC_MAIL_DOMAIN,
@@ -63,9 +57,8 @@ export async function POST(req: NextRequest) {
           </div>
         `,
       });
-      // Tu możesz podpiąć wysyłkę maila zamiast console.log
     }
-    // Zawsze zwracamy ten sam komunikat
+
     return NextResponse.json({
       message:
         "Jeśli podany email istnieje w naszej bazie, wysłaliśmy instrukcję resetowania hasła.",

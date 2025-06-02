@@ -4,6 +4,7 @@ import { db } from "@/lib/config/prisma";
 export async function POST(req: NextRequest) {
   try {
     const { token, uid } = await req.json();
+
     if (
       !token ||
       !uid ||
@@ -15,17 +16,19 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
-    // Szukamy tokenu w bazie
+
     const verifyToken = await db.emailVerificationToken.findFirst({
       where: { userId: uid },
       orderBy: { createdAt: "desc" },
     });
+
     if (!verifyToken) {
       return NextResponse.json(
         { error: "Nieprawidłowy lub wygasły token" },
         { status: 400 }
       );
     }
+
     if (verifyToken.expiresAt < new Date()) {
       await db.emailVerificationToken.delete({ where: { id: verifyToken.id } });
       return NextResponse.json(
@@ -33,18 +36,19 @@ export async function POST(req: NextRequest) {
         { status: 400 }
       );
     }
+
     if (verifyToken.token !== token) {
       return NextResponse.json(
         { error: "Nieprawidłowy token" },
         { status: 400 }
       );
     }
-    // Ustawiamy emailVerified
+
     await db.user.update({
       where: { id: uid },
       data: { emailVerified: new Date() },
     });
-    // Usuwamy token (jednorazowość)
+
     await db.emailVerificationToken.delete({ where: { id: verifyToken.id } });
     return NextResponse.json({
       message: "Email został zweryfikowany. Możesz się teraz zalogować.",
