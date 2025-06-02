@@ -240,7 +240,7 @@ export function PostCreationForm() {
                     );
                     reject(
                       new Error(
-                        `Nie udało się wrzucić pliku ${file.name} (kod: ${xhr.status})`
+                        `Nie udało się wrzucić pliku ${file.name} (kod: ${xhr.status}) ${xhr.response}`
                       )
                     );
                   }
