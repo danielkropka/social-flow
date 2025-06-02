@@ -14,6 +14,7 @@ import { MediaUrl } from "./posts/PostCreationForm";
 import { useTab } from "@/context/TabContext";
 import { useRouter } from "next/navigation";
 import { PLATFORM_DISPLAY } from "@/constants";
+import { uploadMediaToS3 } from "@/lib/publish";
 
 // Typy
 interface ConnectedAccount {
@@ -66,16 +67,49 @@ export function PublishingModal({
     const nextIndex = statusList.findIndex((s) => s.status === "pending");
     if (nextIndex === -1) return;
 
+    const uploadAllMediaToS3 = async (
+      mediaUrls: MediaUrl[]
+    ): Promise<string[]> => {
+      const uploadedUrls: string[] = [];
+      const baseUrl =
+        typeof window !== "undefined" ? window.location.origin : "";
+      for (const media of mediaUrls) {
+        if (media.url.includes("amazonaws.com")) {
+          uploadedUrls.push(media.url);
+          continue;
+        }
+        const response = await fetch(media.url);
+        if (!response.ok)
+          throw new Error("Nie udało się pobrać pliku do uploadu");
+        const blob = await response.blob();
+        const arrayBuffer = await blob.arrayBuffer();
+        const uint8 = new Uint8Array(arrayBuffer);
+        const s3Url = await uploadMediaToS3(uint8, media.type, baseUrl);
+        uploadedUrls.push(s3Url);
+      }
+      return uploadedUrls;
+    };
+
     const publish = async () => {
       const acc = statusList[nextIndex];
       try {
+        let s3Media: MediaUrl[] = [];
+        if (mediaUrls && mediaUrls.length > 0) {
+          const s3Urls = await uploadAllMediaToS3(mediaUrls);
+          s3Media = mediaUrls.map((media, idx) => ({
+            url: s3Urls[idx],
+            type: media.type,
+            name: media.name,
+          }));
+        }
+
         const resCreate = await fetch("/api/posts/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             provider: acc.provider,
             content,
-            mediaUrls,
+            mediaUrls: s3Media,
             accountId: acc.accountId,
           }),
         });

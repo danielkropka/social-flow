@@ -48,10 +48,16 @@ export async function POST(req: NextRequest) {
         media:
           mediaUrls && Array.isArray(mediaUrls)
             ? {
-                create: mediaUrls.map((url: string) => ({
-                  url,
-                  type: url.match(/\.mp4$/i) ? "VIDEO" : "IMAGE",
-                })),
+                create: mediaUrls.map(
+                  (file: { url: string; type?: string }) => ({
+                    url: file.url,
+                    type:
+                      (file.type && file.type.includes("video")) ||
+                      file.url.match(/\.mp4$/i)
+                        ? "VIDEO"
+                        : "IMAGE",
+                  })
+                ),
               }
             : undefined,
         postConnectedAccounts: {

@@ -77,7 +77,7 @@ const postSchema = z.object({
 export type PostFormValues = z.infer<typeof postSchema>;
 
 export type MediaUrl = {
-  data: number[];
+  url: string;
   type: string;
   name: string;
 };
@@ -205,20 +205,27 @@ export function PostCreationForm() {
       setIsPublishing(true);
       setContent(data.text);
 
-      // Bezpieczna konwersja plików
+      // Upload plików do S3 i zbierz URL-e
       const mediaUrls = await Promise.all(
         selectedFiles.map(async (file) => {
-          try {
-            const arrayBuffer = await file.arrayBuffer();
-            return {
-              data: Array.from(new Uint8Array(arrayBuffer)),
-              type: file.type,
-              name: file.name,
-            };
-          } catch (error) {
-            console.error("Błąd podczas przetwarzania pliku:", error);
-            throw new Error(`Nie udało się przetworzyć pliku ${file.name}`);
+          const uploadRes = await fetch("/api/media/upload", {
+            method: "POST",
+            headers: {
+              "Content-Type": file.type,
+              "X-File-Name": encodeURIComponent(file.name),
+              "X-File-Type": file.type,
+            },
+            body: file,
+          });
+          if (!uploadRes.ok) {
+            throw new Error(`Nie udało się wrzucić pliku ${file.name}`);
           }
+          const { url } = await uploadRes.json();
+          return {
+            url,
+            type: file.type,
+            name: file.name,
+          };
         })
       );
 

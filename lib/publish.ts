@@ -5,7 +5,7 @@ import crypto from "crypto";
 import { ConnectedAccount } from "@prisma/client";
 
 // --- Funkcja pomocnicza do uploadu do S3 ---
-async function uploadMediaToS3(
+export async function uploadMediaToS3(
   binaryData: Uint8Array,
   mediaType: string,
   baseUrl: string
