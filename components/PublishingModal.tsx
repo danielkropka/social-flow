@@ -49,7 +49,6 @@ export function PublishingModal({
   const { setActiveTab } = useTab();
   const [statusList, setStatusList] = useState<PublishingStatus[]>([]);
 
-  // Inicjalizacja statusów
   useEffect(() => {
     if (isOpen) {
       setStatusList(
@@ -63,26 +62,53 @@ export function PublishingModal({
     }
   }, [isOpen, accounts]);
 
-  // Publikowanie po kolei
   useEffect(() => {
     const nextIndex = statusList.findIndex((s) => s.status === "pending");
-    if (nextIndex === -1) return; // Wszystko opublikowane
+    if (nextIndex === -1) return;
 
     const publish = async () => {
       const acc = statusList[nextIndex];
       try {
-        // Wywołanie odpowiedniego endpointu
-        const res = await fetch(`/api/posts/${acc.provider.toLowerCase()}`, {
+        const resCreate = await fetch("/api/posts/create", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
+            provider: acc.provider,
             content,
             mediaUrls,
             accountId: acc.accountId,
           }),
         });
-        const data = await res.json();
-        if (res.ok && data.success) {
+        const dataCreate = await resCreate.json();
+        if (!resCreate.ok || !dataCreate.success) {
+          setStatusList((list) =>
+            list.map((s, i) =>
+              i === nextIndex
+                ? {
+                    ...s,
+                    status: "error",
+                    error:
+                      dataCreate.details ||
+                      dataCreate.error ||
+                      "Błąd tworzenia posta",
+                  }
+                : s
+            )
+          );
+          return;
+        }
+
+        const resPublish = await fetch("/api/posts/publish", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            provider: acc.provider,
+            postId: dataCreate.postId,
+            accountId: acc.accountId,
+          }),
+        });
+        const dataPublish = await resPublish.json();
+        if (resPublish.ok && dataPublish.success) {
           setStatusList((list) =>
             list.map((s, i) =>
               i === nextIndex ? { ...s, status: "success" } : s
@@ -95,7 +121,10 @@ export function PublishingModal({
                 ? {
                     ...s,
                     status: "error",
-                    error: data.details || data.error || "Błąd publikacji",
+                    error:
+                      dataPublish.details ||
+                      dataPublish.error ||
+                      "Błąd publikacji",
                   }
                 : s
             )
