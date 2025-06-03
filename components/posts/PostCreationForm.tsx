@@ -18,10 +18,13 @@ import {
   RotateCcw,
   Info,
   Send,
+  User,
+  File as FileIcon,
+  MessageSquareText,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { pl } from "date-fns/locale";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useState, useEffect, useRef } from "react";
@@ -52,6 +55,8 @@ import { AccountSelectionSection } from "@/components/posts/AccountSelectionSect
 import { FileUploadSection } from "@/components/posts/FileUploadSection";
 import { ImagePreviewSection } from "@/components/posts/ImagePreviewSection";
 import { PostTextSection } from "@/components/posts/PostTextSection";
+import { useAccounts } from "./hooks/useAccounts";
+import { useFileProcessing } from "./hooks/useFileProcessing";
 
 const getMinScheduleTime = () => {
   const now = new Date();
@@ -91,6 +96,23 @@ const AVAILABLE_PLATFORMS = Object.values(SUPPORTED_PLATFORMS).map(
   })
 );
 
+// --- ANIMOWANE POWIADOMIENIA ---
+function useAnimatedNotification(show: boolean, timeout = 350) {
+  const [visible, setVisible] = useState(show);
+  const [shouldRender, setShouldRender] = useState(show);
+  useEffect(() => {
+    if (show) {
+      setShouldRender(true);
+      setTimeout(() => setVisible(true), 10);
+    } else {
+      setVisible(false);
+      const timer = setTimeout(() => setShouldRender(false), timeout);
+      return () => clearTimeout(timer);
+    }
+  }, [show, timeout]);
+  return { visible, shouldRender };
+}
+
 export function PostCreationForm() {
   const {
     selectedFiles,
@@ -113,30 +135,46 @@ export function PostCreationForm() {
     onError: (error) => toast.error(error.message),
   });
 
+  const {
+    accounts,
+    isLoading,
+    error,
+    searchQuery,
+    setSearchQuery,
+    selectedPlatforms,
+    setSelectedPlatforms,
+    filteredAccounts,
+    groupedAccounts,
+    refetchAccounts,
+  } = useAccounts();
+
+  const {
+    dragActive,
+    setDragActive,
+    processFiles,
+    handleDrop,
+    handleDragOver,
+    handleDragLeave,
+    getSupportedFormats,
+    getAcceptedFileTypes,
+    selectedPreviewIndex,
+    setSelectedPreviewIndex,
+    mediaUrls,
+    setMediaUrls,
+    imageLimitWarnings,
+  } = useFileProcessing({
+    selectedFiles,
+    setSelectedFiles,
+    isTextOnly,
+    loadVideo,
+    selectedAccounts: selectedAccounts as SocialAccountWithUsername[],
+    postType: postType ?? "",
+  });
+
   const [isPublishing, setIsPublishing] = useState(false);
   const [isPublishingModalOpen, setIsPublishingModalOpen] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [accounts, setAccounts] = useState<SocialAccountWithUsername[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
-  const [dragActive, setDragActive] = useState(false);
-  const [mediaUrls, setMediaUrls] = useState<MediaUrl[]>([]);
-
-  const getSupportedFormats = () => {
-    if (isTextOnly) return [];
-
-    if (postType === "video") {
-      return ["MP4", "MOV"];
-    } else if (postType === "images") {
-      return ["JPG", "PNG"];
-    }
-
-    return ["JPG", "PNG", "MP4", "MOV"];
-  };
 
   const form = useForm<PostFormValues>({
     resolver: zodResolver(postSchema),
@@ -146,6 +184,37 @@ export function PostCreationForm() {
     },
     mode: "onChange",
   });
+
+  const watchedText = useWatch({ control: form.control, name: "text" });
+  const isTextEmpty = (watchedText || "").length === 0;
+  const isFileMissing = !isTextOnly && selectedFiles.length === 0;
+  const isAccountMissing = selectedAccounts.length === 0;
+
+  // --- ANIMOWANE POWIADOMIENIA ---
+  const fileNotification = useAnimatedNotification(isFileMissing);
+  const textNotification = useAnimatedNotification(isTextEmpty);
+  const accountNotification = useAnimatedNotification(isAccountMissing);
+
+  // Funkcja dostępnych platform dla wybranego typu posta
+  const getAvailablePlatforms = () => {
+    const currentPostType = POST_TYPES.find((type) => type.id === postType);
+    if (!currentPostType) return AVAILABLE_PLATFORMS;
+    return AVAILABLE_PLATFORMS.filter((platform) =>
+      currentPostType.platforms.some(
+        (p) => p.name.toLowerCase() === platform.name.toLowerCase()
+      )
+    );
+  };
+
+  // Filtrowanie groupedAccounts do tylko dostępnych platform
+  const availablePlatformIds = getAvailablePlatforms().map((p) =>
+    p.id.toLowerCase()
+  );
+  const filteredGroupedAccounts = Object.fromEntries(
+    Object.entries(groupedAccounts).filter(([platform]) =>
+      availablePlatformIds.includes(platform)
+    )
+  );
 
   useEffect(() => {
     const subscription = form.watch((value) => {
@@ -160,41 +229,6 @@ export function PostCreationForm() {
   }, [form]);
 
   useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        setIsLoading(true);
-        const response = await fetch("/api/accounts");
-        if (!response.ok) {
-          throw new Error("Nie udało się pobrać połączonych kont");
-        }
-        const data = await response.json();
-        setAccounts(
-          (Array.isArray(data) ? data : data.accounts || []).map(
-            (acc: SocialAccountWithUsername) => ({
-              ...acc,
-              provider: acc.provider ?? acc.platform ?? "",
-              username: acc.username ?? "",
-              providerAccountId: acc.providerAccountId ?? "",
-              platform: acc.platform ?? acc.provider ?? "",
-              name: acc.name ?? "",
-              avatar: acc.avatar ?? "",
-              accountType: acc.accountType ?? "",
-              id: acc.id,
-            })
-          )
-        );
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Wystąpił błąd");
-        setAccounts([]);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchAccounts();
-  }, []);
-
-  useEffect(() => {
     if (selectedFiles.length === 0) setSelectedPreviewIndex(0);
     else if (selectedPreviewIndex >= selectedFiles.length)
       setSelectedPreviewIndex(0);
@@ -204,8 +238,6 @@ export function PostCreationForm() {
     try {
       setIsPublishing(true);
       setContent(data.text);
-
-      // Upload plików do S3 i zbierz URL-e
       const mediaUrls = await Promise.all(
         selectedFiles.map(
           (file) =>
@@ -233,11 +265,6 @@ export function PostCreationForm() {
                       name: file.name,
                     });
                   } else {
-                    console.error(
-                      `[onSubmit] Błąd uploadu pliku ${file.name}:`,
-                      xhr.status,
-                      xhr.response
-                    );
                     reject(
                       new Error(
                         `Nie udało się wrzucić pliku ${file.name} (kod: ${xhr.status}) ${xhr.response}`
@@ -247,9 +274,6 @@ export function PostCreationForm() {
                 };
 
                 xhr.onerror = function () {
-                  console.error(
-                    `[onSubmit] Błąd sieci podczas uploadu pliku ${file.name}`
-                  );
                   reject(
                     new Error(`Błąd sieci podczas uploadu pliku ${file.name}`)
                   );
@@ -260,7 +284,6 @@ export function PostCreationForm() {
             )
         )
       );
-
       setMediaUrls(mediaUrls);
       setIsPublishingModalOpen(true);
     } catch (error) {
@@ -269,7 +292,6 @@ export function PostCreationForm() {
       );
       setIsPublishingModalOpen(false);
       setIsPublishing(false);
-      console.error("[onSubmit] Błąd:", error);
     }
   };
 
@@ -277,183 +299,6 @@ export function PostCreationForm() {
     resetState();
     setCurrentStep(1);
     toast.success("Formularz został zresetowany");
-  };
-
-  const processFiles = async (files: File[]) => {
-    try {
-      console.log("[processFiles] Otrzymane pliki:", files);
-      if (isTextOnly) {
-        console.error("[processFiles] Tryb tekstowy - pliki nie są dozwolone");
-        throw new Error("Tryb tekstowy nie obsługuje plików");
-      }
-
-      const hasVideos = files.some((file) => file.type.startsWith("video/"));
-      const hasImages = files.some((file) => file.type.startsWith("image/"));
-      const currentHasVideos = selectedFiles.some((file) =>
-        file.type.startsWith("video/")
-      );
-      const currentHasImages = selectedFiles.some((file) =>
-        file.type.startsWith("image/")
-      );
-
-      // Blokada plików HEIC/HEIF (lepsze wykrywanie)
-      const hasHeic = files.some((file) => {
-        const ext = file.name.toLowerCase().split(".").pop();
-        return (
-          ["heic", "heif"].includes(ext || "") ||
-          file.type === "image/heic" ||
-          file.type === "image/heif" ||
-          ((file.type === "application/octet-stream" || file.type === "") &&
-            ["heic", "heif"].includes(ext || ""))
-        );
-      });
-      if (hasHeic) {
-        toast.error(
-          "Format HEIC/HEIF nie jest obsługiwany. Przekonwertuj zdjęcie do JPG lub PNG."
-        );
-        return;
-      }
-
-      if (
-        !isTextOnly &&
-        ((hasVideos && currentHasImages) || (hasImages && currentHasVideos))
-      ) {
-        console.error(
-          "[processFiles] Próba dodania zdjęć i filmów jednocześnie"
-        );
-        throw new Error("Nie można dodać jednocześnie zdjęć i filmów");
-      }
-
-      if (
-        (hasVideos && files.length > 1) ||
-        (currentHasVideos && files.length > 0)
-      ) {
-        console.error("[processFiles] Próba dodania więcej niż jednego filmu");
-        throw new Error("Można dodać tylko jeden film");
-      }
-
-      const oversizedFiles = files.filter((file) => file.size > MAX_FILE_SIZE);
-      if (oversizedFiles.length > 0) {
-        console.error(
-          "[processFiles] Pliki przekraczają maksymalny rozmiar:",
-          oversizedFiles
-        );
-        throw new Error(
-          `Pliki przekraczają maksymalny rozmiar ${
-            MAX_FILE_SIZE / (1024 * 1024)
-          }MB`
-        );
-      }
-
-      const processedFiles = files.map(
-        (file) => new File([file], file.name, { type: file.type })
-      );
-
-      setSelectedFiles([...selectedFiles, ...processedFiles]);
-
-      if (hasVideos) {
-        await loadVideo(processedFiles[0]);
-      }
-
-      toast.success("Pliki zostały dodane pomyślnie");
-    } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-        console.error("[processFiles] Błąd:", error.message);
-        return;
-      }
-      toast.error("Wystąpił nieznany błąd podczas przetwarzania plików.");
-      console.error("[processFiles] Nieznany błąd:", error);
-    } finally {
-      if (fileInputRef.current) {
-        fileInputRef.current.value = "";
-      }
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setDragActive(false);
-    const files = Array.from(e.dataTransfer.files);
-    processFiles(files);
-  };
-
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(true);
-  };
-
-  const handleDragLeave = (e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-  };
-
-  const filteredAccounts = (accounts || []).filter(
-    (account) =>
-      (account.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        account.provider.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (selectedPlatforms.length === 0 ||
-        selectedPlatforms.includes(account.provider.toLowerCase()))
-  );
-
-  const groupedAccounts = filteredAccounts.reduce(
-    (acc, account) => {
-      const platform = account.provider.toLowerCase();
-      if (!acc[platform]) {
-        acc[platform] = [];
-      }
-      acc[platform].push(account);
-      return acc;
-    },
-    {} as Record<string, SocialAccountWithUsername[]>
-  );
-
-  const getAcceptedFileTypes = () => {
-    if (isTextOnly) return "";
-
-    if (postType === "video") {
-      return ".mp4,.mov";
-    } else if (postType === "images") {
-      return ".jpg,.jpeg,.png";
-    }
-
-    return ".jpg,.jpeg,.png,.mp4,.mov";
-  };
-
-  // Limity platform
-  const PLATFORM_IMAGE_LIMITS: Record<string, { name: string; limit: number }> =
-    {
-      twitter: { name: "Twitter", limit: 4 },
-      facebook: { name: "Facebook", limit: 20 },
-      instagram: { name: "Instagram", limit: 10 },
-      tiktok: { name: "TikTok", limit: 35 },
-    };
-
-  // Zbierz limity dla wybranych platform
-  const imageLimitWarnings = Object.entries(PLATFORM_IMAGE_LIMITS)
-    .filter(([platform, { limit }]) =>
-      selectedAccounts.some(
-        (acc) =>
-          acc.provider.toLowerCase() === platform.toLowerCase() &&
-          selectedFiles.length > limit
-      )
-    )
-    .map(([platform, { name, limit }]) => ({
-      name,
-      limit,
-      platform,
-    }));
-
-  const getAvailablePlatforms = () => {
-    const currentPostType = POST_TYPES.find((type) => type.id === postType);
-    if (!currentPostType) return AVAILABLE_PLATFORMS;
-    return AVAILABLE_PLATFORMS.filter((platform) =>
-      currentPostType.platforms.some(
-        (p) => p.name.toLowerCase() === platform.name.toLowerCase()
-      )
-    );
   };
 
   if (error) {
@@ -477,60 +322,46 @@ export function PostCreationForm() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
-        <div className="space-y-1">
-          <h2 className="text-2xl font-semibold text-gray-900">
-            Tworzenie posta
-          </h2>
-          <p className="text-gray-600 text-sm">
-            {scheduledDate
-              ? "Zaplanuj post na wybraną datę i godzinę"
-              : "Opublikuj post natychmiast lub zaplanuj na później"}
+    <div className="flex flex-col lg:flex-row gap-8">
+      {/* Lewa kolumna: główne sekcje */}
+      <div className="flex-1 space-y-8">
+        {/* 1. Wybór kont */}
+        <section className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+          <h3 className="text-lg font-semibold mb-2 text-gray-900 flex items-center gap-3">
+            <User className="h-5 w-5 text-blue-500" />
+            Wybierz konta
+          </h3>
+          <p className="text-gray-500 text-sm mb-6">
+            Wybierz konta społecznościowe, na których chcesz opublikować post.
           </p>
-        </div>
-        <div className="flex items-center gap-2">
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowHelp(true)}
-                  className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
-                >
-                  <Info className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Pomoc i wskazówki</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <AccountSelectionSection
+            accounts={accounts}
+            selectedAccounts={selectedAccounts as SocialAccountWithUsername[]}
+            setSelectedAccounts={
+              setSelectedAccounts as (
+                accounts: SocialAccountWithUsername[]
+              ) => void
+            }
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            selectedPlatforms={selectedPlatforms}
+            setSelectedPlatforms={setSelectedPlatforms}
+            getAvailablePlatforms={getAvailablePlatforms}
+            groupedAccounts={filteredGroupedAccounts}
+            isLoading={isLoading}
+          />
+        </section>
 
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setShowResetConfirm(true)}
-                  className="text-gray-500 hover:text-red-600 hover:bg-red-50"
-                >
-                  <RotateCcw className="h-5 w-5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Resetuj formularz</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-6">
-          {!isTextOnly && (
+        {/* 2. Dodaj pliki */}
+        {!isTextOnly && (
+          <section className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900 flex items-center gap-3">
+              <FileIcon className="h-5 w-5 text-green-500" />
+              Dodaj pliki
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">
+              Dodaj zdjęcia lub filmy, które chcesz dołączyć do posta.
+            </p>
             <FileUploadSection
               dragActive={dragActive}
               setDragActive={setDragActive}
@@ -546,147 +377,61 @@ export function PostCreationForm() {
               getSupportedFormats={getSupportedFormats}
               MAX_FILE_SIZE={MAX_FILE_SIZE}
             />
-          )}
+          </section>
+        )}
 
-          <form
-            onSubmit={form.handleSubmit(onSubmit)}
-            className="space-y-6"
-            noValidate
-          >
+        {/* 3 i 4. Treść posta i Data publikacji w jednej linii na desktopie */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <section className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm lg:col-span-2">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900 flex items-center gap-3">
+              <MessageSquareText className="h-5 w-5 text-purple-500" />
+              Treść posta
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">
+              Wpisz treść posta. Możesz użyć hashtagów, oznaczeń i emoji.
+            </p>
             <PostTextSection
               isTextOnly={isTextOnly}
               form={form}
               selectedAccounts={selectedAccounts as SocialAccountWithUsername[]}
               getAvailablePlatforms={getAvailablePlatforms}
             />
-
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <Button
-                type="submit"
-                disabled={
-                  isPublishing ||
-                  (!isTextOnly && selectedFiles.length === 0) ||
-                  form.watch("text")?.length === 0 ||
-                  selectedAccounts.length === 0
-                }
-                className={cn(
-                  "w-full transition-all duration-200",
-                  isPublishing ||
-                    (!isTextOnly && selectedFiles.length === 0) ||
-                    form.watch("text")?.length === 0 ||
-                    selectedAccounts.length === 0
-                    ? "opacity-75 cursor-not-allowed"
-                    : "hover:shadow-md bg-blue-600 hover:bg-blue-700 text-white"
-                )}
-              >
-                {isPublishing ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    {scheduledDate ? "Planowanie..." : "Publikowanie..."}
-                  </>
-                ) : (
-                  <>
-                    <Send className="h-4 w-4 mr-2" />
-                    {scheduledDate ? "Zaplanuj post" : "Opublikuj post"}
-                  </>
-                )}
-              </Button>
-              <div className="mt-3 space-y-2">
-                {!isTextOnly && selectedFiles.length === 0 && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Info className="h-4 w-4" />
-                    <span>Dodaj plik, aby opublikować post</span>
-                  </div>
-                )}
-                {form.watch("text")?.length === 0 && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Info className="h-4 w-4" />
-                    <span>Dodaj tekst posta</span>
-                  </div>
-                )}
-                {selectedAccounts.length === 0 && (
-                  <div className="flex items-center gap-2 text-sm text-gray-500">
-                    <Info className="h-4 w-4" />
-                    <span>Wybierz przynajmniej jedno konto</span>
-                  </div>
-                )}
-              </div>
-            </div>
-          </form>
-        </div>
-
-        <div className="lg:col-span-1 space-y-6">
-          {!isTextOnly && selectedFiles.length > 0 && (
-            <ImagePreviewSection
-              selectedFiles={selectedFiles}
-              selectedPreviewIndex={selectedPreviewIndex}
-              setSelectedPreviewIndex={setSelectedPreviewIndex}
-              imageLimitWarnings={imageLimitWarnings}
-            />
-          )}
-
-          <div className="bg-white rounded-xl p-4 border border-gray-100 hover:shadow-md transition-shadow duration-200 sticky top-6">
-            <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent">
-              <AccountSelectionSection
-                accounts={accounts}
-                selectedAccounts={
-                  selectedAccounts as SocialAccountWithUsername[]
-                }
-                setSelectedAccounts={
-                  setSelectedAccounts as (
-                    accounts: SocialAccountWithUsername[]
-                  ) => void
-                }
-                searchQuery={searchQuery}
-                setSearchQuery={setSearchQuery}
-                selectedPlatforms={selectedPlatforms}
-                setSelectedPlatforms={setSelectedPlatforms}
-                getAvailablePlatforms={getAvailablePlatforms}
-                groupedAccounts={groupedAccounts}
-                isLoading={isLoading}
-              />
-            </div>
-
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <div className="flex items-center justify-between mb-3">
-                <Label className="text-base font-medium text-gray-900">
-                  Data publikacji
+          </section>
+          <section className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm lg:col-span-1 mt-8 lg:mt-0">
+            <h3 className="text-lg font-semibold mb-2 text-gray-900 flex items-center gap-3">
+              <CalendarIcon className="h-5 w-5 text-yellow-500" />
+              Data publikacji
+            </h3>
+            <p className="text-gray-500 text-sm mb-6">
+              Wybierz datę i godzinę, jeśli chcesz zaplanować post. Pozostaw
+              puste, aby opublikować od razu.
+            </p>
+            <div className="flex flex-col gap-5">
+              {/* WYBÓR DATY */}
+              <div>
+                <Label className="text-base font-medium text-gray-900 mb-2 block">
+                  Data
                 </Label>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    form.setValue("scheduledDate", undefined);
-                  }}
-                  className={cn(
-                    "text-gray-500 hover:text-gray-700",
-                    !form.watch("scheduledDate") && "hidden"
-                  )}
-                >
-                  <X className="h-4 w-4 mr-1" />
-                  Wyczyść datę
-                </Button>
-              </div>
-              <div className="space-y-3">
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       type="button"
                       variant={"outline"}
                       className={cn(
-                        "w-full justify-start text-left font-normal text-base transition-all duration-200 bg-gray-50 border-gray-200",
+                        "w-full h-12 justify-start text-left font-normal text-base transition-all duration-200 bg-gray-50 border-gray-200 px-4 py-3 rounded-lg",
                         !form.watch("scheduledDate") && "text-gray-500",
                         form.formState.errors.scheduledDate
                           ? "border-red-500 focus-visible:ring-red-500"
                           : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500"
                       )}
                     >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      <CalendarIcon className="mr-3 h-5 w-5 text-gray-400" />
                       {form.watch("scheduledDate") ? (
-                        format(form.watch("scheduledDate") as Date, "PPP", {
-                          locale: pl,
-                        })
+                        <span className="font-semibold text-gray-900">
+                          {format(form.watch("scheduledDate") as Date, "PPP", {
+                            locale: pl,
+                          })}
+                        </span>
                       ) : (
                         <span>Wybierz datę</span>
                       )}
@@ -709,7 +454,6 @@ export function PostCreationForm() {
                             date.getMonth(),
                             date.getDate()
                           );
-
                           if (selectedDate.getTime() === today.getTime()) {
                             const minTime = getMinScheduleTime();
                             form.setValue("scheduledDate", minTime);
@@ -737,12 +481,31 @@ export function PostCreationForm() {
                     />
                   </PopoverContent>
                 </Popover>
-
+                {/* Przycisk wyczyść datę */}
+                {form.watch("scheduledDate") && (
+                  <button
+                    type="button"
+                    onClick={() => form.setValue("scheduledDate", undefined)}
+                    className="mt-2 text-xs text-blue-600 hover:underline focus:outline-none"
+                  >
+                    Wyczyść datę
+                  </button>
+                )}
+              </div>
+              {/* WYBÓR GODZINY */}
+              <div>
+                <Label
+                  htmlFor="scheduledTime"
+                  className="text-base font-medium text-gray-900 mb-2 block"
+                >
+                  Godzina
+                </Label>
                 <div className="relative">
                   <Input
+                    id="scheduledTime"
                     type="time"
                     className={cn(
-                      "text-base transition-all duration-200 bg-gray-50 border-gray-200",
+                      "w-full h-12 text-base transition-all duration-200 bg-gray-50 border-gray-200 pl-4 pr-10 rounded-lg",
                       form.formState.errors.scheduledDate
                         ? "border-red-500 focus-visible:ring-red-500"
                         : "hover:border-gray-400 focus:border-blue-500 focus:ring-blue-500"
@@ -766,20 +529,165 @@ export function PostCreationForm() {
                     }}
                     disabled={!form.watch("scheduledDate")}
                   />
-                  <Clock className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <Clock className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400 pointer-events-none" />
                 </div>
-                {form.formState.errors.scheduledDate && (
-                  <div className="flex items-center gap-2 text-sm text-red-500 bg-red-50 p-2 rounded-md animate-fade-in">
-                    <AlertCircle className="h-4 w-4 flex-shrink-0" />
-                    <p>{form.formState.errors.scheduledDate.message}</p>
+              </div>
+              {/* BŁĄD */}
+              {form.formState.errors.scheduledDate && (
+                <div className="flex items-center gap-2 text-xs text-red-600 bg-red-50 p-2 rounded-md animate-fade-in mt-2">
+                  <AlertCircle className="h-4 w-4 flex-shrink-0" />
+                  <p>{form.formState.errors.scheduledDate.message}</p>
+                </div>
+              )}
+            </div>
+          </section>
+        </div>
+      </div>
+
+      {/* Prawa kolumna: podsumowanie i publikacja */}
+      <div className="w-full lg:w-[380px] flex-shrink-0 space-y-8">
+        <section className="bg-white rounded-xl p-6 border border-gray-100 shadow-md sticky top-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
+              <Send className="h-5 w-5 text-blue-500" />
+              Podsumowanie i publikacja
+            </h3>
+            <div className="flex items-center gap-2">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowHelp(true)}
+                      className="text-gray-500 hover:text-gray-700 hover:bg-gray-100"
+                    >
+                      <Info className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Pomoc i wskazówki</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setShowResetConfirm(true)}
+                      className="text-gray-500 hover:text-red-600 hover:bg-red-50"
+                    >
+                      <RotateCcw className="h-5 w-5" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Resetuj formularz</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </div>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6"
+            noValidate
+          >
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 text-sm text-gray-700">
+                <Info className="h-4 w-4" />
+                <span>
+                  {scheduledDate
+                    ? "Zaplanuj post na wybraną datę i godzinę"
+                    : "Opublikuj post natychmiast lub zaplanuj na później"}
+                </span>
+              </div>
+              <div className="space-y-2 min-h-[24px]">
+                {/* Dodaj plik */}
+                {fileNotification.shouldRender && (
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 text-sm text-gray-500 transition-opacity duration-300",
+                      fileNotification.visible ? "opacity-100" : "opacity-0"
+                    )}
+                  >
+                    <Info className="h-4 w-4" />
+                    <span>Dodaj plik, aby opublikować post</span>
+                  </div>
+                )}
+                {/* Dodaj tekst */}
+                {textNotification.shouldRender && (
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 text-sm text-gray-500 transition-opacity duration-300",
+                      textNotification.visible ? "opacity-100" : "opacity-0"
+                    )}
+                  >
+                    <Info className="h-4 w-4" />
+                    <span>Dodaj tekst posta</span>
+                  </div>
+                )}
+                {/* Wybierz konto */}
+                {accountNotification.shouldRender && (
+                  <div
+                    className={cn(
+                      "flex items-center gap-2 text-sm text-gray-500 transition-opacity duration-300",
+                      accountNotification.visible ? "opacity-100" : "opacity-0"
+                    )}
+                  >
+                    <Info className="h-4 w-4" />
+                    <span>Wybierz przynajmniej jedno konto</span>
                   </div>
                 )}
               </div>
             </div>
-          </div>
-        </div>
+            <Button
+              type="submit"
+              disabled={
+                isPublishing ||
+                (!isTextOnly && selectedFiles.length === 0) ||
+                form.watch("text")?.length === 0 ||
+                selectedAccounts.length === 0
+              }
+              className={cn(
+                "w-full transition-all duration-200",
+                isPublishing ||
+                  (!isTextOnly && selectedFiles.length === 0) ||
+                  form.watch("text")?.length === 0 ||
+                  selectedAccounts.length === 0
+                  ? "opacity-75 cursor-not-allowed"
+                  : "hover:shadow-md bg-blue-600 hover:bg-blue-700 text-white"
+              )}
+            >
+              {isPublishing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {scheduledDate ? "Planowanie..." : "Publikowanie..."}
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  {scheduledDate ? "Zaplanuj post" : "Opublikuj post"}
+                </>
+              )}
+            </Button>
+          </form>
+          {/* Podgląd obrazów pod podsumowaniem */}
+          {!isTextOnly && selectedFiles.length > 0 && (
+            <div className="mt-8">
+              <ImagePreviewSection
+                selectedFiles={selectedFiles}
+                selectedPreviewIndex={selectedPreviewIndex}
+                setSelectedPreviewIndex={setSelectedPreviewIndex}
+                imageLimitWarnings={imageLimitWarnings}
+              />
+            </div>
+          )}
+        </section>
       </div>
 
+      {/* Ukryty input do uploadu plików */}
       <input
         ref={fileInputRef}
         type="file"
@@ -792,6 +700,7 @@ export function PostCreationForm() {
         onChange={(e) => processFiles(Array.from(e.target.files || []))}
       />
 
+      {/* Modale */}
       <PublishingModal
         isOpen={isPublishingModalOpen}
         onClose={() => {
@@ -801,7 +710,6 @@ export function PostCreationForm() {
         content={form.watch("text")}
         mediaUrls={mediaUrls}
       />
-
       <Dialog open={showResetConfirm} onOpenChange={setShowResetConfirm}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -826,7 +734,6 @@ export function PostCreationForm() {
           </div>
         </DialogContent>
       </Dialog>
-
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader className="space-y-3">
@@ -837,7 +744,6 @@ export function PostCreationForm() {
               Dowiedz się więcej o tworzeniu i publikacji postów
             </DialogDescription>
           </DialogHeader>
-
           <div className="mt-6 space-y-6">
             <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6">
               <div className="flex items-start gap-4">
@@ -882,7 +788,6 @@ export function PostCreationForm() {
                 </div>
               </div>
             </div>
-
             <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6">
               <div className="flex items-start gap-4">
                 <div className="rounded-lg bg-green-50 p-3">
@@ -901,7 +806,6 @@ export function PostCreationForm() {
                 </div>
               </div>
             </div>
-
             <div className="relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6">
               <div className="flex items-start gap-4">
                 <div className="rounded-lg bg-purple-50 p-3">

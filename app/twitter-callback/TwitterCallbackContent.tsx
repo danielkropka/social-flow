@@ -31,6 +31,7 @@ export default function TwitterCallbackContent() {
     }
 
     handleTwitterCallback(oauth_token, oauth_verifier);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams]);
 
   const handleTwitterCallback = async (
@@ -38,12 +39,14 @@ export default function TwitterCallbackContent() {
     oauth_verifier: string
   ) => {
     try {
-      const response = await fetch("/api/auth/twitter/access-token", {
+      // Wysyłamy żądanie do /api/accounts/connect z odpowiednimi danymi
+      const response = await fetch("/api/accounts/connect", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
+          provider: "twitter",
           oauth_token,
           oauth_verifier,
         }),
@@ -52,25 +55,9 @@ export default function TwitterCallbackContent() {
       const data = await response.json();
 
       if (!response.ok) {
-        switch (response.status) {
-          case 400:
-            throw new Error(data.error || "Nieprawidłowe dane autoryzacji");
-          case 401:
-            throw new Error(data.error || "Brak autoryzacji");
-          case 403:
-            throw new Error(
-              data.error || "Brak uprawnień do wykonania operacji"
-            );
-          case 429:
-            throw new Error(
-              data.error || "Przekroczono limit prób. Spróbuj ponownie później"
-            );
-          default:
-            throw new Error(
-              data.error ||
-                "Wystąpił nieoczekiwany błąd podczas łączenia z Twitterem"
-            );
-        }
+        throw new Error(
+          data.error || "Wystąpił błąd podczas łączenia z Twitterem"
+        );
       }
 
       if (data.success) {
@@ -78,7 +65,6 @@ export default function TwitterCallbackContent() {
           description: `Połączono konto: ${data.account.name} (@${data.account.username})`,
           duration: 5000,
         });
-
         setTimeout(() => {
           navigateToDashboard();
         }, 3000);
@@ -88,8 +74,7 @@ export default function TwitterCallbackContent() {
         );
       }
     } catch (error) {
-      console.error("Błąd podczas łączenia z Twitterem:", error);
-
+      // Obsługa błędów
       const errorMessage =
         error instanceof Error
           ? error.message

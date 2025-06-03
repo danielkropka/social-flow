@@ -104,7 +104,7 @@ export default function Navbar() {
         <div className="flex items-center justify-between h-20">
           <Link
             href="/"
-            className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text transition-all duration-200 hover:from-blue-600 hover:to-blue-700 tracking-tight drop-shadow-sm"
+            className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text transition-all duration-200 hover:from-blue-600 hover:to-blue-700 tracking-tight drop-shadow-sm focus:outline-blue-500"
             aria-label="Strona główna"
           >
             Social Flow
@@ -114,7 +114,7 @@ export default function Navbar() {
           <div className="hidden lg:flex items-center gap-12">
             <Link
               href="#reviews"
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2 focus:outline-blue-500"
               onClick={(e) => handleScroll(e, "#reviews")}
               aria-label="Przejdź do sekcji opinii"
             >
@@ -122,7 +122,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="#platforms"
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2 focus:outline-blue-500"
               onClick={(e) => handleScroll(e, "#platforms")}
               aria-label="Przejdź do sekcji platform"
             >
@@ -130,7 +130,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="#pricing"
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2 focus:outline-blue-500"
               onClick={(e) => handleScroll(e, "#pricing")}
               aria-label="Przejdź do sekcji cennika"
             >
@@ -138,7 +138,7 @@ export default function Navbar() {
             </Link>
             <Link
               href="#faq"
-              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2"
+              className="text-gray-600 hover:text-blue-600 transition-colors duration-200 relative after:content-[''] after:block after:w-0 after:h-0.5 after:bg-blue-500 after:transition-all after:duration-300 hover:after:w-full after:absolute after:left-0 after:-bottom-1 text-lg font-medium px-2 focus:outline-blue-500"
               onClick={(e) => handleScroll(e, "#faq")}
               aria-label="Przejdź do sekcji FAQ"
             >
@@ -152,7 +152,7 @@ export default function Navbar() {
           {/* Mobile menu button */}
           <button
             onClick={toggleMenu}
-            className="lg:hidden p-3 rounded-xl hover:bg-gray-100 transition-colors duration-200 active:scale-95 shadow-sm"
+            className="lg:hidden p-3 rounded-xl hover:bg-gray-100 transition-colors duration-200 active:scale-95 shadow-sm focus:outline-blue-500"
             aria-label={isOpen ? "Zamknij menu" : "Otwórz menu"}
             aria-expanded={isOpen}
           >

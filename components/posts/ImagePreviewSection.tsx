@@ -52,6 +52,7 @@ export function ImagePreviewSection({
                 src={URL.createObjectURL(selectedFiles[selectedPreviewIndex])}
                 alt="Pełny obraz"
                 className="w-full h-full object-contain"
+                loading="lazy"
               />
             )}
           </div>

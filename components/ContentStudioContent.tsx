@@ -295,6 +295,7 @@ function ContentStudioContent() {
                                               src={acc.avatar}
                                               alt="avatar"
                                               className="w-9 h-9 sm:w-10 sm:h-10 rounded-full object-cover bg-gray-100"
+                                              loading="lazy"
                                             />
                                           ) : (
                                             <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-gray-100 dark:bg-neutral-700 flex items-center justify-center overflow-hidden">
@@ -434,6 +435,7 @@ function ContentStudioContent() {
                                                 src={acc.avatar}
                                                 alt="avatar"
                                                 className="w-8 h-8 sm:w-9 sm:h-9 rounded-full object-cover bg-gray-100"
+                                                loading="lazy"
                                               />
                                             ) : (
                                               <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gray-100 dark:bg-neutral-700 flex items-center justify-center overflow-hidden">

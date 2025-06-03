@@ -194,54 +194,18 @@ export function PostTypeSelectionStep() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Wybierz typ posta
-          </h2>
-          <p className="text-gray-600">
-            Wybierz sposób, w jaki chcesz utworzyć swój post
-          </p>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowHelp(true)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <Info className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Pomoc i wskazówki</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+    <div className="w-full mx-auto">
+      {/* Tytuł i opis sekcji */}
+      <div className="mb-6 flex flex-col gap-1">
+        <h2 className="text-2xl font-bold text-gray-900">Tworzenie posta</h2>
+        <p className="text-gray-600 text-base">
+          Wybierz sposób, w jaki chcesz utworzyć swój post
+        </p>
       </div>
-
-      {!isLoading && !isSubscribed && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Wymagana subskrypcja</AlertTitle>
-          <AlertDescription>
-            Aby korzystać z funkcji tworzenia postów, musisz wykupić subskrypcję
-            lub skorzystać z okresu próbnego.
-            <br />
-            <Link href="/#pricing" className="hover:underline">
-              Kliknij tutaj
-            </Link>
-            , aby wykupić subskrypcję lub rozpocząć okres próbny.
-          </AlertDescription>
-        </Alert>
-      )}
-
+      {/* WYBÓR TYPU POSTA */}
       <div
         className={cn(
-          "grid grid-cols-1 md:grid-cols-3 gap-6",
+          "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6 xl:gap-8 mb-8",
           !isSubscribed && "opacity-50 pointer-events-none"
         )}
       >
@@ -250,14 +214,14 @@ export function PostTypeSelectionStep() {
             key={type.id}
             onClick={() => handleTypeSelect(type.id)}
             className={cn(
-              "flex flex-col items-center p-6 border rounded-xl transition-all duration-300",
-              "border-gray-100 bg-white hover:border-blue-300 hover:bg-blue-50/50 hover:shadow-md"
+              "flex flex-col items-center p-6 border rounded-2xl transition-all duration-300 min-h-[220px] bg-white",
+              "border-gray-100 shadow-md hover:shadow-xl hover:border-blue-300 hover:bg-blue-50/40 hover:scale-[1.03]"
             )}
           >
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 shadow-sm">
               <type.icon className="w-8 h-8 text-blue-500" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
               {type.title}
             </h3>
             <p className="text-sm text-gray-600 text-center mb-4">
@@ -277,7 +241,55 @@ export function PostTypeSelectionStep() {
           </button>
         ))}
       </div>
-
+      {/* PORADY/INSPIRACJE - mini blog, mniejsze i na dole */}
+      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="bg-white rounded-xl shadow p-3 flex gap-3 border border-blue-100">
+          <div className="flex-shrink-0 flex items-start pt-0.5">
+            <ImageIcon className="h-6 w-6 text-blue-500" />
+          </div>
+          <div>
+            <h4 className="text-base font-semibold text-gray-900 mb-0.5">
+              Jak zwiększyć zaangażowanie odbiorców?
+            </h4>
+            <p className="text-gray-700 text-xs">
+              Dodawaj atrakcyjne zdjęcia i grafiki do swoich postów. Obraz
+              przyciąga uwagę i sprawia, że użytkownicy chętniej reagują na
+              Twoje treści.
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow p-3 flex gap-3 border border-purple-100">
+          <div className="flex-shrink-0 flex items-start pt-0.5">
+            <FileText className="h-6 w-6 text-purple-500" />
+          </div>
+          <div>
+            <h4 className="text-base font-semibold text-gray-900 mb-0.5">
+              Jak pisać skuteczne posty?
+            </h4>
+            <p className="text-gray-700 text-xs">
+              Stosuj krótkie, chwytliwe teksty. Zwięzłość i konkret to klucz do
+              skutecznej komunikacji – odbiorcy szybciej zrozumieją Twój
+              przekaz.
+            </p>
+          </div>
+        </div>
+        <div className="bg-white rounded-xl shadow p-3 flex gap-3 border border-pink-100">
+          <div className="flex-shrink-0 flex items-start pt-0.5">
+            <Video className="h-6 w-6 text-pink-500" />
+          </div>
+          <div>
+            <h4 className="text-base font-semibold text-gray-900 mb-0.5">
+              Dlaczego warto publikować regularnie?
+            </h4>
+            <p className="text-gray-700 text-xs">
+              Systematyczność buduje relację z odbiorcami i zwiększa zasięgi.
+              Regularne posty sprawiają, że Twoja marka jest stale obecna w
+              świadomości użytkowników.
+            </p>
+          </div>
+        </div>
+      </div>
+      {/* Dialog pomocy bez zmian */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader className="space-y-3">

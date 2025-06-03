@@ -58,11 +58,20 @@ export default async function RootLayout({
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:url" content={canonicalUrl} />
       </head>
-      <body className={cn("bg-white relative", inter.className)}>
+      <body
+        className={cn(
+          "bg-gradient-to-br from-blue-50 via-white to-purple-100 min-h-screen relative overflow-x-hidden",
+          inter.className
+        )}
+      >
         <Providers>
-          {children}
-          <SpeedInsights />
-          <Toaster position="top-center" />
+          <div className="flex min-h-screen">
+            <main className="flex-1 flex flex-col shadow-xl rounded-lg bg-white/90">
+              {children}
+              <SpeedInsights />
+              <Toaster position="top-center" />
+            </main>
+          </div>
         </Providers>
       </body>
     </html>

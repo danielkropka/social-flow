@@ -53,6 +53,7 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
           className={cn("w-full h-full object-cover rounded-lg", className)}
           onError={() => setImageError(true)}
           style={{ objectFit: "cover", width: "100%", height: "100%" }}
+          loading="lazy"
         />
       </div>
     </ImagePreviewModal>
