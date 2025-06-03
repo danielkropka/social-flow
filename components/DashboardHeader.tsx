@@ -1,9 +1,6 @@
-import { Menu, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { Menu } from "lucide-react";
 
 export function DashboardHeader({ onMenuClick }: { onMenuClick: () => void }) {
-  const router = useRouter();
-
   return (
     <header className="h-16 border-b border-gray-100 bg-white flex items-center justify-between px-6 sticky top-0 z-40 lg:hidden">
       <span className="text-xl font-semibold bg-gradient-to-r from-blue-500 to-blue-600 text-transparent bg-clip-text">

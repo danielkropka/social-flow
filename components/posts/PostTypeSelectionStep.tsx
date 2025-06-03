@@ -1,14 +1,7 @@
 import React, { useState } from "react";
 import { usePostCreation } from "@/context/PostCreationContext";
 import { cn } from "@/lib/utils/utils";
-import { Button } from "@/components/ui/button";
 import { FileText, Image as ImageIcon, Info, Video } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +12,6 @@ import {
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import { IconType } from "react-icons";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   SUPPORTED_PLATFORMS,

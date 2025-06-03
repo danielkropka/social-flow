@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { MAX_FILE_SIZE } from "@/constants";
 import type { SocialAccountWithUsername } from "@/types";

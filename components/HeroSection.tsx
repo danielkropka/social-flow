@@ -73,7 +73,7 @@ export default function HeroSection() {
             </div>
 
             <ul className="flex flex-col gap-2 mt-5 text-lg min-h-[180px] bg-white/80 rounded-2xl border border-blue-100 p-4 shadow-xl backdrop-blur-xl list-none">
-              {advantages.map((adv, i) => (
+              {advantages.map((adv) => (
                 <li key={adv.text} className="flex items-center gap-3 group">
                   <span className="transition-transform group-hover:scale-110 group-hover:text-blue-700 duration-200">
                     {adv.icon}

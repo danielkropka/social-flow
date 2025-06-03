@@ -14,7 +14,6 @@ import {
   Clock,
   Loader2,
   AlertCircle,
-  X,
   RotateCcw,
   Info,
   Send,
@@ -143,9 +142,7 @@ export function PostCreationForm() {
     setSearchQuery,
     selectedPlatforms,
     setSelectedPlatforms,
-    filteredAccounts,
     groupedAccounts,
-    refetchAccounts,
   } = useAccounts();
 
   const {
