@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     let details = "Nieznany błąd";
-    let message =
+    const message =
       "Coś poszło nie tak podczas publikacji posta. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.";
     if (error instanceof Error) {
       if (

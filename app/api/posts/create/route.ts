@@ -77,7 +77,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     let details = "Nieznany błąd";
-    let message =
+    const message =
       "Coś poszło nie tak podczas tworzenia posta. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.";
     if (error instanceof Error) {
       if (error.message.includes("Unique constraint failed")) {
