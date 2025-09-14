@@ -192,6 +192,41 @@ export function PostTypeSelectionStep() {
           Wybierz sposób, w jaki chcesz utworzyć swój post
         </p>
       </div>
+      {!isSubscribed && (
+        <div className="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <Info className="w-5 h-5 text-amber-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-amber-900 mb-2">
+                Wymagana subskrypcja
+              </h3>
+              <p className="text-amber-800 text-sm leading-relaxed mb-3">
+                Aby móc tworzyć i publikować posty na platformach
+                społecznościowych, potrzebujesz aktywnej subskrypcji Premium.
+                Nasza subskrypcja daje Ci dostęp do wszystkich funkcji
+                publikowania, zaawansowanych narzędzi analitycznych oraz
+                nieograniczonej liczby postów.
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-amber-700">
+                <span className="px-2 py-1 bg-amber-100 rounded-full">
+                  ✓ Publikowanie na wszystkich platformach
+                </span>
+                <span className="px-2 py-1 bg-amber-100 rounded-full">
+                  ✓ Zaawansowane narzędzia analityczne
+                </span>
+                <span className="px-2 py-1 bg-amber-100 rounded-full">
+                  ✓ Nieograniczona liczba postów
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* WYBÓR TYPU POSTA */}
       <div
         className={cn(
