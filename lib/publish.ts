@@ -496,7 +496,7 @@ export async function publishTwitterPost({
         }
       }
     }
-    let postData: { text: string; media?: { media_ids: string[] } } = {
+    const postData: { text: string; media?: { media_ids: string[] } } = {
       text: content,
     };
     if (mediaIds.length > 0) {
