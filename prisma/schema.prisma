@@ -29,11 +29,6 @@ enum PlanInterval {
     YEAR
 }
 
-enum MediaType {
-    IMAGE
-    VIDEO
-}
-
 enum Provider {
     FACEBOOK
     INSTAGRAM
@@ -116,7 +111,7 @@ model User {
 model Media {
     id           String    @id @default(auto()) @map("_id") @db.ObjectId
     url          String    @db.String
-    type         MediaType
+    type         String
     thumbnailUrl String?   @db.String
     postId       String    @db.ObjectId
     post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)

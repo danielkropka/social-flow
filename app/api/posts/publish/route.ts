@@ -25,7 +25,6 @@ export async function POST(req: NextRequest) {
     where: {
       id: postId,
       userId: session.user.id,
-      deletedAt: null,
     },
     include: {
       media: true,
@@ -124,10 +123,26 @@ export async function POST(req: NextRequest) {
       postUrl: publishResult.postUrl,
     });
   } catch (error) {
+    let details = "Nieznany błąd";
+    let message =
+      "Coś poszło nie tak podczas publikacji posta. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.";
+    if (error instanceof Error) {
+      if (
+        error.message.toLowerCase().includes("not found") ||
+        error.message.toLowerCase().includes("nie znaleziono")
+      ) {
+        details =
+          "Nie znaleziono posta lub konta. Odśwież stronę i spróbuj ponownie.";
+      } else if (error.message.includes("ECONNREFUSED")) {
+        details = "Brak połączenia z serwerem. Spróbuj ponownie później.";
+      } else {
+        details = error.message;
+      }
+    }
     return NextResponse.json(
       {
-        error: "Błąd podczas publikacji posta",
-        details: error instanceof Error ? error.message : "Nieznany błąd",
+        error: message,
+        details,
       },
       { status: 500 }
     );

@@ -114,7 +114,7 @@ export function PublishingModal({
           }),
         });
         const dataCreate = await resCreate.json();
-        if (!resCreate.ok || !dataCreate.success) {
+        if (!resCreate.ok || !dataCreate.success || !dataCreate.data?.id) {
           setStatusList((list) =>
             list.map((s, i) =>
               i === nextIndex
@@ -124,7 +124,8 @@ export function PublishingModal({
                     error:
                       dataCreate.details ||
                       dataCreate.error ||
-                      "Błąd tworzenia posta",
+                      dataCreate.message ||
+                      `Błąd tworzenia posta (kod: ${resCreate.status})`,
                   }
                 : s
             )
@@ -132,17 +133,45 @@ export function PublishingModal({
           return;
         }
 
-        const resPublish = await fetch("/api/posts/publish", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            provider: acc.provider,
-            postId: dataCreate.postId,
-            accountId: acc.accountId,
-          }),
-        });
-        const dataPublish = await resPublish.json();
-        if (resPublish.ok && dataPublish.success) {
+        // Dodaję opóźnienie 300ms, aby mieć pewność, że post jest już w bazie
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        // Mechanizm retry dla publish
+        let publishSuccess = false;
+        let publishError = null;
+        for (let attempt = 1; attempt <= 3; attempt++) {
+          const resPublish = await fetch("/api/posts/publish", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              provider: acc.provider,
+              postId: dataCreate.data.id,
+              accountId: acc.accountId,
+            }),
+          });
+          const dataPublish = await resPublish.json();
+          if (resPublish.ok && dataPublish.success) {
+            publishSuccess = true;
+            break;
+          } else {
+            publishError =
+              dataPublish.details ||
+              dataPublish.error ||
+              dataPublish.message ||
+              `Błąd publikacji (kod: ${resPublish.status})`;
+            // Jeśli błąd dotyczy braku posta, czekaj i spróbuj ponownie
+            if (
+              typeof publishError === "string" &&
+              (publishError.toLowerCase().includes("nie znaleziono") ||
+                publishError.toLowerCase().includes("not found"))
+            ) {
+              await new Promise((resolve) => setTimeout(resolve, 500));
+            } else {
+              break;
+            }
+          }
+        }
+        if (publishSuccess) {
           setStatusList((list) =>
             list.map((s, i) =>
               i === nextIndex ? { ...s, status: "success" } : s
@@ -155,23 +184,23 @@ export function PublishingModal({
                 ? {
                     ...s,
                     status: "error",
-                    error:
-                      dataPublish.details ||
-                      dataPublish.error ||
-                      "Błąd publikacji",
+                    error: publishError,
                   }
                 : s
             )
           );
         }
       } catch (e: unknown) {
+        let errorMsg = "Błąd publikacji";
+        if (e instanceof Error) errorMsg = e.message;
+        else if (typeof e === "string") errorMsg = e;
         setStatusList((list) =>
           list.map((s, i) =>
             i === nextIndex
               ? {
                   ...s,
                   status: "error",
-                  error: e instanceof Error ? e.message : "Błąd publikacji",
+                  error: errorMsg,
                 }
               : s
           )

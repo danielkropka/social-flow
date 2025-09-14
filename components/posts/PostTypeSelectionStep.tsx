@@ -231,54 +231,6 @@ export function PostTypeSelectionStep() {
           </button>
         ))}
       </div>
-      {/* PORADY/INSPIRACJE - mini blog, mniejsze i na dole */}
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-white rounded-xl shadow p-3 flex gap-3 border border-blue-100">
-          <div className="flex-shrink-0 flex items-start pt-0.5">
-            <ImageIcon className="h-6 w-6 text-blue-500" />
-          </div>
-          <div>
-            <h4 className="text-base font-semibold text-gray-900 mb-0.5">
-              Jak zwiększyć zaangażowanie odbiorców?
-            </h4>
-            <p className="text-gray-700 text-xs">
-              Dodawaj atrakcyjne zdjęcia i grafiki do swoich postów. Obraz
-              przyciąga uwagę i sprawia, że użytkownicy chętniej reagują na
-              Twoje treści.
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-3 flex gap-3 border border-purple-100">
-          <div className="flex-shrink-0 flex items-start pt-0.5">
-            <FileText className="h-6 w-6 text-purple-500" />
-          </div>
-          <div>
-            <h4 className="text-base font-semibold text-gray-900 mb-0.5">
-              Jak pisać skuteczne posty?
-            </h4>
-            <p className="text-gray-700 text-xs">
-              Stosuj krótkie, chwytliwe teksty. Zwięzłość i konkret to klucz do
-              skutecznej komunikacji – odbiorcy szybciej zrozumieją Twój
-              przekaz.
-            </p>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow p-3 flex gap-3 border border-pink-100">
-          <div className="flex-shrink-0 flex items-start pt-0.5">
-            <Video className="h-6 w-6 text-pink-500" />
-          </div>
-          <div>
-            <h4 className="text-base font-semibold text-gray-900 mb-0.5">
-              Dlaczego warto publikować regularnie?
-            </h4>
-            <p className="text-gray-700 text-xs">
-              Systematyczność buduje relację z odbiorcami i zwiększa zasięgi.
-              Regularne posty sprawiają, że Twoja marka jest stale obecna w
-              świadomości użytkowników.
-            </p>
-          </div>
-        </div>
-      </div>
       {/* Dialog pomocy bez zmian */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="sm:max-w-3xl">

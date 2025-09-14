@@ -21,14 +21,13 @@ const s3 = new S3Client({
 export async function POST(req: NextRequest) {
   return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
-      const fileName = req.headers.get("X-File-Name") || `${Date.now()}-file`;
+      const fileName = req.headers.get("X-File-Name");
       const contentType =
         req.headers.get("X-File-Type") || "application/octet-stream";
       const blobUrl = req.headers.get("X-Blob-Url");
 
       let buffer: Buffer;
       if (blobUrl) {
-        // Dla URL-i blob, pobieramy dane z URL-a
         const response = await fetch(blobUrl);
         if (!response.ok) {
           throw new Error("Nie udało się pobrać pliku z URL blob");
@@ -37,13 +36,12 @@ export async function POST(req: NextRequest) {
         const arrayBuffer = await blob.arrayBuffer();
         buffer = Buffer.from(arrayBuffer);
       } else {
-        // Dla zwykłych plików, używamy danych z requestu
         buffer = Buffer.from(await req.arrayBuffer());
       }
 
       const command = new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET_NAME!,
-        Key: fileName,
+        Key: fileName || `${Date.now()}-file`,
         Body: buffer,
         ContentType: contentType,
       });

@@ -30,6 +30,7 @@ export default function SignIn() {
     register,
     handleSubmit,
     formState: { errors },
+    setError,
   } = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
   });
@@ -60,13 +61,18 @@ export default function SignIn() {
           );
           break;
         case "InvalidCredentials":
+          setError("email", {
+            type: "manual",
+            message: "Nieprawidłowy email lub hasło.",
+          });
+          setError("password", {
+            type: "manual",
+            message: "Nieprawidłowy email lub hasło.",
+          });
           toast.error("Nieprawidłowy email lub hasło");
           break;
         case "Email i hasło są wymagane":
           toast.error("Proszę wypełnić wszystkie pola");
-          break;
-        case "Nie znaleziono konta z podanym adresem email":
-          toast.error("Nie znaleziono konta z podanym adresem email");
           break;
         default:
           if (result.error) {

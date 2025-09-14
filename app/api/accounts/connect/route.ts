@@ -115,8 +115,6 @@ export async function GET(request: NextRequest) {
         ...oauth.toHeader(oauth.authorize(requestOptions)),
       },
     });
-    console.log(requestTokenResponse);
-    console.log(requestOptions);
     if (!requestTokenResponse.ok) {
       return NextResponse.json(
         { error: "Nie udało się pobrać tokena" },

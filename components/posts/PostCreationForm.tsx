@@ -377,16 +377,14 @@ export function PostCreationForm() {
           </section>
         )}
 
-        {/* 3 i 4. Treść posta i Data publikacji w jednej linii na desktopie */}
+        {/* 3 i 4. Treść posta i Data publikacji */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <section className="bg-white rounded-xl p-6 border border-gray-100 shadow-sm lg:col-span-2">
             <h3 className="text-lg font-semibold mb-2 text-gray-900 flex items-center gap-3">
               <MessageSquareText className="h-5 w-5 text-purple-500" />
               Treść posta
             </h3>
-            <p className="text-gray-500 text-sm mb-6">
-              Wpisz treść posta. Możesz użyć hashtagów, oznaczeń i emoji.
-            </p>
+            <p className="text-gray-500 text-sm mb-6">Wpisz treść posta.</p>
             <PostTextSection
               isTextOnly={isTextOnly}
               form={form}

@@ -312,7 +312,21 @@ export async function publishTwitterPost({
     if (mediaUrls && mediaUrls.length > 0) {
       for (let i = 0; i < Math.min(mediaUrls.length, 4); i++) {
         const mediaData = mediaUrls[i];
-        const mediaType = mediaData.type || "application/octet-stream";
+        const mediaType = mediaData.type;
+        // Walidacja typu MIME
+        const allowedImageTypes = ["image/jpeg", "image/png", "image/gif"];
+        const allowedVideoTypes = ["video/mp4"];
+        let mediaCategory: "tweet_image" | "tweet_video";
+        console.log("Typ MIME przesyłany do Twittera:", mediaType);
+        if (allowedImageTypes.includes(mediaType)) {
+          mediaCategory = "tweet_image";
+        } else if (allowedVideoTypes.includes(mediaType)) {
+          mediaCategory = "tweet_video";
+        } else {
+          throw new Error(
+            `Nieobsługiwany typ pliku dla Twittera: ${mediaType}. Dozwolone typy: obrazy: ${allowedImageTypes.join(", ")}, wideo: ${allowedVideoTypes.join(", ")}`
+          );
+        }
         let binaryData;
         if (Array.isArray(mediaData.data)) {
           binaryData = new Uint8Array(mediaData.data);
@@ -322,17 +336,21 @@ export async function publishTwitterPost({
           throw new Error(`Nieprawidłowy format danych dla pliku ${i + 1}`);
         }
         const s3Url = await uploadMediaToS3(binaryData, mediaType, baseUrl);
-        let mediaCategory = "tweet_image";
-        if (mediaType.startsWith("video/")) {
-          mediaCategory = "tweet_video";
-        }
         const s3Response = await fetch(s3Url);
+        console.log(s3Response);
         if (!s3Response.ok) {
           throw new Error(
             `Nie udało się pobrać pliku z S3: ${s3Response.statusText}`
           );
         }
         const s3Blob = await s3Response.blob();
+        // Logowanie rozmiaru i fragmentu pliku
+        console.log("Rozmiar pliku:", s3Blob.size);
+        const buf = await s3Blob.arrayBuffer();
+        console.log(
+          "Pierwsze bajty:",
+          Array.from(new Uint8Array(buf).slice(0, 10))
+        );
         if (
           s3Blob.size >
           (mediaCategory === "tweet_video"
@@ -400,11 +418,12 @@ export async function publishTwitterPost({
             key: accessToken,
             secret: accessTokenSecret,
           });
+          const appendHeaders = {
+            Authorization: oauth.toHeader(appendAuthorization).Authorization,
+          };
           const appendResponse = await fetch(appendRequestData.url, {
             method: "POST",
-            headers: {
-              Authorization: oauth.toHeader(appendAuthorization).Authorization,
-            },
+            headers: appendHeaders,
             body: appendForm,
           });
           if (!appendResponse.ok) {
@@ -435,7 +454,10 @@ export async function publishTwitterPost({
           body: finalizeForm,
         });
         if (!finalizeResponse.ok) {
-          throw new Error("Błąd podczas finalizacji uploadu mediów");
+          const errorText = await finalizeResponse.text();
+          throw new Error(
+            `Błąd podczas finalizacji uploadu mediów: ${errorText}`
+          );
         }
         const finalizeData = await finalizeResponse.json();
         if (finalizeData.processing_info) {
@@ -474,10 +496,12 @@ export async function publishTwitterPost({
         }
       }
     }
-    const postData = {
+    let postData: { text: string; media?: { media_ids: string[] } } = {
       text: content,
-      media: { media_ids: mediaIds.map((m) => m.mediaId) },
     };
+    if (mediaIds.length > 0) {
+      postData.media = { media_ids: mediaIds.map((m) => m.mediaId) };
+    }
     const postRequestData = {
       url: "https://api.twitter.com/2/tweets",
       method: "POST",
