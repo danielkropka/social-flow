@@ -28,7 +28,6 @@ export async function POST(req: NextRequest) {
   return withMiddlewareRateLimit(async (req: NextRequest) => {
     try {
       const body = await req.json();
-      console.log(body);
       const { priceId, email, customerId, isFreeTrial } =
         body as CreateCheckoutSessionBody;
 
@@ -53,7 +52,7 @@ export async function POST(req: NextRequest) {
           });
 
           if (user && (await hasUsedTrialBefore(customerId))) {
-            throw new Error("Już korzystałeś z bezpłatnego okresu próbnego.");
+            throw new Error("TrialAlreadyUsed");
           }
 
           sessionOptions.customer = customerId;

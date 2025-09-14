@@ -44,11 +44,17 @@ export default function PricingSection() {
           }),
         });
 
-        if (!response.ok) {
-          throw new Error("Nie udało się utworzyć sesji checkout");
-        }
-
         const checkoutSession = await response.json();
+
+        if (!response.ok) {
+          if (checkoutSession.error === "TrialAlreadyUsed") {
+            throw new Error("Już korzystałeś z bezpłatnego okresu próbnego.");
+          }
+          throw new Error(
+            checkoutSession.error ||
+              "Wystąpił błąd podczas tworzenia sesji checkout"
+          );
+        }
 
         if (checkoutSession.error) throw new Error(checkoutSession.error);
 
