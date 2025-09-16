@@ -28,7 +28,6 @@ export async function GET(req: Request, { params }: { params: { provider: Provid
                 const oauth_verifier = searchParams.get("oauth_verifier");
                 if (!oauth_token || !oauth_verifier) return NextResponse.redirect(new URL(`${DASHBOARD_REDIRECT}?error=twitter_missing_params`, url));
 
-                const oauth_token_secret = searchParams.get("oauth_token_secret");
                 const client = createClient({
                     username: "default",
                     password: process.env.REDIS_DATABASE_PASSWORD,
