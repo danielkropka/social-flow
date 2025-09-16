@@ -1,6 +1,6 @@
 import { AccountStatus, Provider } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { createClient } from "@redis/client";
+import { createClient } from "redis";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/config/auth";
 import { TwitterApi } from "twitter-api-v2";
