@@ -2,7 +2,6 @@ import { authOptions } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { publishInstagramPost, publishTwitterPost } from "@/lib/publish";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -56,30 +55,20 @@ export async function POST(req: NextRequest) {
 
   try {
     let publishResult = null;
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || `http://${req.headers.get("host")}`;
+/*    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || `http://${req.headers.get("host")}`;*/
     switch (provider.toLowerCase()) {
       case "instagram":
-        publishResult = await publishInstagramPost({
-          content: post.content,
-          mediaUrls: post.media.map((media) => ({
-            data: media.url,
-            type: media.type,
-          })),
-          account,
-          baseUrl,
-        });
+          publishResult = {
+              success: false,
+              message: "Publikacja na Instagramie niezaimplementowana",
+          }
         break;
       case "twitter":
-        publishResult = await publishTwitterPost({
-          content: post.content,
-          mediaUrls: post.media.map((media) => ({
-            data: media.url,
-            type: media.type,
-          })),
-          account,
-          baseUrl,
-        });
+        publishResult = {
+            success: false,
+            message: "Publikacja na Twitterze niezaimplementowana",
+        }
         break;
       case "facebook":
         publishResult = {
@@ -120,7 +109,6 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: publishResult.success,
       message: publishResult.message,
-      postUrl: publishResult.postUrl,
     });
   } catch (error) {
     let details = "Nieznany błąd";

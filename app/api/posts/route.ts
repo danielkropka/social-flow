@@ -73,7 +73,7 @@ export async function GET(req: NextRequest) {
               connectedAccount: {
                 select: {
                   provider: true,
-                  name: true,
+                  displayName: true
                 },
               },
             },
