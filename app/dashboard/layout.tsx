@@ -9,7 +9,6 @@ import { useAccounts } from "@/components/posts/hooks/useAccounts";
 import dynamic from "next/dynamic";
 import {Button} from "@/components/ui/button";
 
-// Prosty empty state zamiast modala/alertu
 function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
   return (
     <div className="flex flex-1 items-center justify-center">
@@ -25,7 +24,6 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
           Połącz konto, aby planować i publikować posty bezpośrednio z panelu. To zajmie mniej niż minutę.
         </p>
 
-        {/* Sekcja korzyści: eleganckie, spójne karty z ikonami */}
         {(() => {
           const benefits = [
             {

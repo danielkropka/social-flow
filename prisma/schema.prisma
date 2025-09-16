@@ -1,233 +1,246 @@
 datasource db {
-    provider = "mongodb"
-    url      = env("DATABASE_URL")
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
 }
 
 generator client {
-    provider = "prisma-client-js"
+  provider = "prisma-client-js"
 }
 
 enum PlanStatus {
-    INCOMPLETE
-    INCOMPLETE_EXPIRED
-    TRIALING
-    ACTIVE
-    PAST_DUE
-    CANCELED
-    UNPAID
-    PAUSED
+  INCOMPLETE
+  INCOMPLETE_EXPIRED
+  TRIALING
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+  PAUSED
 }
 
 enum PlanType {
-    FREE
-    BASIC
-    CREATOR
+  FREE
+  BASIC
+  CREATOR
 }
 
 enum PlanInterval {
-    MONTH
-    YEAR
+  MONTH
+  YEAR
 }
 
 enum Provider {
-    FACEBOOK
-    INSTAGRAM
-    TWITTER
-    TIKTOK
-    GOOGLE
+  FACEBOOK
+  INSTAGRAM
+  TWITTER
+  TIKTOK
+  GOOGLE
 }
 
 enum AccountStatus {
-    ACTIVE
-    EXPIRED
-    REVOKED
-    PENDING
+  ACTIVE
+  EXPIRED
+  REVOKED
+  PENDING
 }
 
 enum PostStatus {
-    DRAFT
-    SCHEDULED
-    PUBLISHED
-    FAILED
-    DELETED
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  FAILED
+  DELETED
 }
 
 enum PublishingStatus {
-    PENDING
-    PUBLISHED
-    FAILED
-    DELETED
+  PENDING
+  PUBLISHED
+  FAILED
+  DELETED
 }
 
 model Account {
-    id                String   @id @default(auto()) @map("_id") @db.ObjectId
-    userId            String   @db.ObjectId
-    type              String
-    provider          String
-    providerAccountId String
-    refresh_token     String?  @db.String
-    access_token      String?  @db.String
-    expires_at        Int?
-    token_type        String?
-    scope             String?
-    id_token          String?  @db.String
-    session_state     String?
-    createdAt         DateTime @default(now())
-    updatedAt         DateTime @updatedAt
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @db.ObjectId
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?  @db.String
+  access_token      String?  @db.String
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?  @db.String
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@unique([provider, providerAccountId])
-    @@index([userId])
-    @@index([provider])
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([provider])
 }
 
 model User {
-    id            String    @id @default(auto()) @map("_id") @db.ObjectId
-    name          String?
-    email         String?   @unique
-    emailVerified DateTime?
-    password      String?   @db.String
-    image         String?
-    accounts      Account[]
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  password      String?   @db.String
+  image         String?
+  accounts      Account[]
 
-    stripeCustomerId     String?
-    stripeSubscriptionId String?
-    subscriptionStatus   PlanStatus?
-    subscriptionType     PlanType?
-    subscriptionInterval PlanInterval?
-    subscriptionStart    DateTime?
-    subscriptionEnd      DateTime?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+  subscriptionStatus   PlanStatus?
+  subscriptionType     PlanType?
+  subscriptionInterval PlanInterval?
+  subscriptionStart    DateTime?
+  subscriptionEnd      DateTime?
 
-    posts Post[]
+  posts Post[]
 
-    createdAt              DateTime                 @default(now())
-    updatedAt              DateTime                 @updatedAt
-    PasswordResetToken     PasswordResetToken[]
-    EmailVerificationToken EmailVerificationToken[]
-    ConnectedAccount       ConnectedAccount[]
+  createdAt              DateTime                 @default(now())
+  updatedAt              DateTime                 @updatedAt
+  PasswordResetToken     PasswordResetToken[]
+  EmailVerificationToken EmailVerificationToken[]
+  ConnectedAccount       ConnectedAccount[]
 }
 
 model Media {
-    id           String    @id @default(auto()) @map("_id") @db.ObjectId
-    url          String    @db.String
-    type         String
-    thumbnailUrl String?   @db.String
-    postId       String    @db.ObjectId
-    post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
-    createdAt    DateTime  @default(now())
-    updatedAt    DateTime  @updatedAt
-    deletedAt    DateTime?
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  url          String    @db.String
+  type         String
+  thumbnailUrl String?   @db.String
+  postId       String    @db.ObjectId
+  post         Post      @relation(fields: [postId], references: [id], onDelete: Cascade)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  deletedAt    DateTime?
 
-    @@index([postId])
-    @@index([type])
-    @@index([deletedAt])
+  @@index([postId])
+  @@index([type])
+  @@index([deletedAt])
 }
 
 model Post {
-    id           String     @id @default(auto()) @map("_id") @db.ObjectId
-    content      String     @db.String
-    status       PostStatus @default(DRAFT)
-    published    Boolean    @default(false)
-    publishedAt  DateTime?
-    scheduledFor DateTime?
-    createdAt    DateTime   @default(now())
-    updatedAt    DateTime   @updatedAt
-    deletedAt    DateTime?
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  content      String     @db.String
+  status       PostStatus @default(DRAFT)
+  published    Boolean    @default(false)
+  publishedAt  DateTime?
+  scheduledFor DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  deletedAt    DateTime?
 
-    // Relacje
-    userId                String                 @db.ObjectId
-    user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-    media                 Media[]
-    postConnectedAccounts PostConnectedAccount[]
+  // Relacje
+  userId                String                 @db.ObjectId
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  media                 Media[]
+  postConnectedAccounts PostConnectedAccount[]
 
-    @@index([userId])
-    @@index([published])
-    @@index([publishedAt])
-    @@index([status])
-    @@index([scheduledFor])
-    @@index([deletedAt])
+  @@index([userId])
+  @@index([published])
+  @@index([publishedAt])
+  @@index([status])
+  @@index([scheduledFor])
+  @@index([deletedAt])
 }
 
 model ConnectedAccount {
-    id                    String        @id @default(auto()) @map("_id") @db.ObjectId
-    provider              Provider
-    providerAccountId     String
-    accessToken           String        @db.String
-    accessTokenSecret     String?       @db.String
-    refreshToken          String?       @db.String
-    expiresAt             DateTime?
-    name                  String
-    username              String
-    profileImage          String?       @db.String
-    status                AccountStatus @default(ACTIVE)
-    lastUsedAt            DateTime?
-    requestToken          String?       @db.String
-    requestTokenSecret    String?       @db.String
-    requestTokenExpiresAt DateTime?
-    followersCount        Int?          @default(0)
-    postsCount            Int?          @default(0)
-    lastStatsUpdate       DateTime?
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @db.ObjectId
+  provider          Provider
+  providerAccountId String
 
-    // Relacje
-    userId                String                 @db.ObjectId
-    user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-    postConnectedAccounts PostConnectedAccount[]
+  // Status i audyt
+  status           AccountStatus @default(ACTIVE)
+  connectedAt      DateTime      @default(now())
+  revokedAt        DateTime?
+  lastSyncedAt     DateTime?
+  lastPublishAt    DateTime?
+  lastErrorAt      DateTime?
+  lastErrorMessage String?       @db.String
 
-    createdAt DateTime  @default(now())
-    updatedAt DateTime  @updatedAt
-    deletedAt DateTime?
+  // Tokeny i uprawnienia
+  accessToken          String?   @db.String
+  accessSecret         String?   @db.String
+  refreshToken         String?   @db.String
+  accessTokenExpiresAt DateTime?
+  tokenType            String?
+  scope                String?   @db.String
+  oauthVersion         String? // "OAUTH2" | "OAUTH1"
+  oauthTokenSecret     String?   @db.String // tylko dla OAuth1 (Twitter 1.0a)
 
-    @@unique([provider, providerAccountId, userId])
-    @@index([userId])
-    @@index([provider])
-    @@index([status])
-    @@index([deletedAt])
-    @@index([requestTokenExpiresAt])
+  // Dane profilu
+  username        String?
+  displayName     String?
+  profileImageUrl String? @db.String
+  profileUrl      String? @db.String
+  locale          String?
+  timezone        String?
+
+  // Dane specyficzne i rozszerzalne
+  platformData Json?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
+  user                 User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  PostConnectedAccount PostConnectedAccount[]
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([provider])
+  @@index([status])
+  @@index([deletedAt])
 }
 
 model PasswordResetToken {
-    id        String   @id @default(auto()) @map("_id") @db.ObjectId
-    userId    String   @db.ObjectId
-    token     String   @unique
-    expiresAt DateTime
-    createdAt DateTime @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@index([expiresAt])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model EmailVerificationToken {
-    id        String   @id @default(auto()) @map("_id") @db.ObjectId
-    userId    String   @db.ObjectId
-    token     String   @unique
-    expiresAt DateTime
-    createdAt DateTime @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @db.ObjectId
+  token     String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
 
-    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-    @@index([userId])
-    @@index([expiresAt])
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model PostConnectedAccount {
-    id                 String           @id @default(auto()) @map("_id") @db.ObjectId
-    postId             String           @db.ObjectId
-    connectedAccountId String           @db.ObjectId
-    status             PublishingStatus @default(PENDING)
-    postUrl            String?          @db.String
-    publishedAt        DateTime?
-    createdAt          DateTime         @default(now())
-    updatedAt          DateTime         @updatedAt
-    deletedAt          DateTime?
+  id                 String           @id @default(auto()) @map("_id") @db.ObjectId
+  postId             String           @db.ObjectId
+  connectedAccountId String           @db.ObjectId
+  status             PublishingStatus @default(PENDING)
+  postUrl            String?          @db.String
+  publishedAt        DateTime?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  deletedAt          DateTime?
 
-    post             Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
-    connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
+  post             Post             @relation(fields: [postId], references: [id], onDelete: Cascade)
+  connectedAccount ConnectedAccount @relation(fields: [connectedAccountId], references: [id], onDelete: Cascade)
 
-    @@index([postId])
-    @@index([connectedAccountId])
-    @@index([status])
-    @@index([deletedAt])
+  @@index([postId])
+  @@index([connectedAccountId])
+  @@index([status])
+  @@index([deletedAt])
 }
