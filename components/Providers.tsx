@@ -7,9 +7,21 @@ import { queryClient } from "@/lib/config/queryClient";
 import { SessionExpiredModal } from "@/components/SessionExpiredModal";
 import { SessionWarningModal } from "@/components/SessionWarningModal";
 import { useSessionTimeout } from "@/hooks/useSessionTimeout";
+import { useEffect } from "react";
+import { useSession } from "next-auth/react";
+import { usePathname, useRouter } from "next/navigation";
 
 function SessionManager({ children }: { children: React.ReactNode }) {
   const { showWarning, showExpired } = useSessionTimeout();
+  const { status } = useSession();
+  const pathname = usePathname();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated" && pathname?.startsWith("/dashboard")) {
+      router.replace("/sign-in");
+    }
+  }, [status, pathname, router]);
 
   return (
     <>
@@ -22,7 +34,7 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus={true}>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
       <QueryClientProvider client={queryClient}>
         <TabProvider>
           <SessionManager>{children}</SessionManager>

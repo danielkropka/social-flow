@@ -7,6 +7,111 @@ import { useTab } from "@/context/TabContext";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import { useAccounts } from "@/components/posts/hooks/useAccounts";
 import dynamic from "next/dynamic";
+import {Button} from "@/components/ui/button";
+
+// Prosty empty state zamiast modala/alertu
+function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
+  return (
+    <div className="flex flex-1 items-center justify-center">
+      <section
+        className="w-full max-w-2xl rounded-2xl border border-gray-200 bg-white p-10 text-center shadow-sm"
+        role="region"
+        aria-labelledby="empty-state-title"
+      >
+        <h2 id="empty-state-title" className="text-xl font-semibold text-gray-900">
+          Brak połączonych kont
+        </h2>
+        <p className="mt-2 text-sm text-gray-600">
+          Połącz konto, aby planować i publikować posty bezpośrednio z panelu. To zajmie mniej niż minutę.
+        </p>
+
+        {/* Sekcja korzyści: eleganckie, spójne karty z ikonami */}
+        {(() => {
+          const benefits = [
+            {
+              title: "Planowanie postów",
+              desc: "Twórz harmonogram i publikuj, gdy Twoi odbiorcy są najbardziej aktywni.",
+              icon: (
+                <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M8 11h8M8 15h5" />
+                </svg>
+              ),
+              accent: "emerald",
+            },
+            {
+              title: "Automatyczna publikacja",
+              desc: "Wyślij posty bez ręcznej interwencji w wybranych kanałach.",
+              icon: (
+                <svg className="h-5 w-5 text-sky-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m5 12 7-7v4h7v6h-7v4l-7-7z" />
+                </svg>
+              ),
+              accent: "sky",
+            },
+            {
+              title: "Podgląd i statystyki",
+              desc: "Podgląd treści przed publikacją oraz proste metryki wyników.",
+              icon: (
+                <svg className="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 19h16M6 17V7m6 10V5m6 12v-6" />
+                </svg>
+              ),
+              accent: "violet",
+            },
+          ] as const;
+
+          const accentClasses: Record<string, { bg: string; ring: string }> = {
+            emerald: { bg: "bg-emerald-50", ring: "ring-emerald-100" },
+            sky: { bg: "bg-sky-50", ring: "ring-sky-100" },
+            violet: { bg: "bg-violet-50", ring: "ring-violet-100" },
+          };
+
+          return (
+            <ul
+              className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3"
+              role="list"
+              aria-label="Korzyści z połączenia konta"
+            >
+              {benefits.map((b, i) => {
+                const a = accentClasses[b.accent];
+                return (
+                  <li key={i} className="h-full">
+                    <div
+                      tabIndex={0}
+                      className="group h-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-left transition-all hover:border-gray-300 hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-300"
+                    >
+                      <div className="flex items-start gap-3">
+                        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${a.bg} ring-1 ${a.ring}`}>
+                          {b.icon}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-semibold text-gray-900">{b.title}</p>
+                          <p className="mt-1 text-xs leading-5 text-gray-600">
+                            {b.desc}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                );
+              })}
+            </ul>
+          );
+        })()}
+
+          <div className="mt-8 flex items-center justify-center">
+              <Button onClick={onAddAccount} autoFocus className="w-full sm:w-auto">
+                  Połącz konto
+              </Button>
+          </div>
+
+        <p className="mt-4 text-xs text-gray-500">
+          W każdej chwili możesz dodać kolejne konta w sekcji „Połączone konta”.
+        </p>
+      </section>
+    </div>
+  );
+}
 
 const PostsContent = dynamic(() => import("@/components/PostsContent"));
 const AccountsContent = dynamic(() => import("@/components/AccountsContent"));
@@ -14,32 +119,7 @@ const ContentStudioContent = dynamic(
   () => import("@/components/ContentStudioContent")
 );
 
-function NoAccountsAlert() {
-  return (
-    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center gap-3 shadow text-red-800">
-      <svg
-        className="w-6 h-6 text-red-500"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0ZM12 17h.01M12 7h.01"
-        />
-      </svg>
-      <span>
-        Nie masz jeszcze żadnych połączonych kont.{" "}
-        <a href="#" className="underline font-semibold">
-          Dodaj konto
-        </a>
-        , aby móc publikować!
-      </span>
-    </div>
-  );
-}
+
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -81,8 +161,16 @@ function DashboardContent({ children }: { children: ReactNode }) {
   if (activeTab === "dashboard") {
     mainContent = (
       <>
-        {accountsCount === 0 && !isLoading && <NoAccountsAlert />}
-        {children}
+        {isLoading ? (
+          <div className="flex-1 animate-pulse">
+            <div className="h-6 w-48 bg-gray-200 rounded mb-4" />
+            <div className="h-24 w-full bg-gray-100 rounded-xl border border-gray-200" />
+          </div>
+        ) : accountsCount === 0 ? (
+          <EmptyState onAddAccount={() => setActiveTab("accounts")} />
+        ) : (
+          children
+        )}
       </>
     );
   } else if (activeTab === "posts") {
