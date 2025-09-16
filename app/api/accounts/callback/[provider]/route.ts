@@ -8,11 +8,11 @@ import {db} from "@/lib/config/prisma";
 
 const DASHBOARD_REDIRECT = "/dashboard"
 
-export async function GET(req: Request, context: { params: { provider: string }}) {
+export async function GET(req: Request, { params }: { params: { provider: Provider }}) {
     const url = new URL(req.url);
     const searchParams = url.searchParams;
 
-    const providerParam = context.params?.provider?.toUpperCase();
+    const providerParam = params.provider;
     if (!providerParam || !Object.values(Provider).includes(providerParam as Provider)) {
         return NextResponse.redirect(new URL(`/dashboard?error=unsupported_provider`, url));
     }
