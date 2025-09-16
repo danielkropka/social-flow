@@ -5,7 +5,7 @@ import { authOptions } from "@/lib/config/auth";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import { Provider } from "@prisma/client";
-import { createClient } from "redis";
+import { Redis } from "@upstash/redis";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
@@ -95,21 +95,13 @@ export async function GET(request: NextRequest) {
       }
 
       try {
-        const client = createClient({
-          username: "default",
-          password: process.env.REDIS_DATABASE_PASSWORD,
-          socket: {
-            host: process.env.REDIS_DATABASE_URL,
-            port: 11273,
-          },
+        const client = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN,
         });
 
-        await client.connect();
-
         const redisKey = `tw:oauth:req_secret:${session.user.id}:${requestToken}`;
-        await client.set(redisKey, requestTokenSecret, { EX: 600, NX: true });
-
-        await client.quit();
+        await client.set(redisKey, requestTokenSecret, { ex: 600, nx: true });
       } catch (error) {
         console.log(error);
       }

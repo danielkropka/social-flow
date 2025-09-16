@@ -1,10 +1,10 @@
 import { AccountStatus, Provider } from "@prisma/client";
 import { NextResponse } from "next/server";
-import { createClient } from "redis";
 import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/config/auth";
 import { TwitterApi } from "twitter-api-v2";
 import { db } from "@/lib/config/prisma";
+import { Redis } from "@upstash/redis";
 
 const DASHBOARD_REDIRECT = "/dashboard";
 
@@ -46,29 +46,21 @@ export async function GET(
             new URL(`${DASHBOARD_REDIRECT}?error=twitter_missing_params`, url),
           );
 
-        const client = createClient({
-          username: "default",
-          password: process.env.REDIS_DATABASE_PASSWORD,
-          socket: {
-            host: process.env.REDIS_DATABASE_URL,
-            port: 11273,
-          },
+        const client = new Redis({
+          url: process.env.UPSTASH_REDIS_REST_URL,
+          token: process.env.UPSTASH_REDIS_REST_TOKEN,
         });
-
-        await client.connect();
 
         const redisKey = `tw:oauth:req_secret:${session.user.id}:${oauth_token}`;
         const requestTokenSecret = await client.get(redisKey);
 
         if (!requestTokenSecret) {
-          await client.quit();
           return NextResponse.redirect(
             new URL(`${DASHBOARD_REDIRECT}?error=session_expired`, url),
           );
         }
 
         await client.del(redisKey);
-        await client.quit();
 
         const oauth = new TwitterApi({
           appKey: process.env.TWITTER_API_KEY!,
