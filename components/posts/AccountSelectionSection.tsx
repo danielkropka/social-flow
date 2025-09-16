@@ -75,7 +75,7 @@ export function AccountSelectionSection({
         </div>
         <div className="flex items-center gap-2">
           {getAvailablePlatforms().map((platform) => {
-            const { icon: Icon } =
+            const { icon: Icon, color } =
               PLATFORM_DISPLAY[platform.id as keyof typeof PLATFORM_DISPLAY];
             return (
               <TooltipProvider key={platform.id}>
@@ -91,7 +91,7 @@ export function AccountSelectionSection({
                           : "text-gray-500 hover:text-gray-700 transition-colors duration-200"
                       }
                     >
-                      <Icon className="h-5 w-5" />
+                      <Icon className={`h-5 w-5 ${color}`} />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -119,14 +119,18 @@ export function AccountSelectionSection({
               </div>
             ))}
           </>
+        ) : Object.keys(groupedAccounts).length === 0 ? (
+          <div className="text-center text-gray-500 py-8">
+            Nie masz żadnych kont do wyboru.
+          </div>
         ) : (
           Object.entries(groupedAccounts).map(([platform, accounts]) => {
-            const { icon: Icon } =
+            const { icon: Icon, color } =
               PLATFORM_DISPLAY[platform as keyof typeof PLATFORM_DISPLAY];
             return (
               <div key={platform} className="space-y-2">
                 <h3 className="text-sm font-medium text-gray-700 flex items-center gap-2 sticky top-0 bg-white py-2 z-10 border-b border-gray-100">
-                  <Icon className="h-5 w-5" />
+                  <Icon className={`h-5 w-5 ${color}`} />
                   {getAvailablePlatforms().find((p) => p.id === platform)?.name}
                   <span className="text-xs text-gray-500">
                     ({accounts.length})

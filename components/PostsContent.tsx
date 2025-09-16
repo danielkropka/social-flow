@@ -21,7 +21,6 @@ import {
   AlertCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { MediaType } from "@prisma/client";
 import { cn } from "@/lib/utils/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
@@ -43,7 +42,7 @@ interface Post {
   media: {
     id: string;
     url: string;
-    type: MediaType;
+    type: string;
     thumbnailUrl: string | null;
   }[];
   postConnectedAccounts: {

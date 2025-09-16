@@ -10,4 +10,6 @@ export type SocialAccountWithUsername = SocialAccount & {
   username: string;
   provider: string;
   providerAccountId: string;
+  followersCount?: number;
+  lastUpdate?: string;
 };

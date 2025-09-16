@@ -3,42 +3,41 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
   const { pathname } = request.nextUrl;
 
-  // Przekieruj zalogowanych użytkowników z auth routes do dashboardu
-  if (token && (pathname === "/sign-in" || pathname === "/sign-up")) {
+  const isSignIn = pathname === "/sign-in" || pathname === "/sign-in/";
+  const isSignUp = pathname === "/sign-up" || pathname === "/sign-up/";
+  const isDashboard = pathname.startsWith("/dashboard");
+  const isSuccess = pathname === "/success" || pathname === "/success/";
+
+  const needsAuthCheck = isSignIn || isSignUp || isDashboard || isSuccess;
+  const token = needsAuthCheck
+    ? await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
+    : null;
+
+  if (token && (isSignIn || isSignUp)) {
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
     addSecurityHeaders(response);
     return response;
   }
 
-  // Przekieruj niezalogowanych użytkowników do strony logowania
-  if (!token && pathname.startsWith("/dashboard")) {
+  if (!token && isDashboard) {
     const response = NextResponse.redirect(new URL("/sign-in", request.url));
     addSecurityHeaders(response);
     return response;
   }
 
-  // Zabezpieczenie strony sukcesu
-  if (pathname === "/success") {
-    // Sprawdź czy użytkownik jest zalogowany
+  if (isSuccess) {
     if (!token) {
       const response = NextResponse.redirect(new URL("/sign-in", request.url));
       addSecurityHeaders(response);
       return response;
     }
 
-    // Sprawdź czy pochodzi z przekierowania Stripe
+    // Uwaga: referer może być pusty; zostawiamy jak było, ale warto rozważyć weryfikację parametru state.
     const referer = request.headers.get("referer");
     if (!referer || !referer.includes("stripe.com")) {
-      const response = NextResponse.redirect(
-        new URL("/dashboard", request.url)
-      );
+      const response = NextResponse.redirect(new URL("/dashboard", request.url));
       addSecurityHeaders(response);
       return response;
     }
@@ -49,12 +48,23 @@ export async function middleware(request: NextRequest) {
   return response;
 }
 
-// Funkcja pomocnicza do dodawania nagłówków bezpieczeństwa
 function addSecurityHeaders(response: NextResponse) {
-  response.headers.set(
-    "Content-Security-Policy",
-    "default-src 'self' https:; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: https: blob:; font-src 'self' data:; connect-src 'self' https:; frame-src 'self' https://js.stripe.com;"
-  );
+  const isProd = process.env.NODE_ENV === "production";
+
+  const cspParts = [
+    "default-src 'self' https:",
+    // W produkcji bez 'unsafe-eval'; w dev potrzebne dla React Refresh/HMR
+    `script-src 'self' 'unsafe-inline' ${isProd ? "" : "'unsafe-eval'"} https://js.stripe.com`.trim(),
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: https: blob:",
+    "font-src 'self' data:",
+    // W dev dodaj ws: wss: dla HMR
+    `connect-src 'self' https:${isProd ? "" : " ws: wss:"}`.trim(),
+    "frame-src 'self' https://js.stripe.com",
+    "frame-ancestors 'self'",
+  ];
+
+  response.headers.set("Content-Security-Policy", cspParts.join("; "));
   response.headers.set(
     "Strict-Transport-Security",
     "max-age=63072000; includeSubDomains; preload"
@@ -69,5 +79,6 @@ function addSecurityHeaders(response: NextResponse) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/sign-in", "/sign-up", "/success"],
+  // Zachowujemy dotychczasowe ścieżki — middleware nie dotyka /api (w tym /api/auth) ani zasobów Nexta
+  matcher: ["/dashboard/:path*", "/sign-in", "/sign-in/", "/sign-up", "/sign-up/", "/success", "/success/"],
 };

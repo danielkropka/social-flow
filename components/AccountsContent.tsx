@@ -251,49 +251,52 @@ export default function AccountsContent() {
         })}
       </div>
 
-      {showModal && PLATFORM_DISPLAY[showModal as PlatformKey] && (
-        <Dialog open={!!showModal} onOpenChange={() => setShowModal(null)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>
-                Połączenie z {PLATFORM_DISPLAY[showModal as PlatformKey].label}
-              </DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                Połącz swoje konto{" "}
-                {PLATFORM_DISPLAY[showModal as PlatformKey].label}, aby móc
-                publikować i planować posty.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button onClick={() => setShowModal(null)} variant="outline">
-                Anuluj
-              </Button>
-              <Button
-                onClick={async () => {
-                  try {
-                    const response = await fetch(
-                      `/api/accounts/connect?provider=${showModal}`
-                    );
-                    if (!response.ok) {
-                      throw new Error("Nie udało się pobrać URL autoryzacji");
-                    }
-                    const data = await response.json();
-                    router.push(data.authUrl);
-                  } catch (error) {
-                    console.error(error);
-                    toast.error(
-                      `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`
-                    );
-                  }
-                }}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
-              >
-                Połącz konto
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+        {showModal && PLATFORM_DISPLAY[showModal as PlatformKey] && (
+            <Dialog open={!!showModal} onOpenChange={() => setShowModal(null)}>
+                <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>
+                            Połączenie z {PLATFORM_DISPLAY[showModal as PlatformKey].label}
+                        </DialogTitle>
+                        <DialogDescription className="text-base text-muted-foreground">
+                            Połącz swoje konto{" "}
+                            {PLATFORM_DISPLAY[showModal as PlatformKey].label}, aby móc
+                            publikować i planować posty.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button onClick={() => setShowModal(null)} variant="outline">
+                            Anuluj
+                        </Button>
+                        <Button
+                            onClick={async () => {
+                                try {
+                                    const response = await fetch(`/api/accounts/connect?provider=${showModal?.toUpperCase()}`, {
+                                        method: "GET",
+                                    });
+                                    if (!response.ok) {
+                                        throw new Error("Nie udało się pobrać URL autoryzacji");
+                                    }
+                                    const data = await response.json();
+                                    if (!data.authUrl) {
+                                        throw new Error("Brak URL autoryzacji");
+                                    }
+                                    router.push(data.authUrl);
+                                } catch (error) {
+                                    console.error(error);
+                                    toast.error(
+                                        `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`
+                                    );
+                                }
+                            }}
+                            className="bg-blue-500 hover:bg-blue-600 text-white"
+                        >
+                            Połącz konto
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        )}
 
       {accountToRemove && (
         <Dialog

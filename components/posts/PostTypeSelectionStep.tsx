@@ -1,14 +1,7 @@
 import React, { useState } from "react";
 import { usePostCreation } from "@/context/PostCreationContext";
 import { cn } from "@/lib/utils/utils";
-import { Button } from "@/components/ui/button";
 import { FileText, Image as ImageIcon, Info, Video } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -19,9 +12,6 @@ import {
 import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
 import { IconType } from "react-icons";
 import { useSubscription } from "@/hooks/useSubscription";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { AlertCircle } from "lucide-react";
-import Link from "next/link";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   SUPPORTED_PLATFORMS,
@@ -194,54 +184,53 @@ export function PostTypeSelectionStep() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex flex-col gap-2">
-          <h2 className="text-2xl font-bold text-gray-900">
-            Wybierz typ posta
-          </h2>
-          <p className="text-gray-600">
-            Wybierz sposób, w jaki chcesz utworzyć swój post
-          </p>
-        </div>
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setShowHelp(true)}
-                className="text-gray-500 hover:text-gray-700"
-              >
-                <Info className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Pomoc i wskazówki</p>
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+    <div className="w-full mx-auto">
+      {/* Tytuł i opis sekcji */}
+      <div className="mb-6 flex flex-col gap-1">
+        <h2 className="text-2xl font-bold text-gray-900">Tworzenie posta</h2>
+        <p className="text-gray-600 text-base">
+          Wybierz sposób, w jaki chcesz utworzyć swój post
+        </p>
       </div>
-
-      {!isLoading && !isSubscribed && (
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertTitle>Wymagana subskrypcja</AlertTitle>
-          <AlertDescription>
-            Aby korzystać z funkcji tworzenia postów, musisz wykupić subskrypcję
-            lub skorzystać z okresu próbnego.
-            <br />
-            <Link href="/#pricing" className="hover:underline">
-              Kliknij tutaj
-            </Link>
-            , aby wykupić subskrypcję lub rozpocząć okres próbny.
-          </AlertDescription>
-        </Alert>
+      {!isSubscribed && (
+        <div className="mb-8 p-6 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                <Info className="w-5 h-5 text-amber-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-amber-900 mb-2">
+                Wymagana subskrypcja
+              </h3>
+              <p className="text-amber-800 text-sm leading-relaxed mb-3">
+                Aby móc tworzyć i publikować posty na platformach
+                społecznościowych, potrzebujesz aktywnej subskrypcji Premium.
+                Nasza subskrypcja daje Ci dostęp do wszystkich funkcji
+                publikowania, zaawansowanych narzędzi analitycznych oraz
+                nieograniczonej liczby postów.
+              </p>
+              <div className="flex flex-wrap gap-2 text-xs text-amber-700">
+                <span className="px-2 py-1 bg-amber-100 rounded-full">
+                  ✓ Publikowanie na wszystkich platformach
+                </span>
+                <span className="px-2 py-1 bg-amber-100 rounded-full">
+                  ✓ Zaawansowane narzędzia analityczne
+                </span>
+                <span className="px-2 py-1 bg-amber-100 rounded-full">
+                  ✓ Nieograniczona liczba postów
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
 
+      {/* WYBÓR TYPU POSTA */}
       <div
         className={cn(
-          "grid grid-cols-1 md:grid-cols-3 gap-6",
+          "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 md:gap-6 xl:gap-8 mb-8",
           !isSubscribed && "opacity-50 pointer-events-none"
         )}
       >
@@ -250,14 +239,14 @@ export function PostTypeSelectionStep() {
             key={type.id}
             onClick={() => handleTypeSelect(type.id)}
             className={cn(
-              "flex flex-col items-center p-6 border rounded-xl transition-all duration-300",
-              "border-gray-100 bg-white hover:border-blue-300 hover:bg-blue-50/50 hover:shadow-md"
+              "flex flex-col items-center p-6 border rounded-2xl transition-all duration-300 min-h-[220px] bg-white",
+              "border-gray-100 shadow-md hover:shadow-xl hover:border-blue-300 hover:bg-blue-50/40 hover:scale-[1.03]"
             )}
           >
             <div className="w-16 h-16 rounded-full bg-blue-50 flex items-center justify-center mb-4 shadow-sm">
               <type.icon className="w-8 h-8 text-blue-500" />
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2 text-center">
               {type.title}
             </h3>
             <p className="text-sm text-gray-600 text-center mb-4">
@@ -277,7 +266,7 @@ export function PostTypeSelectionStep() {
           </button>
         ))}
       </div>
-
+      {/* Dialog pomocy bez zmian */}
       <Dialog open={showHelp} onOpenChange={setShowHelp}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader className="space-y-3">

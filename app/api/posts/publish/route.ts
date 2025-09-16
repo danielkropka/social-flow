@@ -2,7 +2,6 @@ import { authOptions } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
-import { publishInstagramPost, publishTwitterPost } from "@/lib/publish";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -25,7 +24,6 @@ export async function POST(req: NextRequest) {
     where: {
       id: postId,
       userId: session.user.id,
-      deletedAt: null,
     },
     include: {
       media: true,
@@ -57,30 +55,20 @@ export async function POST(req: NextRequest) {
 
   try {
     let publishResult = null;
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || `http://${req.headers.get("host")}`;
+/*    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || `http://${req.headers.get("host")}`;*/
     switch (provider.toLowerCase()) {
       case "instagram":
-        publishResult = await publishInstagramPost({
-          content: post.content,
-          mediaUrls: post.media.map((media) => ({
-            data: media.url,
-            type: media.type,
-          })),
-          account,
-          baseUrl,
-        });
+          publishResult = {
+              success: false,
+              message: "Publikacja na Instagramie niezaimplementowana",
+          }
         break;
       case "twitter":
-        publishResult = await publishTwitterPost({
-          content: post.content,
-          mediaUrls: post.media.map((media) => ({
-            data: media.url,
-            type: media.type,
-          })),
-          account,
-          baseUrl,
-        });
+        publishResult = {
+            success: false,
+            message: "Publikacja na Twitterze niezaimplementowana",
+        }
         break;
       case "facebook":
         publishResult = {
@@ -121,13 +109,28 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: publishResult.success,
       message: publishResult.message,
-      postUrl: publishResult.postUrl,
     });
   } catch (error) {
+    let details = "Nieznany błąd";
+    const message =
+      "Coś poszło nie tak podczas publikacji posta. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.";
+    if (error instanceof Error) {
+      if (
+        error.message.toLowerCase().includes("not found") ||
+        error.message.toLowerCase().includes("nie znaleziono")
+      ) {
+        details =
+          "Nie znaleziono posta lub konta. Odśwież stronę i spróbuj ponownie.";
+      } else if (error.message.includes("ECONNREFUSED")) {
+        details = "Brak połączenia z serwerem. Spróbuj ponownie później.";
+      } else {
+        details = error.message;
+      }
+    }
     return NextResponse.json(
       {
-        error: "Błąd podczas publikacji posta",
-        details: error instanceof Error ? error.message : "Nieznany błąd",
+        error: message,
+        details,
       },
       { status: 500 }
     );

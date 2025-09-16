@@ -55,12 +55,10 @@ export const authOptions: NextAuthOptions = {
           if (!emailRegex.test(credentials.email)) {
             throw new Error("InvalidEmailFormat");
           }
-
           // Walidacja długości hasła
           if (credentials.password.length < 8) {
             throw new Error("PasswordTooShort");
           }
-
           const user = await db.user.findUnique({
             where: {
               email: credentials.email,
@@ -79,11 +77,9 @@ export const authOptions: NextAuthOptions = {
               },
             },
           });
-
           if (!user) {
-            throw new Error("Nie znaleziono konta z podanym adresem email");
+            throw new Error("InvalidCredentials");
           }
-
           // const hasGoogleAccount = user.accounts.some(
           //   (account) => account.provider === "google"
           // );
@@ -94,22 +90,18 @@ export const authOptions: NextAuthOptions = {
           if (!user.emailVerified) {
             throw new Error("EmailNotVerified");
           }
-
           if (!user.password) {
             throw new Error(
               "Brak hasła. Zaloguj się przez Google lub ustaw hasło przez reset hasła."
             );
           }
-
           const isCorrectPassword = await bcrypt.compare(
             credentials.password,
             user.password
           );
-
           if (!isCorrectPassword) {
             throw new Error("InvalidCredentials");
           }
-
           return {
             id: user.id,
             name: user.name,

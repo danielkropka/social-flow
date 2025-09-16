@@ -13,9 +13,6 @@ export const metadata = {
       index: true,
       follow: true,
       noimageindex: false,
-      maxVideoPreview: -1,
-      maxImagePreview: "large",
-      maxSnippet: -1,
     },
   },
   openGraph: {
@@ -35,7 +32,6 @@ export const metadata = {
     site: "@socialflowpl",
   },
   metadataBase: new URL("https://social-flow.pl"),
-  language: "pl",
 };
 
 export default function PrivacyPolicy() {

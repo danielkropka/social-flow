@@ -48,10 +48,12 @@ export async function POST(req: NextRequest) {
         media:
           mediaUrls && Array.isArray(mediaUrls)
             ? {
-                create: mediaUrls.map((url: string) => ({
-                  url,
-                  type: url.match(/\.mp4$/i) ? "VIDEO" : "IMAGE",
-                })),
+                create: mediaUrls.map(
+                  (file: { url: string; type: string }) => ({
+                    url: file.url,
+                    type: file.type,
+                  })
+                ),
               }
             : undefined,
         postConnectedAccounts: {
@@ -74,10 +76,22 @@ export async function POST(req: NextRequest) {
       data: createdPost,
     });
   } catch (error) {
+    let details = "Nieznany błąd";
+    const message =
+      "Coś poszło nie tak podczas tworzenia posta. Spróbuj ponownie lub skontaktuj się z pomocą techniczną.";
+    if (error instanceof Error) {
+      if (error.message.includes("Unique constraint failed")) {
+        details = "Taki post już istnieje.";
+      } else if (error.message.includes("ECONNREFUSED")) {
+        details = "Brak połączenia z bazą danych. Spróbuj ponownie później.";
+      } else {
+        details = error.message;
+      }
+    }
     return NextResponse.json(
       {
-        error: "Błąd podczas tworzenia posta",
-        details: error instanceof Error ? error.message : "Nieznany błąd",
+        error: message,
+        details,
       },
       { status: 500 }
     );
