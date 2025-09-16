@@ -66,7 +66,6 @@ export async function GET(
           appKey: process.env.TWITTER_API_KEY!,
           appSecret: process.env.TWITTER_API_SECRET!,
           accessToken: oauth_token,
-          accessSecret: requestTokenSecret,
         });
 
         const { accessToken, accessSecret, screenName, userId } =
