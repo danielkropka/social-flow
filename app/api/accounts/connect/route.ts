@@ -5,7 +5,6 @@ import { authOptions } from "@/lib/config/auth";
 import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import {Provider} from "@prisma/client";
-import {encryptToken} from "@/lib/utils/utils";
 import {createClient} from "@redis/client";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
