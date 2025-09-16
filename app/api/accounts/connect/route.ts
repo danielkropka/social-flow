@@ -6,7 +6,6 @@ import OAuth from "oauth-1.0a";
 import crypto from "crypto";
 import { Provider } from "@prisma/client";
 import { createClient } from "@redis/client";
-import RedisClient from "@redis/client/dist/lib/client";
 
 const TWITTER_API_KEY = process.env.TWITTER_API_KEY;
 const TWITTER_API_SECRET = process.env.TWITTER_API_SECRET;
