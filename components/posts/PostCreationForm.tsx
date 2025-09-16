@@ -42,7 +42,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import type { SocialAccountWithUsername } from "@/types";
+import type {SocialAccountWithUsername} from "@/types";
 import { useVideoProcessing } from "@/hooks/useVideoProcessing";
 import {
   MAX_FILE_SIZE,

@@ -8,6 +8,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
+import {SocialAccountWithUsername} from "@/types";
 
 interface PostText {
   default: string;
@@ -16,16 +17,9 @@ interface PostText {
   twitter?: string;
 }
 
-interface SocialAccount {
-  id: string;
-  name: string;
-  provider: string;
-  username: string;
-}
-
 interface PostCreationState {
   selectedFiles: File[];
-  selectedAccounts: SocialAccount[];
+  selectedAccounts: SocialAccountWithUsername[];
   postText: PostText;
   scheduledDate: Date | undefined;
   currentStep: number;
@@ -36,7 +30,7 @@ interface PostCreationState {
 
 type PostCreationAction =
   | { type: "SET_SELECTED_FILES"; payload: File[] }
-  | { type: "SET_SELECTED_ACCOUNTS"; payload: SocialAccount[] }
+  | { type: "SET_SELECTED_ACCOUNTS"; payload: SocialAccountWithUsername[] }
   | { type: "SET_POST_TEXT"; payload: PostText }
   | { type: "SET_SCHEDULED_DATE"; payload: Date | undefined }
   | { type: "SET_CURRENT_STEP"; payload: number }
@@ -100,7 +94,7 @@ function postCreationReducer(
 interface PostCreationContextType {
   state: PostCreationState;
   setSelectedFiles: (files: File[]) => void;
-  setSelectedAccounts: (accounts: SocialAccount[]) => void;
+  setSelectedAccounts: (accounts: SocialAccountWithUsername[]) => void;
   setPostText: (text: PostText) => void;
   setScheduledDate: (date: Date | undefined) => void;
   setCurrentStep: (step: number) => void;
@@ -121,7 +115,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_SELECTED_FILES", payload: files });
   }, []);
 
-  const setSelectedAccounts = useCallback((accounts: SocialAccount[]) => {
+  const setSelectedAccounts = useCallback((accounts: SocialAccountWithUsername[]) => {
     dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts });
   }, []);
 

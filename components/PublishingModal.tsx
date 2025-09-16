@@ -1,10 +1,10 @@
 import {MediaUrl} from "@/components/posts/PostCreationForm";
-import {ConnectedAccount} from "@prisma/client";
+import type {SocialAccountWithUsername} from "@/types";
 
 interface PublishingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  accounts: ConnectedAccount[];
+  accounts: SocialAccountWithUsername[];
   content: string;
   mediaUrls?: MediaUrl[];
 }
