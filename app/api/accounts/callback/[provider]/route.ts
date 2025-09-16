@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/config/auth";
 import { TwitterApi } from "twitter-api-v2";
 import { db } from "@/lib/config/prisma";
 import { Redis } from "@upstash/redis";
+import { encryptToken } from "@/lib/utils/utils";
 
 const DASHBOARD_REDIRECT = "/dashboard";
 
@@ -96,8 +97,8 @@ export async function GET(
             },
           },
           update: {
-            accessToken,
-            accessSecret,
+            accessToken: encryptToken(accessToken),
+            accessSecret: encryptToken(accessSecret),
             oauthVersion: "OAUTH1",
             displayName: name ?? undefined,
             username: username ?? undefined,
@@ -112,8 +113,8 @@ export async function GET(
             userId: session.user.id,
             provider,
             providerAccountId: userId,
-            accessToken,
-            accessSecret,
+            accessToken: encryptToken(accessToken),
+            accessSecret: encryptToken(accessSecret),
             oauthVersion: "OAUTH1",
             oauthTokenSecret: null,
             displayName: name ?? undefined,

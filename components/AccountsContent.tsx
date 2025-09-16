@@ -9,26 +9,14 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import Image from "next/image";
-import { Loader2, X, Plus } from "lucide-react";
+import { X, Plus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { SUPPORTED_PLATFORMS, PLATFORM_DISPLAY } from "@/constants";
 import { cn } from "@/lib/utils/utils";
-
-interface ConnectedAccountWithDetails {
-  id: string;
-  avatar?: string;
-  provider: string;
-  name: string;
-  username: string;
-  providerAccountId: string;
-  followersCount: number;
-  postsCount: number;
-  lastUpdate: string;
-  isLoading?: boolean;
-}
+import { ConnectedAccount } from "@prisma/client";
 
 const fetchAccounts = async () => {
   const response = await fetch("/api/accounts");
@@ -36,10 +24,11 @@ const fetchAccounts = async () => {
     throw new Error("Błąd podczas pobierania kont");
   }
   const data = await response.json();
-  return data.accounts;
+
+  return data;
 };
 
-const removeAccount = async (account: ConnectedAccountWithDetails) => {
+const removeAccount = async (account: ConnectedAccount) => {
   const response = await fetch("/api/accounts", {
     method: "DELETE",
     headers: {
@@ -61,7 +50,7 @@ export default function AccountsContent() {
   const queryClient = useQueryClient();
   const [showModal, setShowModal] = useState<string | null>(null);
   const [accountToRemove, setAccountToRemove] =
-    useState<ConnectedAccountWithDetails | null>(null);
+    useState<ConnectedAccount | null>(null);
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["accounts"],
@@ -75,10 +64,8 @@ export default function AccountsContent() {
     onMutate: async (account) => {
       await queryClient.cancelQueries({ queryKey: ["accounts"] });
       const previousAccounts = queryClient.getQueryData(["accounts"]);
-      queryClient.setQueryData(
-        ["accounts"],
-        (old: ConnectedAccountWithDetails[]) =>
-          old.map((a) => (a.id === account.id ? { ...a, isLoading: true } : a))
+      queryClient.setQueryData(["accounts"], (old: ConnectedAccount[]) =>
+        old.map((a) => (a.id === account.id ? { ...a, isLoading: true } : a)),
       );
       return { previousAccounts };
     },
@@ -93,7 +80,7 @@ export default function AccountsContent() {
     },
     onSuccess: (removedAccount) => {
       toast.success("Konto zostało pomyślnie usunięte", {
-        description: `Konto ${removedAccount?.name} zostało odłączone.`,
+        description: `Konto ${removedAccount?.username} zostało odłączone.`,
       });
     },
     onSettled: () => {
@@ -107,7 +94,8 @@ export default function AccountsContent() {
 
   const getConnectedAccounts = (platform: string) => {
     return accounts.filter(
-      (account: ConnectedAccountWithDetails) => account.provider === platform
+      (account: ConnectedAccount) =>
+        account.provider.toLowerCase() === platform,
     );
   };
 
@@ -208,27 +196,25 @@ export default function AccountsContent() {
                   </div>
                 ) : (
                   getConnectedAccounts(platform).map(
-                    (account: ConnectedAccountWithDetails) => (
+                    (account: ConnectedAccount) => (
                       <div
                         key={account.id}
                         className="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
-                          {account.isLoading && (
-                            <Loader2 className="animate-spin h-4 w-4 text-blue-500" />
-                          )}
-                          {"avatar" in account && account.avatar && (
-                            <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
-                              <Image
-                                src={account.avatar}
-                                alt={account.name}
-                                fill
-                                className="object-cover"
-                              />
-                            </div>
-                          )}
+                          {"profileImageUrl" in account &&
+                            account.profileImageUrl && (
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
+                                <Image
+                                  src={account.profileImageUrl!}
+                                  alt={account.username!}
+                                  fill
+                                  className="object-cover"
+                                />
+                              </div>
+                            )}
                           <span className="text-sm font-medium text-gray-900 truncate">
-                            {account.name}
+                            {account.displayName} ({account.username})
                           </span>
                         </div>
                         <button
@@ -236,13 +222,12 @@ export default function AccountsContent() {
                             setAccountToRemove(account);
                           }}
                           className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-red-50 rounded-full transition-colors"
-                          disabled={account.isLoading}
                           title="Usuń konto"
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
-                    )
+                    ),
                   )
                 )}
               </div>
@@ -251,52 +236,55 @@ export default function AccountsContent() {
         })}
       </div>
 
-        {showModal && PLATFORM_DISPLAY[showModal as PlatformKey] && (
-            <Dialog open={!!showModal} onOpenChange={() => setShowModal(null)}>
-                <DialogContent className="max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>
-                            Połączenie z {PLATFORM_DISPLAY[showModal as PlatformKey].label}
-                        </DialogTitle>
-                        <DialogDescription className="text-base text-muted-foreground">
-                            Połącz swoje konto{" "}
-                            {PLATFORM_DISPLAY[showModal as PlatformKey].label}, aby móc
-                            publikować i planować posty.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter>
-                        <Button onClick={() => setShowModal(null)} variant="outline">
-                            Anuluj
-                        </Button>
-                        <Button
-                            onClick={async () => {
-                                try {
-                                    const response = await fetch(`/api/accounts/connect?provider=${showModal?.toUpperCase()}`, {
-                                        method: "GET",
-                                    });
-                                    if (!response.ok) {
-                                        throw new Error("Nie udało się pobrać URL autoryzacji");
-                                    }
-                                    const data = await response.json();
-                                    if (!data.authUrl) {
-                                        throw new Error("Brak URL autoryzacji");
-                                    }
-                                    router.push(data.authUrl);
-                                } catch (error) {
-                                    console.error(error);
-                                    toast.error(
-                                        `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`
-                                    );
-                                }
-                            }}
-                            className="bg-blue-500 hover:bg-blue-600 text-white"
-                        >
-                            Połącz konto
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-        )}
+      {showModal && PLATFORM_DISPLAY[showModal as PlatformKey] && (
+        <Dialog open={!!showModal} onOpenChange={() => setShowModal(null)}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>
+                Połączenie z {PLATFORM_DISPLAY[showModal as PlatformKey].label}
+              </DialogTitle>
+              <DialogDescription className="text-base text-muted-foreground">
+                Połącz swoje konto{" "}
+                {PLATFORM_DISPLAY[showModal as PlatformKey].label}, aby móc
+                publikować i planować posty.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button onClick={() => setShowModal(null)} variant="outline">
+                Anuluj
+              </Button>
+              <Button
+                onClick={async () => {
+                  try {
+                    const response = await fetch(
+                      `/api/accounts/connect?provider=${showModal?.toUpperCase()}`,
+                      {
+                        method: "GET",
+                      },
+                    );
+                    if (!response.ok) {
+                      throw new Error("Nie udało się pobrać URL autoryzacji");
+                    }
+                    const data = await response.json();
+                    if (!data.authUrl) {
+                      throw new Error("Brak URL autoryzacji");
+                    }
+                    router.push(data.authUrl);
+                  } catch (error) {
+                    console.error(error);
+                    toast.error(
+                      `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`,
+                    );
+                  }
+                }}
+                className="bg-blue-500 hover:bg-blue-600 text-white"
+              >
+                Połącz konto
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       {accountToRemove && (
         <Dialog
@@ -308,7 +296,7 @@ export default function AccountsContent() {
               <DialogTitle>Potwierdzenie usunięcia</DialogTitle>
               <DialogDescription>
                 Czy na pewno chcesz usunąć konto{" "}
-                <strong>{accountToRemove.name}</strong>?
+                <strong>{accountToRemove.username}</strong>?
               </DialogDescription>
               <div className="mt-2 p-3 bg-destructive/10 rounded-lg">
                 <span className="text-sm text-destructive">
