@@ -9,7 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import Image from "next/image";
-import { X, Plus } from "lucide-react";
+import { X, Plus, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
@@ -51,6 +51,10 @@ export default function AccountsContent() {
   const [showModal, setShowModal] = useState<string | null>(null);
   const [accountToRemove, setAccountToRemove] =
     useState<ConnectedAccount | null>(null);
+  const [isConnecting, setIsConnecting] = useState(false);
+  const modalPlatformInfo = showModal
+    ? PLATFORM_DISPLAY[showModal as PlatformKey]
+    : null;
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["accounts"],
@@ -237,30 +241,63 @@ export default function AccountsContent() {
       </div>
 
       {showModal && PLATFORM_DISPLAY[showModal as PlatformKey] && (
-        <Dialog open={!!showModal} onOpenChange={() => setShowModal(null)}>
-          <DialogContent className="max-w-2xl">
+        <Dialog
+          open={!!showModal}
+          onOpenChange={() => {
+            if (!isConnecting) setShowModal(null);
+          }}
+        >
+          <DialogContent
+            className="max-w-2xl"
+            aria-busy={isConnecting ? true : undefined}
+          >
             <DialogHeader>
-              <DialogTitle>
-                Połączenie z {PLATFORM_DISPLAY[showModal as PlatformKey].label}
-              </DialogTitle>
-              <DialogDescription className="text-base text-muted-foreground">
-                Połącz swoje konto{" "}
-                {PLATFORM_DISPLAY[showModal as PlatformKey].label}, aby móc
-                publikować i planować posty.
-              </DialogDescription>
+              <div className="flex items-start gap-3">
+                {modalPlatformInfo && (
+                  <modalPlatformInfo.icon
+                    className={cn(
+                      "h-6 w-6 mt-0.5 shrink-0",
+                      modalPlatformInfo.color,
+                    )}
+                    aria-hidden="true"
+                  />
+                )}
+                <div className="flex-1">
+                  <DialogTitle className="text-xl">
+                    Połącz konto {modalPlatformInfo?.label}
+                  </DialogTitle>
+                  <DialogDescription className="mt-1 text-base text-muted-foreground">
+                    Zostaniesz przekierowany do oficjalnej strony autoryzacji.
+                    Po zakończeniu wrócisz tutaj i Twoje konto będzie gotowe do
+                    publikowania.
+                  </DialogDescription>
+                </div>
+              </div>
+              <div className="mt-4 rounded-lg border bg-muted/30 p-3">
+                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+                  <li>Nie publikujemy nic bez Twojej wyraźnej akceptacji.</li>
+                  <li>
+                    W każdej chwili możesz odłączyć konto w sekcji Połączone
+                    konta.
+                  </li>
+                </ul>
+              </div>
             </DialogHeader>
-            <DialogFooter>
-              <Button onClick={() => setShowModal(null)} variant="outline">
+            <DialogFooter className="gap-2">
+              <Button
+                onClick={() => setShowModal(null)}
+                variant="outline"
+                disabled={isConnecting}
+              >
                 Anuluj
               </Button>
               <Button
                 onClick={async () => {
                   try {
+                    setIsConnecting(true);
                     const response = await fetch(
                       `/api/accounts/connect?provider=${showModal?.toUpperCase()}`,
-                      {
-                        method: "GET",
-                      },
+                      { method: "GET" },
                     );
                     if (!response.ok) {
                       throw new Error("Nie udało się pobrać URL autoryzacji");
@@ -275,11 +312,21 @@ export default function AccountsContent() {
                     toast.error(
                       `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`,
                     );
+                  } finally {
+                    setIsConnecting(false);
                   }
                 }}
-                className="bg-blue-500 hover:bg-blue-600 text-white"
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+                disabled={isConnecting}
               >
-                Połącz konto
+                {isConnecting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Łączenie...
+                  </span>
+                ) : (
+                  "Połącz konto"
+                )}
               </Button>
             </DialogFooter>
           </DialogContent>
