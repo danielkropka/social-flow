@@ -7,7 +7,19 @@ import {
   CardContent,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Check, ArrowRight, Loader2, Search, Filter, CheckSquare, Square, RefreshCw, SortAsc, SortDesc, Users } from "lucide-react";
+import {
+  Check,
+  ArrowRight,
+  Loader2,
+  Search,
+  Filter,
+  CheckSquare,
+  Square,
+  RefreshCw,
+  SortAsc,
+  SortDesc,
+  Users,
+} from "lucide-react";
 import { SiTiktok, SiFacebook, SiX, SiInstagram } from "react-icons/si";
 import { usePostCreation } from "@/context/PostCreationContext";
 import { PublicSocialAccount } from "@/types";
@@ -38,13 +50,16 @@ const PLATFORM_NAMES: Record<string, string> = {
 };
 
 export default function AccountSelection() {
-  const { selectedAccounts, setSelectedAccounts, setCurrentStep } = usePostCreation();
+  const { selectedAccounts, setSelectedAccounts, setCurrentStep } =
+    usePostCreation();
   const [accounts, setAccounts] = useState<PublicSocialAccount[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
-  const [sortBy, setSortBy] = useState<"name" | "platform" | "connectedAt">("name");
+  const [sortBy, setSortBy] = useState<"name" | "platform" | "connectedAt">(
+    "name",
+  );
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [refreshing, setRefreshing] = useState(false);
 
@@ -73,12 +88,12 @@ export default function AccountSelection() {
 
   const handleAccountToggle = (account: PublicSocialAccount) => {
     const isSelected = selectedAccounts.some(
-      (selected) => selected.id === account.id
+      (selected) => selected.id === account.id,
     );
 
     if (isSelected) {
       setSelectedAccounts(
-        selectedAccounts.filter((selected) => selected.id !== account.id)
+        selectedAccounts.filter((selected) => selected.id !== account.id),
       );
     } else {
       setSelectedAccounts([...selectedAccounts, account]);
@@ -93,21 +108,27 @@ export default function AccountSelection() {
 
   // Get available platforms from accounts
   const availablePlatforms = useMemo(() => {
-    const platforms = new Set(accounts.map(account => account.provider));
+    const platforms = new Set(accounts.map((account) => account.provider));
     return Array.from(platforms);
   }, [accounts]);
 
   // Filter and sort accounts
   const filteredAndSortedAccounts = useMemo(() => {
-    let filtered = accounts.filter(account => {
+    const filtered = accounts.filter((account) => {
       // Search filter
-      const searchMatch = searchQuery === "" || 
-        (account.displayName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         account.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-         PLATFORM_NAMES[account.provider]?.toLowerCase().includes(searchQuery.toLowerCase()));
+      const searchMatch =
+        searchQuery === "" ||
+        account.displayName
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase()) ||
+        account.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        PLATFORM_NAMES[account.provider]
+          ?.toLowerCase()
+          .includes(searchQuery.toLowerCase());
 
       // Platform filter
-      const platformMatch = selectedPlatforms.length === 0 || 
+      const platformMatch =
+        selectedPlatforms.length === 0 ||
         selectedPlatforms.includes(account.provider);
 
       return searchMatch && platformMatch;
@@ -116,7 +137,7 @@ export default function AccountSelection() {
     // Sort accounts
     filtered.sort((a, b) => {
       let comparison = 0;
-      
+
       switch (sortBy) {
         case "name":
           const nameA = (a.displayName || a.username || "").toLowerCase();
@@ -124,7 +145,10 @@ export default function AccountSelection() {
           comparison = nameA.localeCompare(nameB);
           break;
         case "platform":
-          comparison = PLATFORM_NAMES[a.provider]?.localeCompare(PLATFORM_NAMES[b.provider] || "") || 0;
+          comparison =
+            PLATFORM_NAMES[a.provider]?.localeCompare(
+              PLATFORM_NAMES[b.provider] || "",
+            ) || 0;
           break;
         case "connectedAt":
           const dateA = new Date(a.connectedAt).getTime();
@@ -132,7 +156,7 @@ export default function AccountSelection() {
           comparison = dateA - dateB;
           break;
       }
-      
+
       return sortOrder === "asc" ? comparison : -comparison;
     });
 
@@ -140,10 +164,10 @@ export default function AccountSelection() {
   }, [accounts, searchQuery, selectedPlatforms, sortBy, sortOrder]);
 
   const handlePlatformToggle = (platform: string) => {
-    setSelectedPlatforms(prev => 
-      prev.includes(platform) 
-        ? prev.filter(p => p !== platform)
-        : [...prev, platform]
+    setSelectedPlatforms((prev) =>
+      prev.includes(platform)
+        ? prev.filter((p) => p !== platform)
+        : [...prev, platform],
     );
   };
 
@@ -161,15 +185,23 @@ export default function AccountSelection() {
   };
 
   const handleSelectByPlatform = (platform: string) => {
-    const platformAccounts = filteredAndSortedAccounts.filter(account => account.provider === platform);
-    const currentPlatformSelected = selectedAccounts.filter(account => account.provider === platform);
-    
+    const platformAccounts = filteredAndSortedAccounts.filter(
+      (account) => account.provider === platform,
+    );
+    const currentPlatformSelected = selectedAccounts.filter(
+      (account) => account.provider === platform,
+    );
+
     if (currentPlatformSelected.length === platformAccounts.length) {
       // Deselect all from this platform
-      setSelectedAccounts(selectedAccounts.filter(account => account.provider !== platform));
+      setSelectedAccounts(
+        selectedAccounts.filter((account) => account.provider !== platform),
+      );
     } else {
       // Select all from this platform
-      const otherSelected = selectedAccounts.filter(account => account.provider !== platform);
+      const otherSelected = selectedAccounts.filter(
+        (account) => account.provider !== platform,
+      );
       setSelectedAccounts([...otherSelected, ...platformAccounts]);
     }
   };
@@ -240,9 +272,7 @@ export default function AccountSelection() {
         </header>
         <div className="flex items-center justify-center py-12">
           <div className="text-center">
-            <p className="text-sm text-gray-500 mb-2">
-              Brak połączonych kont
-            </p>
+            <p className="text-sm text-gray-500 mb-2">Brak połączonych kont</p>
             <p className="text-xs text-gray-400">
               Połącz swoje konta społecznościowe, aby móc publikować posty.
             </p>
@@ -278,7 +308,7 @@ export default function AccountSelection() {
               className="pl-10"
             />
           </div>
-          
+
           {/* Quick Actions */}
           <div className="flex gap-2">
             <button
@@ -290,7 +320,9 @@ export default function AccountSelection() {
                 "disabled:opacity-50 disabled:cursor-not-allowed",
               ].join(" ")}
             >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
               Odśwież
             </button>
           </div>
@@ -323,9 +355,15 @@ export default function AccountSelection() {
               {availablePlatforms.map((platform) => {
                 const platformName = PLATFORM_NAMES[platform] || platform;
                 const platformIcon = PLATFORM_ICONS[platform];
-                const platformAccounts = filteredAndSortedAccounts.filter(account => account.provider === platform);
-                const selectedCount = selectedAccounts.filter(account => account.provider === platform).length;
-                const isAllSelected = platformAccounts.length > 0 && selectedCount === platformAccounts.length;
+                const platformAccounts = filteredAndSortedAccounts.filter(
+                  (account) => account.provider === platform,
+                );
+                const selectedCount = selectedAccounts.filter(
+                  (account) => account.provider === platform,
+                ).length;
+                const isAllSelected =
+                  platformAccounts.length > 0 &&
+                  selectedCount === platformAccounts.length;
 
                 return (
                   <button
@@ -337,12 +375,14 @@ export default function AccountSelection() {
                         ? "border-green-500 bg-green-50 text-green-700 dark:border-green-400 dark:bg-green-950/40 dark:text-green-200"
                         : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
                     ].join(" ")}
-                    title={`${isAllSelected ? 'Odznacz' : 'Zaznacz'} wszystkie konta ${platformName}`}
+                    title={`${isAllSelected ? "Odznacz" : "Zaznacz"} wszystkie konta ${platformName}`}
                   >
                     {platformIcon}
                     {platformName}
                     {platformAccounts.length > 0 && (
-                      <span className="text-xs">({selectedCount}/{platformAccounts.length})</span>
+                      <span className="text-xs">
+                        ({selectedCount}/{platformAccounts.length})
+                      </span>
                     )}
                   </button>
                 );
@@ -370,9 +410,12 @@ export default function AccountSelection() {
                   ].join(" ")}
                 >
                   {label}
-                  {sortBy === key && (
-                    sortOrder === "asc" ? <SortAsc className="h-3 w-3" /> : <SortDesc className="h-3 w-3" />
-                  )}
+                  {sortBy === key &&
+                    (sortOrder === "asc" ? (
+                      <SortAsc className="h-3 w-3" />
+                    ) : (
+                      <SortDesc className="h-3 w-3" />
+                    ))}
                 </button>
               ))}
             </div>
@@ -387,7 +430,7 @@ export default function AccountSelection() {
               Filtruj platformy:
             </span>
           </div>
-          
+
           <div className="flex flex-wrap gap-2">
             {availablePlatforms.map((platform) => {
               const isSelected = selectedPlatforms.includes(platform);
@@ -404,8 +447,8 @@ export default function AccountSelection() {
                     "shadow-[0_1px_0_0_rgba(0,0,0,0.03)]",
                     isSelected
                       ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-200"
-                      : platformStyle ??
-                        "bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-700",
+                      : (platformStyle ??
+                        "bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-700"),
                   ].join(" ")}
                 >
                   {platformIcon}
@@ -429,17 +472,16 @@ export default function AccountSelection() {
         {/* Results count */}
         <div className="flex items-center justify-between">
           <div className="text-xs text-gray-500 dark:text-gray-400">
-            {filteredAndSortedAccounts.length === accounts.length ? (
-              `Wyświetlane wszystkie konta (${accounts.length})`
-            ) : (
-              `Wyświetlane ${filteredAndSortedAccounts.length} z ${accounts.length} kont`
-            )}
+            {filteredAndSortedAccounts.length === accounts.length
+              ? `Wyświetlane wszystkie konta (${accounts.length})`
+              : `Wyświetlane ${filteredAndSortedAccounts.length} z ${accounts.length} kont`}
           </div>
-          
+
           {selectedAccounts.length > 0 && (
             <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
               <Users className="h-3.5 w-3.5" />
-              Wybrano {selectedAccounts.length} {selectedAccounts.length === 1 ? "konto" : "kont"}
+              Wybrano {selectedAccounts.length}{" "}
+              {selectedAccounts.length === 1 ? "konto" : "kont"}
             </div>
           )}
         </div>
@@ -448,9 +490,10 @@ export default function AccountSelection() {
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {filteredAndSortedAccounts.map((account) => {
           const isSelected = selectedAccounts.some(
-            (selected) => selected.id === account.id
+            (selected) => selected.id === account.id,
           );
-          const platformName = PLATFORM_NAMES[account.provider] || account.provider;
+          const platformName =
+            PLATFORM_NAMES[account.provider] || account.provider;
           const platformIcon = PLATFORM_ICONS[account.provider];
           const platformStyle = PLATFORM_BADGE_STYLES[account.provider];
 
@@ -506,7 +549,9 @@ export default function AccountSelection() {
                       </div>
                       <div>
                         <CardTitle className="text-base">
-                          {account.displayName || account.username || platformName}
+                          {account.displayName ||
+                            account.username ||
+                            platformName}
                         </CardTitle>
                         <CardDescription className="mt-0.5">
                           {account.username && account.displayName
@@ -553,7 +598,10 @@ export default function AccountSelection() {
                     <div className="text-xs text-gray-500 dark:text-gray-400">
                       {account.connectedAt && (
                         <p>
-                          Połączono: {new Date(account.connectedAt).toLocaleDateString("pl-PL")}
+                          Połączono:{" "}
+                          {new Date(account.connectedAt).toLocaleDateString(
+                            "pl-PL",
+                          )}
                         </p>
                       )}
                     </div>
@@ -588,7 +636,8 @@ export default function AccountSelection() {
       {selectedAccounts.length > 0 && (
         <div className="mt-8 flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Wybrano {selectedAccounts.length} {selectedAccounts.length === 1 ? "konto" : "kont"}
+            Wybrano {selectedAccounts.length}{" "}
+            {selectedAccounts.length === 1 ? "konto" : "kont"}
           </div>
           <button
             onClick={handleContinue}

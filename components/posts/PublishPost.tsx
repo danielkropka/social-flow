@@ -35,12 +35,10 @@ import {
   Check,
   AlertCircle,
   Trash2,
-  Edit3,
   Play,
 } from "lucide-react";
 import { SiTiktok, SiFacebook, SiX, SiInstagram } from "react-icons/si";
 import { usePostCreation } from "@/context/PostCreationContext";
-import { map } from "zod";
 import { toast } from "sonner";
 
 const PLATFORM_BADGE_STYLES: Record<string, string> = {
@@ -85,11 +83,6 @@ export default function PublishPost() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [customTexts, setCustomTexts] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
-  const [selectedTime, setSelectedTime] = useState<string>("");
-  const [selectedHour, setSelectedHour] = useState<string>("");
-  const [selectedMinute, setSelectedMinute] = useState<string>("");
-  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -108,7 +101,6 @@ export default function PublishPost() {
       setTimeout(() => {
         const newFiles = [...selectedFiles, ...files];
         setSelectedFiles(newFiles);
-
 
         setIsUploading(false);
         if (fileInputRef.current) {
@@ -187,24 +179,9 @@ export default function PublishPost() {
       newErrors.accounts = "Wybierz przynajmniej jedno konto";
     }
 
-    if (scheduledDate && selectedDate && selectedHour && selectedMinute) {
-      if (!validateScheduleTime(selectedDate, selectedHour, selectedMinute)) {
-        newErrors.schedule = "Post można zaplanować minimum 5 minut do przodu";
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  }, [
-    postType,
-    selectedFiles,
-    postText.default,
-    selectedAccounts,
-    scheduledDate,
-    selectedDate,
-    selectedHour,
-    selectedMinute,
-  ]);
+  }, [postType, selectedFiles, postText.default, selectedAccounts]);
 
   const handlePublish = useCallback(async () => {
     if (!validateForm()) return;
@@ -253,7 +230,6 @@ export default function PublishPost() {
           content: postText.default,
           mediaUrls: mediaUrls.length > 0 ? mediaUrls : undefined,
           accountIds: selectedAccounts.map((account) => account.id),
-          scheduledFor: scheduledDate ? scheduledDate.toISOString() : undefined,
         }),
       });
 
@@ -265,33 +241,31 @@ export default function PublishPost() {
       const createResult = await createResponse.json();
       const post = createResult.data;
 
-      // Jeśli post nie jest zaplanowany, publikujemy go natychmiast
-      if (!scheduledDate) {
-        const publishPromises = selectedAccounts.map(async (account) => {
-          const publishResponse = await fetch("/api/posts/publish", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              postId: post.id,
-              provider: account.provider.toLowerCase(),
-              accountId: account.id,
-            }),
-          });
-
-          if (!publishResponse.ok) {
-            const errorData = await publishResponse.json();
-            throw new Error(
-              `Błąd publikacji na ${account.provider}: ${errorData.error || errorData.message}`,
-            );
-          }
-
-          return await publishResponse.json();
+      // Publikujemy post natychmiast
+      const publishPromises = selectedAccounts.map(async (account) => {
+        const publishResponse = await fetch("/api/posts/publish", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            postId: post.id,
+            provider: account.provider.toLowerCase(),
+            accountId: account.id,
+          }),
         });
 
-        await Promise.all(publishPromises);
-      }
+        if (!publishResponse.ok) {
+          const errorData = await publishResponse.json();
+          throw new Error(
+            `Błąd publikacji na ${account.provider}: ${errorData.error || errorData.message}`,
+          );
+        }
+
+        return await publishResponse.json();
+      });
+
+      await Promise.all(publishPromises);
 
       // Resetujemy formularz i wracamy do pierwszego kroku
       setCurrentStep(1);
@@ -316,7 +290,6 @@ export default function PublishPost() {
     selectedAccounts,
     postText,
     customTexts,
-    scheduledDate,
     setCurrentStep,
   ]);
 
@@ -362,74 +335,6 @@ export default function PublishPost() {
   const minutes = Array.from({ length: 60 }, (_, i) =>
     i.toString().padStart(2, "0"),
   );
-
-  const validateScheduleTime = (date: Date, hour: string, minute: string) => {
-    if (!date || !hour || !minute) return true;
-
-    const scheduledDateTime = new Date(date);
-    scheduledDateTime.setHours(parseInt(hour), parseInt(minute));
-
-    const now = new Date();
-    const minScheduleTime = new Date(now.getTime() + 5 * 60 * 1000); // 5 minut do przodu
-
-    return scheduledDateTime >= minScheduleTime;
-  };
-
-  const handleDateSelect = (date: Date | undefined) => {
-    setSelectedDate(date);
-    if (date && selectedHour && selectedMinute) {
-      const scheduledDateTime = new Date(date);
-      scheduledDateTime.setHours(
-        parseInt(selectedHour),
-        parseInt(selectedMinute),
-      );
-
-      if (validateScheduleTime(date, selectedHour, selectedMinute)) {
-        setScheduledDate(scheduledDateTime);
-      }
-    }
-  };
-
-  const handleHourChange = (hour: string) => {
-    setSelectedHour(hour);
-    if (selectedDate && hour && selectedMinute) {
-      const scheduledDateTime = new Date(selectedDate);
-      scheduledDateTime.setHours(parseInt(hour), parseInt(selectedMinute));
-
-      if (validateScheduleTime(selectedDate, hour, selectedMinute)) {
-        setScheduledDate(scheduledDateTime);
-      }
-    }
-  };
-
-  const handleMinuteChange = (minute: string) => {
-    setSelectedMinute(minute);
-    if (selectedDate && selectedHour && minute) {
-      const scheduledDateTime = new Date(selectedDate);
-      scheduledDateTime.setHours(parseInt(selectedHour), parseInt(minute));
-
-      if (validateScheduleTime(selectedDate, selectedHour, minute)) {
-        setScheduledDate(scheduledDateTime);
-      }
-    }
-  };
-
-  const clearSchedule = () => {
-    setSelectedDate(undefined);
-    setSelectedTime("");
-    setSelectedHour("");
-    setSelectedMinute("");
-    setScheduledDate(undefined);
-  };
-
-  React.useEffect(() => {
-    if (scheduledDate) {
-      setSelectedDate(scheduledDate);
-      setSelectedTime(scheduledDate.toTimeString().slice(0, 5));
-      setSelectedHour(scheduledDate.getHours().toString().padStart(2, "0"));
-      setSelectedMinute(scheduledDate.getMinutes().toString().padStart(2, "0"));
-    }
-  }, [scheduledDate]);
 
   return (
     <section className="w-full">
@@ -611,50 +516,50 @@ export default function PublishPost() {
                         return (
                           <div key={index} className="space-y-2">
                             <div className="relative group aspect-square rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                                {isImage ? (
-                                  <img
-                                    src={URL.createObjectURL(file)}
-                                    alt={`Preview ${index + 1}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                ) : isVideo ? (
-                                  <div className="relative w-full h-full">
-                                    <div className="w-full h-full flex items-center justify-center">
-                                      <Video className="h-8 w-8 text-gray-400" />
-                                    </div>
-                                    <div className="absolute inset-0 flex items-center justify-center">
-                                      <div className="bg-black/50 rounded-full p-2">
-                                        <Play className="h-6 w-6 text-white" />
-                                      </div>
-                                    </div>
-                                  </div>
-                                ) : (
+                              {isImage ? (
+                                <img
+                                  src={URL.createObjectURL(file)}
+                                  alt={`Preview ${index + 1}`}
+                                  className="w-full h-full object-cover"
+                                />
+                              ) : isVideo ? (
+                                <div className="relative w-full h-full">
                                   <div className="w-full h-full flex items-center justify-center">
-                                    <FileText className="h-8 w-8 text-gray-400" />
+                                    <Video className="h-8 w-8 text-gray-400" />
                                   </div>
-                                )}
-
-                                {/* File info overlay */}
-                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                  <div className="text-white text-xs">
-                                    <p className="font-medium truncate">
-                                      {file.name}
-                                    </p>
-                                    <p>{formatFileSize(file.size)}</p>
+                                  <div className="absolute inset-0 flex items-center justify-center">
+                                    <div className="bg-black/50 rounded-full p-2">
+                                      <Play className="h-6 w-6 text-white" />
+                                    </div>
                                   </div>
                                 </div>
+                              ) : (
+                                <div className="w-full h-full flex items-center justify-center">
+                                  <FileText className="h-8 w-8 text-gray-400" />
+                                </div>
+                              )}
 
-                                {/* Action buttons */}
-                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                  <button
-                                    onClick={() => removeFile(index)}
-                                    className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
-                                    title="Usuń plik"
-                                  >
-                                    <X className="h-3 w-3" />
-                                  </button>
+                              {/* File info overlay */}
+                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                <div className="text-white text-xs">
+                                  <p className="font-medium truncate">
+                                    {file.name}
+                                  </p>
+                                  <p>{formatFileSize(file.size)}</p>
                                 </div>
                               </div>
+
+                              {/* Action buttons */}
+                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button
+                                  onClick={() => removeFile(index)}
+                                  className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                                  title="Usuń plik"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
@@ -737,158 +642,6 @@ export default function PublishPost() {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          {/* Scheduling */}
-          <Card className="bg-white/70 dark:bg-zinc-900/60 backdrop-blur">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="h-5 w-5" />
-                Planowanie
-              </CardTitle>
-              <CardDescription>
-                Opublikuj teraz lub zaplanuj na później.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-3">
-                <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Data publikacji
-                </label>
-
-                {/* Date Picker */}
-                <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={[
-                        "w-full justify-start text-left font-normal",
-                        !selectedDate && "text-muted-foreground",
-                      ].join(" ")}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {selectedDate ? (
-                        selectedDate.toLocaleDateString("pl-PL")
-                      ) : (
-                        <span>Wybierz datę</span>
-                      )}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={handleDateSelect}
-                      disabled={(date) =>
-                        date < new Date(new Date().setHours(0, 0, 0, 0))
-                      }
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                {/* Time Picker */}
-                {selectedDate && (
-                  <div className="space-y-3">
-                    <label className="text-xs text-gray-600 dark:text-gray-400">
-                      Godzina publikacji
-                    </label>
-                    <div className="flex gap-2">
-                      {/* Hour Selector */}
-                      <div className="flex-1">
-                        <Select
-                          value={selectedHour}
-                          onValueChange={handleHourChange}
-                        >
-                          <SelectTrigger className="text-sm">
-                            <SelectValue placeholder="Godzina" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-48">
-                            {hours.map((hour) => (
-                              <SelectItem key={hour} value={hour}>
-                                {hour}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      {/* Separator */}
-                      <div className="flex items-center text-gray-400 text-lg font-medium">
-                        :
-                      </div>
-
-                      {/* Minute Selector */}
-                      <div className="flex-1">
-                        <Select
-                          value={selectedMinute}
-                          onValueChange={handleMinuteChange}
-                        >
-                          <SelectTrigger className="text-sm">
-                            <SelectValue placeholder="Min" />
-                          </SelectTrigger>
-                          <SelectContent className="max-h-48">
-                            {minutes.map((minute) => (
-                              <SelectItem key={minute} value={minute}>
-                                {minute}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-
-                    {/* Validation Error */}
-                    {selectedDate &&
-                      selectedHour &&
-                      selectedMinute &&
-                      !validateScheduleTime(
-                        selectedDate,
-                        selectedHour,
-                        selectedMinute,
-                      ) && (
-                        <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                          <AlertCircle className="h-4 w-4" />
-                          <span>
-                            Post można zaplanować minimum 5 minut do przodu
-                          </span>
-                        </div>
-                      )}
-                  </div>
-                )}
-
-                {/* Clear Schedule Button */}
-                {(selectedDate || scheduledDate) && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearSchedule}
-                    className="w-full text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                  >
-                    <X className="h-3 w-3 mr-1" />
-                    Wyczyść planowanie
-                  </Button>
-                )}
-
-                {/* Schedule Info */}
-                {scheduledDate && (
-                  <div className="flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/20 p-3 rounded-lg">
-                    <Clock className="h-4 w-4" />
-                    <span>
-                      Zaplanowano na: {scheduledDate.toLocaleString("pl-PL")}
-                    </span>
-                  </div>
-                )}
-
-                {/* Schedule Validation Error */}
-                {errors.schedule && (
-                  <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 p-3 rounded-lg">
-                    <AlertCircle className="h-4 w-4" />
-                    <span>{errors.schedule}</span>
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-
           {/* Preview */}
           <Card className="bg-white/70 dark:bg-zinc-900/60 backdrop-blur">
             <CardHeader>
@@ -1013,18 +766,14 @@ export default function PublishPost() {
                 ) : (
                   <>
                     <Send className="h-4 w-4 mr-2" />
-                    {scheduledDate ? "Zaplanuj publikację" : "Opublikuj teraz"}
+                    Opublikuj teraz
                   </>
                 )}
               </Button>
-              <p className="mt-2 text-xs text-center text-gray-500 dark:text-gray-400">
-                Post zostanie opublikowany na {selectedAccounts.length} kontach
-              </p>
             </CardContent>
           </Card>
         </div>
       </div>
-
     </section>
   );
 }
