@@ -8,24 +8,9 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Upload,
   X,
-  Calendar as CalendarIcon,
-  Clock,
   Send,
   Image,
   Video,
@@ -72,10 +57,8 @@ export default function PublishPost() {
     selectedFiles,
     selectedAccounts,
     postText,
-    scheduledDate,
     setSelectedFiles,
     setPostText,
-    setScheduledDate,
     setCurrentStep,
   } = usePostCreation();
 
@@ -328,13 +311,6 @@ export default function PublishPost() {
         return "";
     }
   };
-
-  const hours = Array.from({ length: 24 }, (_, i) =>
-    i.toString().padStart(2, "0"),
-  );
-  const minutes = Array.from({ length: 60 }, (_, i) =>
-    i.toString().padStart(2, "0"),
-  );
 
   return (
     <section className="w-full">
