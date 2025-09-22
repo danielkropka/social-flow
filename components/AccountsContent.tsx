@@ -3,18 +3,34 @@ import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogTitle,
   DialogDescription,
   DialogFooter,
+  DialogHeader,
+  DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import Image from "next/image";
-import { X, Plus, Loader2 } from "lucide-react";
-import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Check,
+  Filter,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Search,
+  Users,
+  X,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { SUPPORTED_PLATFORMS, PLATFORM_DISPLAY } from "@/constants";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PLATFORM_DISPLAY, SUPPORTED_PLATFORMS } from "@/constants";
 import { cn } from "@/lib/utils/utils";
 import { ConnectedAccount } from "@prisma/client";
 
@@ -23,9 +39,8 @@ const fetchAccounts = async () => {
   if (!response.ok) {
     throw new Error("Błąd podczas pobierania kont");
   }
-  const data = await response.json();
 
-  return data;
+  return await response.json();
 };
 
 const removeAccount = async (account: ConnectedAccount) => {
@@ -52,6 +67,9 @@ export default function AccountsContent() {
   const [accountToRemove, setAccountToRemove] =
     useState<ConnectedAccount | null>(null);
   const [isConnecting, setIsConnecting] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
   const modalPlatformInfo = showModal
     ? PLATFORM_DISPLAY[showModal as PlatformKey]
     : null;
@@ -103,112 +121,274 @@ export default function AccountsContent() {
     );
   };
 
+  const handlePlatformToggle = (platform: string) => {
+    setSelectedPlatforms((prev) =>
+      prev.includes(platform)
+        ? prev.filter((p) => p !== platform)
+        : [...prev, platform],
+    );
+  };
+
+  const clearFilters = () => {
+    setSearchQuery("");
+    setSelectedPlatforms([]);
+  };
+
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await queryClient.invalidateQueries({ queryKey: ["accounts"] });
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  // Filter accounts based on search and platform filters
+  const getFilteredAccounts = (platform: string) => {
+    let filtered = getConnectedAccounts(platform);
+
+    // Apply search filter
+    if (searchQuery) {
+      filtered = filtered.filter(
+        (account: ConnectedAccount) =>
+          account.displayName
+            ?.toLowerCase()
+            .includes(searchQuery.toLowerCase()) ||
+          account.username?.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    }
+
+    return filtered;
+  };
+
+  const availablePlatforms = Array.from(
+    new Set(accounts.map((account: ConnectedAccount) => account.provider)),
+  ) as string[];
+
   if (isLoading) {
     return (
-      <div className="space-y-8">
-        <div className="flex flex-col gap-2">
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-5 w-72" />
+      <section className="w-full">
+        <header className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            Połączone konta
+          </h1>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Zarządzaj swoimi kontami społecznościowymi i planuj posty
+          </p>
+        </header>
+        <div className="flex items-center justify-center py-12">
+          <div className="flex items-center gap-3">
+            <Loader2 className="h-5 w-5 animate-spin text-gray-500" />
+            <span className="text-sm text-gray-500">Ładowanie kont...</span>
+          </div>
         </div>
-
-        <div className="grid grid-cols-1 gap-6">
-          {Object.values(SUPPORTED_PLATFORMS).map((platform) => (
-            <div
-              key={platform}
-              className="flex flex-col gap-4 p-6 border border-gray-100 rounded-xl shadow-sm bg-white"
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Skeleton className="h-5 w-5 rounded" />
-                  <div className="flex flex-col gap-2">
-                    <Skeleton className="h-6 w-24" />
-                    <Skeleton className="h-4 w-32" />
-                  </div>
-                </div>
-                <Skeleton className="h-10 w-32" />
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {[1, 2, 3].map((index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100"
-                  >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <Skeleton className="h-10 w-10 rounded-full" />
-                      <Skeleton className="h-4 w-32" />
-                    </div>
-                    <Skeleton className="h-6 w-6 rounded-full" />
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-2xl font-bold text-gray-900">Połączone konta</h1>
-        <p className="text-gray-600">
+    <section className="w-full">
+      <header className="mb-6">
+        <h1 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+          Połączone konta
+        </h1>
+        <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
           Zarządzaj swoimi kontami społecznościowymi i planuj posty
         </p>
+      </header>
+
+      {/* Search and Filters */}
+      <div className="mb-6 space-y-4">
+        {/* Search Input and Actions */}
+        <div className="flex gap-3">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <Input
+              type="text"
+              placeholder="Szukaj kont po nazwie lub użytkowniku..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+
+          {/* Quick Actions */}
+          <div className="flex gap-2">
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className={[
+                "inline-flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
+                "disabled:opacity-50 disabled:cursor-not-allowed",
+              ].join(" ")}
+            >
+              <RefreshCw
+                className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`}
+              />
+              Odśwież
+            </button>
+          </div>
+        </div>
+
+        {/* Platform Filters */}
+        {availablePlatforms.length > 1 && (
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2">
+              <Filter className="h-4 w-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Filtruj platformy:
+              </span>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {availablePlatforms.map((platform) => {
+                const isSelected = selectedPlatforms.includes(platform);
+                const platformInfo = PLATFORM_DISPLAY[platform as PlatformKey];
+
+                return (
+                  <button
+                    key={platform}
+                    onClick={() => handlePlatformToggle(platform)}
+                    className={[
+                      "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors",
+                      "shadow-[0_1px_0_0_rgba(0,0,0,0.03)]",
+                      isSelected
+                        ? "border-blue-500 bg-blue-50 text-blue-700 dark:border-blue-400 dark:bg-blue-950/40 dark:text-blue-200"
+                        : "bg-zinc-100 text-zinc-700 border-zinc-200 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:border-zinc-700 dark:hover:bg-zinc-700",
+                    ].join(" ")}
+                  >
+                    {platformInfo?.icon && (
+                      <platformInfo.icon className="h-3.5 w-3.5" />
+                    )}
+                    {platformInfo?.label || platform}
+                    {isSelected && <Check className="h-3 w-3" />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {(searchQuery || selectedPlatforms.length > 0) && (
+              <button
+                onClick={clearFilters}
+                className="text-xs text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              >
+                Wyczyść filtry
+              </button>
+            )}
+          </div>
+        )}
+
+        {/* Results count */}
+        <div className="flex items-center justify-between">
+          <div className="text-xs text-gray-500 dark:text-gray-400">
+            {accounts.length === 0
+              ? "Brak połączonych kont"
+              : `Wyświetlane wszystkie konta (${accounts.length})`}
+          </div>
+
+          {accounts.length > 0 && (
+            <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
+              <Users className="h-3.5 w-3.5" />
+              {accounts.length} {accounts.length === 1 ? "konto" : "kont"}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6">
         {Object.values(SUPPORTED_PLATFORMS).map((platform) => {
           const { icon: Icon, label } = PLATFORM_DISPLAY[platform];
-          return (
-            <div
-              key={platform}
-              className="flex flex-col gap-4 p-6 border border-gray-100 rounded-xl shadow-sm bg-white hover:shadow-md transition-shadow"
-            >
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <Icon
-                    className={cn("h-5 w-5", PLATFORM_DISPLAY[platform].color)}
-                  />
-                  <div className="flex flex-col">
-                    <span className="font-semibold text-lg capitalize text-gray-900">
-                      {label}
-                    </span>
-                    <span className="text-sm text-gray-500">
-                      {getConnectedAccounts(platform).length} połączonych kont
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => handleAddAccount(platform)}
-                  className="w-full md:w-auto gap-2"
-                  variant="outline"
-                >
-                  <Plus className="h-4 w-4" />
-                  Dodaj konto
-                </Button>
-              </div>
+          const filteredAccounts = getFilteredAccounts(platform);
+          const shouldShowPlatform =
+            selectedPlatforms.length === 0 ||
+            selectedPlatforms.includes(platform);
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
-                {getConnectedAccounts(platform).length === 0 ? (
-                  <div className="col-span-full flex items-center justify-center p-8 bg-gray-50 rounded-lg border border-dashed border-gray-200">
-                    <p className="text-gray-500 text-center">
-                      Brak połączonych kont. Kliknij &quot;Dodaj konto&quot;,
-                      aby rozpocząć.
-                    </p>
+          if (!shouldShowPlatform) return null;
+
+          return (
+            <Card
+              key={platform}
+              className={[
+                "relative overflow-hidden border transition-colors",
+                "bg-white/70 dark:bg-zinc-900/60 backdrop-blur",
+                "hover:border-zinc-300 dark:hover:border-zinc-700",
+              ].join(" ")}
+            >
+              <div
+                aria-hidden
+                className={[
+                  "pointer-events-none absolute inset-x-0 -top-16 h-32",
+                  "bg-gradient-to-b",
+                  "from-zinc-500/10 via-zinc-500/5 to-transparent",
+                ].join(" ")}
+              />
+
+              <CardHeader className="relative">
+                <div className="mb-3 flex items-start justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={[
+                        "flex h-9 w-9 items-center justify-center rounded-lg",
+                        "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200",
+                        "ring-1 ring-inset ring-zinc-200/60 dark:ring-zinc-700/60",
+                        "shadow-sm",
+                      ].join(" ")}
+                    >
+                      <Icon
+                        className={cn(
+                          "h-5 w-5",
+                          PLATFORM_DISPLAY[platform].color,
+                        )}
+                      />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{label}</CardTitle>
+                      <CardDescription className="mt-0.5">
+                        {filteredAccounts.length} połączonych kont
+                      </CardDescription>
+                    </div>
                   </div>
-                ) : (
-                  getConnectedAccounts(platform).map(
-                    (account: ConnectedAccount) => (
+
+                  <Button
+                    onClick={() => handleAddAccount(platform)}
+                    className="gap-2"
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Dodaj konto
+                  </Button>
+                </div>
+              </CardHeader>
+
+              <CardContent className="pb-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+                  {filteredAccounts.length === 0 ? (
+                    <div className="col-span-full flex items-center justify-center p-8 bg-zinc-50/50 dark:bg-zinc-800/50 rounded-lg border border-dashed border-zinc-200 dark:border-zinc-700">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
+                          {getConnectedAccounts(platform).length === 0
+                            ? "Brak połączonych kont"
+                            : "Brak kont spełniających kryteria wyszukiwania"}
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-gray-500">
+                          {getConnectedAccounts(platform).length === 0
+                            ? 'Kliknij "Dodaj konto", aby rozpocząć.'
+                            : "Spróbuj zmienić filtry lub wyszukiwanie"}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    filteredAccounts.map((account: ConnectedAccount) => (
                       <div
                         key={account.id}
-                        className="flex items-center justify-between gap-3 bg-gray-50 p-4 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors"
+                        className="group flex items-center justify-between gap-3 bg-zinc-50/50 dark:bg-zinc-800/50 p-4 rounded-lg border border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100/50 dark:hover:bg-zinc-700/50 transition-colors"
                       >
                         <div className="flex items-center gap-3 min-w-0">
                           {"profileImageUrl" in account &&
                             account.profileImageUrl && (
-                              <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-gray-100">
+                              <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0 ring-2 ring-zinc-100 dark:ring-zinc-700">
                                 <Image
                                   src={account.profileImageUrl!}
                                   alt={account.username!}
@@ -217,25 +397,32 @@ export default function AccountsContent() {
                                 />
                               </div>
                             )}
-                          <span className="text-sm font-medium text-gray-900 truncate">
-                            {account.displayName} ({account.username})
-                          </span>
+                          <div className="min-w-0">
+                            <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">
+                              {account.displayName || account.username}
+                            </p>
+                            {account.displayName && account.username && (
+                              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                                @{account.username}
+                              </p>
+                            )}
+                          </div>
                         </div>
                         <button
                           onClick={() => {
                             setAccountToRemove(account);
                           }}
-                          className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-red-50 rounded-full transition-colors"
+                          className="text-red-500 hover:text-red-600 disabled:opacity-50 flex-shrink-0 p-1 hover:bg-red-50 dark:hover:bg-red-950/20 rounded-full transition-colors opacity-0 group-hover:opacity-100"
                           title="Usuń konto"
                         >
                           <X className="h-4 w-4" />
                         </button>
                       </div>
-                    ),
-                  )
-                )}
-              </div>
-            </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           );
         })}
       </div>
@@ -254,13 +441,19 @@ export default function AccountsContent() {
             <DialogHeader>
               <div className="flex items-start gap-3">
                 {modalPlatformInfo && (
-                  <modalPlatformInfo.icon
-                    className={cn(
-                      "h-6 w-6 mt-0.5 shrink-0",
-                      modalPlatformInfo.color,
-                    )}
-                    aria-hidden="true"
-                  />
+                  <div
+                    className={[
+                      "flex h-10 w-10 items-center justify-center rounded-lg",
+                      "bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200",
+                      "ring-1 ring-inset ring-zinc-200/60 dark:ring-zinc-700/60",
+                      "shadow-sm",
+                    ].join(" ")}
+                  >
+                    <modalPlatformInfo.icon
+                      className={cn("h-5 w-5", modalPlatformInfo.color)}
+                      aria-hidden="true"
+                    />
+                  </div>
                 )}
                 <div className="flex-1">
                   <DialogTitle className="text-xl">
@@ -273,8 +466,8 @@ export default function AccountsContent() {
                   </DialogDescription>
                 </div>
               </div>
-              <div className="mt-4 rounded-lg border bg-muted/30 p-3">
-                <ul className="list-disc pl-5 text-sm text-muted-foreground space-y-1">
+              <div className="mt-4 rounded-lg border bg-blue-50/50 dark:bg-blue-950/20 p-4">
+                <ul className="list-disc pl-5 text-sm text-blue-700 dark:text-blue-300 space-y-1">
                   <li>Nie publikujemy nic bez Twojej wyraźnej akceptacji.</li>
                   <li>
                     W każdej chwili możesz odłączyć konto w sekcji Połączone
@@ -345,8 +538,8 @@ export default function AccountsContent() {
                 Czy na pewno chcesz usunąć konto{" "}
                 <strong>{accountToRemove.username}</strong>?
               </DialogDescription>
-              <div className="mt-2 p-3 bg-destructive/10 rounded-lg">
-                <span className="text-sm text-destructive">
+              <div className="mt-4 rounded-lg border bg-red-50/50 dark:bg-red-950/20 p-4">
+                <span className="text-sm text-red-700 dark:text-red-300">
                   Uwaga: Wszystkie zaplanowane posty dla tego konta zostaną
                   anulowane.
                 </span>
@@ -374,6 +567,6 @@ export default function AccountsContent() {
           </DialogContent>
         </Dialog>
       )}
-    </div>
+    </section>
   );
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 
 const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 godziny
@@ -8,17 +8,17 @@ export function useSessionTimeout() {
   const { data: session } = useSession();
   const [showWarning, setShowWarning] = useState(false);
   const [showExpired, setShowExpired] = useState(false);
-  const [lastActivity, setLastActivity] = useState(Date.now());
+  const lastActivityRef = useRef(Date.now());
+
+  const updateLastActivity = useCallback(() => {
+    lastActivityRef.current = Date.now();
+    if (showWarning) {
+      setShowWarning(false);
+    }
+  }, [showWarning]);
 
   useEffect(() => {
     if (!session) return;
-
-    const updateLastActivity = () => {
-      setLastActivity(Date.now());
-      if (showWarning) {
-        setShowWarning(false);
-      }
-    };
 
     const events = [
       "mousedown",
@@ -27,13 +27,14 @@ export function useSessionTimeout() {
       "scroll",
       "touchstart",
     ];
+    
     events.forEach((event) => {
       window.addEventListener(event, updateLastActivity);
     });
 
     const checkInactivity = () => {
       const currentTime = Date.now();
-      const inactiveTime = currentTime - lastActivity;
+      const inactiveTime = currentTime - lastActivityRef.current;
 
       if (inactiveTime >= SESSION_TIMEOUT) {
         setShowWarning(false);
@@ -54,7 +55,7 @@ export function useSessionTimeout() {
       });
       clearInterval(interval);
     };
-  }, [session, lastActivity, showWarning]);
+  }, [session, updateLastActivity]);
 
   return {
     showWarning,

@@ -33,16 +33,18 @@ export default function Home() {
   }, []);
 
   return (
-    <main className="flex min-h-screen flex-col">
+    <div className="flex min-h-screen flex-col">
       <Navigation />
-      <div className="hero-section-animate">
-        <HeroSection />
-        <ReviewsSection />
-        <PlatformsSection />
-        <PricingSection />
-        <FaqSection />
-      </div>
+      <main className="flex-1 pt-16 md:pt-20">
+        <div className="hero-section-animate">
+          <HeroSection />
+          <ReviewsSection />
+          <PlatformsSection />
+          <PricingSection />
+          <FaqSection />
+        </div>
+      </main>
       <Footer />
-    </main>
+    </div>
   );
 }

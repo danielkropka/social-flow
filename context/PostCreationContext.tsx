@@ -8,33 +8,32 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import {SocialAccountWithUsername} from "@/types";
+import { PublicSocialAccount } from "@/types";
 
 interface PostText {
   default: string;
   facebook?: string;
   instagram?: string;
   twitter?: string;
+  tiktok?: string;
 }
 
-interface PostCreationState {
+export interface PostCreationState {
   selectedFiles: File[];
-  selectedAccounts: SocialAccountWithUsername[];
+  selectedAccounts: PublicSocialAccount[];
   postText: PostText;
   scheduledDate: Date | undefined;
   currentStep: number;
-  content: string;
   isTextOnly: boolean;
   postType: "images" | "video" | "text" | null;
 }
 
 type PostCreationAction =
   | { type: "SET_SELECTED_FILES"; payload: File[] }
-  | { type: "SET_SELECTED_ACCOUNTS"; payload: SocialAccountWithUsername[] }
+  | { type: "SET_SELECTED_ACCOUNTS"; payload: PublicSocialAccount[] }
   | { type: "SET_POST_TEXT"; payload: PostText }
   | { type: "SET_SCHEDULED_DATE"; payload: Date | undefined }
   | { type: "SET_CURRENT_STEP"; payload: number }
-  | { type: "SET_CONTENT"; payload: string }
   | { type: "SET_IS_TEXT_ONLY"; payload: boolean }
   | { type: "SET_POST_TYPE"; payload: "images" | "video" | "text" | null }
   | { type: "RESET_STATE" };
@@ -47,14 +46,13 @@ const initialState: PostCreationState = {
   },
   scheduledDate: undefined,
   currentStep: 1,
-  content: "",
   isTextOnly: false,
   postType: null,
 };
 
 function postCreationReducer(
   state: PostCreationState,
-  action: PostCreationAction
+  action: PostCreationAction,
 ): PostCreationState {
   switch (action.type) {
     case "SET_SELECTED_FILES":
@@ -67,8 +65,6 @@ function postCreationReducer(
       return { ...state, scheduledDate: action.payload };
     case "SET_CURRENT_STEP":
       return { ...state, currentStep: action.payload };
-    case "SET_CONTENT":
-      return { ...state, content: action.payload };
     case "SET_IS_TEXT_ONLY":
       return { ...state, isTextOnly: action.payload };
     case "SET_POST_TYPE":
@@ -82,7 +78,6 @@ function postCreationReducer(
         },
         scheduledDate: undefined,
         currentStep: 1,
-        content: "",
         isTextOnly: false,
         postType: null,
       };
@@ -94,18 +89,17 @@ function postCreationReducer(
 interface PostCreationContextType {
   state: PostCreationState;
   setSelectedFiles: (files: File[]) => void;
-  setSelectedAccounts: (accounts: SocialAccountWithUsername[]) => void;
+  setSelectedAccounts: (accounts: PublicSocialAccount[]) => void;
   setPostText: (text: PostText) => void;
   setScheduledDate: (date: Date | undefined) => void;
   setCurrentStep: (step: number) => void;
-  setContent: (content: string) => void;
   setIsTextOnly: (value: boolean) => void;
   setPostType: (type: "images" | "video" | "text" | null) => void;
   resetState: () => void;
 }
 
 const PostCreationContext = createContext<PostCreationContextType | undefined>(
-  undefined
+  undefined,
 );
 
 export function PostCreationProvider({ children }: { children: ReactNode }) {
@@ -115,7 +109,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_SELECTED_FILES", payload: files });
   }, []);
 
-  const setSelectedAccounts = useCallback((accounts: SocialAccountWithUsername[]) => {
+  const setSelectedAccounts = useCallback((accounts: PublicSocialAccount[]) => {
     dispatch({ type: "SET_SELECTED_ACCOUNTS", payload: accounts });
   }, []);
 
@@ -131,10 +125,6 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_CURRENT_STEP", payload: step });
   }, []);
 
-  const setContent = useCallback((content: string) => {
-    dispatch({ type: "SET_CONTENT", payload: content });
-  }, []);
-
   const setIsTextOnly = useCallback((value: boolean) => {
     dispatch({ type: "SET_IS_TEXT_ONLY", payload: value });
   }, []);
@@ -143,7 +133,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     (type: "images" | "video" | "text" | null) => {
       dispatch({ type: "SET_POST_TYPE", payload: type });
     },
-    []
+    [],
   );
 
   const resetState = useCallback(() => {
@@ -158,7 +148,6 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
       setPostText,
       setScheduledDate,
       setCurrentStep,
-      setContent,
       setIsTextOnly,
       setPostType,
       resetState,
@@ -170,11 +159,10 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
       setPostText,
       setScheduledDate,
       setCurrentStep,
-      setContent,
       setIsTextOnly,
       setPostType,
       resetState,
-    ]
+    ],
   );
 
   return (
@@ -188,7 +176,7 @@ export function usePostCreation() {
   const context = useContext(PostCreationContext);
   if (context === undefined) {
     throw new Error(
-      "usePostCreation must be used within a PostCreationProvider"
+      "usePostCreation must be used within a PostCreationProvider",
     );
   }
   return {
@@ -198,7 +186,6 @@ export function usePostCreation() {
     setPostText: context.setPostText,
     setScheduledDate: context.setScheduledDate,
     setCurrentStep: context.setCurrentStep,
-    setContent: context.setContent,
     setIsTextOnly: context.setIsTextOnly,
     setPostType: context.setPostType,
     resetState: context.resetState,

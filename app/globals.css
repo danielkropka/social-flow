@@ -2,6 +2,44 @@
 @tailwind components;
 @tailwind utilities;
 
+/* React Easy Crop Styles */
+.react-easy-crop {
+  position: relative;
+  background: #f3f4f6;
+}
+
+.react-easy-crop__image {
+  max-width: none !important;
+  max-height: none !important;
+}
+
+.react-easy-crop__crop-selection {
+  border: 2px solid #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.react-easy-crop__crop-selection::before {
+  content: '';
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  right: -2px;
+  bottom: -2px;
+  border: 2px dashed #3b82f6;
+  pointer-events: none;
+}
+
+.react-easy-crop__crop-selection::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(59, 130, 246, 0.05);
+  pointer-events: none;
+}
+
 body {
   letter-spacing: var(--tracking-normal);
 }

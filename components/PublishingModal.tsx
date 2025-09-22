@@ -1,18 +1,14 @@
-import {MediaUrl} from "@/components/posts/PostCreationForm";
-import type {SocialAccountWithUsername} from "@/types";
+import { MediaUrl } from "@/components/posts/PostCreationForm";
+import { PublicSocialAccount } from "@/types";
 
 interface PublishingModalProps {
   isOpen: boolean;
   onClose: () => void;
-  accounts: SocialAccountWithUsername[];
+  accounts: PublicSocialAccount[];
   content: string;
   mediaUrls?: MediaUrl[];
 }
 
-export function PublishingModal({
-}: PublishingModalProps) {
-
-  return (
-    <div>W trakcie budowy</div>
-  );
+export function PublishingModal({}: PublishingModalProps) {
+  return <div>W trakcie budowy</div>;
 }

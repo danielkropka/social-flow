@@ -2,6 +2,7 @@ import { authOptions } from "@/lib/config/auth";
 import { db } from "@/lib/config/prisma";
 import { getServerSession } from "next-auth";
 import { NextRequest, NextResponse } from "next/server";
+import { createTwitterPublisher } from "@/lib/services/twitterPublisher";
 
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
@@ -65,9 +66,64 @@ export async function POST(req: NextRequest) {
           }
         break;
       case "twitter":
-        publishResult = {
+        try {
+          const twitterPublisher = await createTwitterPublisher(accountId, session.user.id);
+          
+          // Sprawdź czy konto jest aktywne
+          const verification = await twitterPublisher.verifyAccount();
+          if (!verification.valid) {
+            publishResult = {
+              success: false,
+              message: `Błąd weryfikacji konta Twitter/X: ${verification.error}`,
+            };
+            break;
+          }
+
+          // Określ typ posta na podstawie mediów
+          const hasImages = post.media.some(media => media.type.startsWith('image/'));
+          const hasVideos = post.media.some(media => media.type.startsWith('video/'));
+          
+          if (hasImages && !hasVideos) {
+            // Post ze zdjęciami
+            const imageUrls = post.media
+              .filter(media => media.type.startsWith('image/'))
+              .map(media => media.url);
+            
+            publishResult = await twitterPublisher.publishImagePost(post.content, imageUrls);
+          } else if (hasVideos) {
+            // Post z filmem (Twitter pozwala tylko na jeden film)
+            const videoMedia = post.media.find(media => media.type.startsWith('video/'));
+            if (videoMedia) {
+              publishResult = await twitterPublisher.publishVideoPost(post.content, videoMedia.url);
+            } else {
+              publishResult = {
+                success: false,
+                message: "Nie znaleziono filmu do publikacji",
+              };
+            }
+          } else {
+            // Post tekstowy
+            publishResult = await twitterPublisher.publishTextPost(post.content);
+          }
+
+          // Jeśli publikacja się powiodła, zapisz URL posta
+          if (publishResult.success && publishResult.tweetUrl) {
+            await db.postConnectedAccount.updateMany({
+              where: { 
+                postId: postId,
+                connectedAccountId: accountId 
+              },
+              data: { 
+                postUrl: publishResult.tweetUrl 
+              }
+            });
+          }
+        } catch (error) {
+          console.error('Twitter publish error:', error);
+          publishResult = {
             success: false,
-            message: "Publikacja na Twitterze niezaimplementowana",
+            message: error instanceof Error ? error.message : "Nieznany błąd podczas publikacji na Twitter/X",
+          };
         }
         break;
       case "facebook":
@@ -75,6 +131,7 @@ export async function POST(req: NextRequest) {
           success: false,
           message: "Publikacja na Facebooku niezaimplementowana",
         };
+        break;
       case "tiktok":
         publishResult = {
           success: false,

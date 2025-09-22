@@ -53,24 +53,33 @@ export default async function RootLayout({
   const path = headersList.get("x-invoke-path") || "";
   const canonicalUrl = `https://www.social-flow.pl${path}`;
   return (
-    <html lang="pl">
+    <html lang="pl" className="h-full">
       <head>
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:url" content={canonicalUrl} />
       </head>
       <body
         className={cn(
-          "bg-gradient-to-br from-blue-50 via-white to-purple-100 min-h-screen relative overflow-x-hidden",
+          "h-full min-h-screen relative overflow-x-hidden",
           inter.className
         )}
       >
+        {/* Continuous gradient background */}
+        <div className="fixed inset-0 z-0">
+          {/* Vertical gradient base (light and dark) */}
+          <div className="absolute inset-0 bg-gradient-to-b from-white via-sky-50/50 to-white dark:from-zinc-950 dark:via-zinc-900/60 dark:to-zinc-950" />
+          {/* Grid */}
+          <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03] dark:opacity-[0.05]" />
+          {/* Decorative blurred "blobs" */}
+          <div className="pointer-events-none absolute -top-24 -left-24 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-blue-500/25 via-fuchsia-400/20 to-transparent blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -right-24 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-indigo-400/25 via-sky-400/20 to-transparent blur-3xl" />
+        </div>
+        
         <Providers>
-          <div className="flex min-h-screen">
-            <main className="flex-1 flex flex-col shadow-xl rounded-lg bg-white/90">
-              {children}
-              <SpeedInsights />
-              <Toaster position="top-center" />
-            </main>
+          <div className="relative z-10 h-full">
+            {children}
+            <SpeedInsights />
+            <Toaster position="top-center" />
           </div>
         </Providers>
       </body>
