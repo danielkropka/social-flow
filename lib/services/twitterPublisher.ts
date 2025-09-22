@@ -16,6 +16,15 @@ export interface TwitterMediaUploadResult {
   error?: string;
 }
 
+export interface TwitterApiError extends Error {
+  code?: number;
+  status?: number;
+  data?: {
+    detail?: string;
+    title?: string;
+  };
+}
+
 export class TwitterPublisher {
   private client: TwitterApi;
 
@@ -64,20 +73,21 @@ export class TwitterPublisher {
         tweetId: tweet.data.id,
         tweetUrl: `https://twitter.com/user/status/${tweet.data.id}`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Twitter publish error:", error);
 
       let errorMessage = "Nieznany błąd podczas publikacji na Twitter/X";
       let errorCode = "UNKNOWN_ERROR";
 
       // Sprawdź kod błędu z Twitter API
-      if (error?.code === 401) {
+      const twitterError = error as TwitterApiError;
+      if (twitterError?.code === 401) {
         errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
         errorCode = "UNAUTHORIZED";
-      } else if (error?.code === 403) {
+      } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do publikacji na Twitter/X";
         errorCode = "FORBIDDEN";
-      } else if (error?.code === 429) {
+      } else if (twitterError?.code === 429) {
         errorMessage = "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
         errorCode = "RATE_LIMIT";
       } else if (error instanceof Error) {
@@ -168,7 +178,7 @@ export class TwitterPublisher {
         tweetId: tweet.data.id,
         tweetUrl: `https://twitter.com/user/status/${tweet.data.id}`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Twitter image publish error:", error);
 
       let errorMessage =
@@ -176,13 +186,14 @@ export class TwitterPublisher {
       let errorCode = "UNKNOWN_ERROR";
 
       // Sprawdź kod błędu z Twitter API
-      if (error?.code === 401) {
+      const twitterError = error as TwitterApiError;
+      if (twitterError?.code === 401) {
         errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
         errorCode = "UNAUTHORIZED";
-      } else if (error?.code === 403) {
+      } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do publikacji na Twitter/X";
         errorCode = "FORBIDDEN";
-      } else if (error?.code === 429) {
+      } else if (twitterError?.code === 429) {
         errorMessage = "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
         errorCode = "RATE_LIMIT";
       } else if (error instanceof Error) {
@@ -259,7 +270,7 @@ export class TwitterPublisher {
         tweetId: tweet.data.id,
         tweetUrl: `https://twitter.com/user/status/${tweet.data.id}`,
       };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Twitter video publish error:", error);
 
       let errorMessage =
@@ -267,13 +278,14 @@ export class TwitterPublisher {
       let errorCode = "UNKNOWN_ERROR";
 
       // Sprawdź kod błędu z Twitter API
-      if (error?.code === 401) {
+      const twitterError = error as TwitterApiError;
+      if (twitterError?.code === 401) {
         errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
         errorCode = "UNAUTHORIZED";
-      } else if (error?.code === 403) {
+      } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do publikacji na Twitter/X";
         errorCode = "FORBIDDEN";
-      } else if (error?.code === 429) {
+      } else if (twitterError?.code === 429) {
         errorMessage = "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
         errorCode = "RATE_LIMIT";
       } else if (error instanceof Error) {
@@ -378,17 +390,18 @@ export class TwitterPublisher {
     try {
       await this.client.v2.me({ "user.fields": ["id", "username", "name"] });
       return { valid: true };
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error("Twitter account verification error:", error);
 
       let errorMessage = "Nie można zweryfikować konta Twitter/X";
       
       // Sprawdź kod błędu z Twitter API
-      if (error?.code === 401) {
+      const twitterError = error as TwitterApiError;
+      if (twitterError?.code === 401) {
         errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
-      } else if (error?.code === 403) {
+      } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do konta Twitter/X";
-      } else if (error?.code === 429) {
+      } else if (twitterError?.code === 429) {
         errorMessage = "Przekroczono limit zapytań do Twitter API. Spróbuj ponownie później";
       } else if (error instanceof Error) {
         if (
