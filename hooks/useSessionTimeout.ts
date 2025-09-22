@@ -36,7 +36,19 @@ export function useSessionTimeout() {
       const currentTime = Date.now();
       const inactiveTime = currentTime - lastActivityRef.current;
 
+      // Debug logging
+      if (inactiveTime > 1000) { // Log tylko jeśli jest jakaś nieaktywność
+        console.log("Session timeout check:", {
+          inactiveTime: Math.round(inactiveTime / 1000) + "s",
+          sessionTimeout: Math.round(SESSION_TIMEOUT / 1000) + "s",
+          warningTime: Math.round(WARNING_TIME / 1000) + "s",
+          willExpire: inactiveTime >= SESSION_TIMEOUT,
+          willWarn: inactiveTime >= SESSION_TIMEOUT - WARNING_TIME
+        });
+      }
+
       if (inactiveTime >= SESSION_TIMEOUT) {
+        console.log("Session expired - signing out");
         setShowWarning(false);
         setShowExpired(true);
         signOut({ redirect: false });

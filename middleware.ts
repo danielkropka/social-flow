@@ -15,6 +15,17 @@ export async function middleware(request: NextRequest) {
     ? await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
     : null;
 
+  // Debug logging
+  if (isDashboard) {
+    console.log("Middleware - Dashboard access:", {
+      pathname,
+      hasToken: !!token,
+      tokenId: token?.id,
+      tokenEmail: token?.email,
+      nextAuthSecret: process.env.NEXTAUTH_SECRET ? "SET" : "NOT SET"
+    });
+  }
+
   if (token && (isSignIn || isSignUp)) {
     const response = NextResponse.redirect(new URL("/dashboard", request.url));
     addSecurityHeaders(response);

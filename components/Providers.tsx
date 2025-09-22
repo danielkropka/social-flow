@@ -34,7 +34,7 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+    <SessionProvider refetchInterval={5 * 60} refetchOnWindowFocus={true}>
       <QueryClientProvider client={queryClient}>
         <TabProvider>
           <SessionManager>{children}</SessionManager>
