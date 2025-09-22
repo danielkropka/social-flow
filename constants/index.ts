@@ -1,4 +1,4 @@
-import { FaFacebook, FaInstagram, FaTwitter, FaTiktok } from "react-icons/fa";
+import { SiFacebook, SiInstagram, SiX, SiTiktok } from "react-icons/si";
 
 export const MAX_FILE_SIZE = 250 * 1024 * 1024; // 250MB
 
@@ -45,7 +45,7 @@ export const PLATFORM_LIMITS = {
 
 export const PLATFORM_DISPLAY = {
   [SUPPORTED_PLATFORMS.FACEBOOK]: {
-    icon: FaFacebook,
+    icon: SiFacebook,
     color: "text-[#1877F2]",
     label: "Facebook",
     description: "Posty, zdjęcia i filmy",
@@ -53,7 +53,7 @@ export const PLATFORM_DISPLAY = {
     strokeColor: "#1877F2",
   },
   [SUPPORTED_PLATFORMS.INSTAGRAM]: {
-    icon: FaInstagram,
+    icon: SiInstagram,
     color: "text-[#E4405F]",
     label: "Instagram",
     description: "Reels'y i posty",
@@ -61,7 +61,7 @@ export const PLATFORM_DISPLAY = {
     strokeColor: "#E4405F",
   },
   [SUPPORTED_PLATFORMS.TWITTER]: {
-    icon: FaTwitter,
+    icon: SiX,
     color: "text-[#1DA1F2]",
     label: "Twitter",
     description: "Tweetowanie",
@@ -69,7 +69,7 @@ export const PLATFORM_DISPLAY = {
     strokeColor: "#1DA1F2",
   },
   [SUPPORTED_PLATFORMS.TIKTOK]: {
-    icon: FaTiktok,
+    icon: SiTiktok,
     color: "text-[#000000]",
     label: "TikTok",
     description: "Krótkie filmy i treści wideo",

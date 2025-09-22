@@ -21,6 +21,14 @@ import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "sonner";
 import { TabContextType } from "@/context/TabContext";
 
+// Dodatkowe: poprawa dostępności dla Enter/Space na elementach interaktywnych
+const handleKeyActivate = (e: React.KeyboardEvent, cb: () => void) => {
+  if (e.key === "Enter" || e.key === " ") {
+    e.preventDefault();
+    cb();
+  }
+};
+
 const contentCreationItems = [
   { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
   { href: "posts", icon: List, label: "Lista postów" },
@@ -83,7 +91,7 @@ export function Sidebar({
         throw new Error("Nie udało się uzyskać ID klienta Stripe");
 
       const stripe = await loadStripe(
-        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!,
       );
 
       if (!stripe) throw new Error("Wystąpił błąd podczas ładowania Stripe");
@@ -123,38 +131,47 @@ export function Sidebar({
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="lg:hidden fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+          className="lg:hidden fixed inset-0 bg-black/30 backdrop-blur-sm z-40"
           onClick={onClose}
+          aria-hidden="true"
         />
       )}
 
       {/* Sidebar */}
       <aside
+        role="navigation"
+        aria-label="Główna nawigacja"
         className={`
           fixed lg:sticky top-0 lg:top-0
           h-[100dvh] w-[280px]
-          bg-white shadow-xl lg:shadow-none
+          bg-gradient-to-b from-white to-blue-50/30 dark:from-zinc-950 dark:to-zinc-900
+          shadow-xl lg:shadow-none
           flex flex-col
           transition-all duration-300 ease-in-out
           lg:translate-x-0 z-50
-          border-r border-gray-200
+          border-r border-gray-200/70 dark:border-zinc-800
           ${isOpen ? "translate-x-0" : "-translate-x-full"}
         `}
       >
         {/* Logo */}
-        <div className="h-16 px-6 flex items-center border-b border-gray-100 hover:bg-gray-50 transition-colors">
+        <div className="h-16 px-6 flex items-center border-b border-gray-100/70 dark:border-zinc-800/80">
           <Link
             href="/"
-            className="text-xl font-semibold bg-gradient-to-r from-blue-600 to-blue-700 text-transparent bg-clip-text hover:from-blue-700 hover:to-blue-800 transition-all"
+            className="group inline-flex items-center gap-2 rounded-lg px-2 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/60"
           >
-            Social Flow
+            <span className="inline-flex h-7 w-7 items-center justify-center rounded-md bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-sm group-hover:scale-[1.03] transition-transform">
+              S
+            </span>
+            <span className="text-lg font-semibold tracking-tight bg-gradient-to-r from-blue-700 to-indigo-700 dark:from-blue-400 dark:to-indigo-400 text-transparent bg-clip-text group-hover:opacity-90 transition-opacity">
+              Social Flow
+            </span>
           </Link>
         </div>
 
         {/* Main navigation */}
-        <nav className="flex-1 px-3 py-6 overflow-y-auto">
-          <div className="mb-6">
-            <h3 className="text-sm font-semibold text-gray-600 mb-3 px-3">
+        <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200/60 dark:scrollbar-thumb-zinc-700/60">
+          <div className="mb-5">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-zinc-400 mb-2 px-3">
               Tworzenie treści
             </h3>
             {contentCreationItems.map((item) => {
@@ -165,33 +182,52 @@ export function Sidebar({
                   onClick={() =>
                     handleNavigation(item.href as TabContextType["activeTab"])
                   }
+                  onKeyDown={(e) =>
+                    handleKeyActivate(e, () =>
+                      handleNavigation(
+                        item.href as TabContextType["activeTab"],
+                      ),
+                    )
+                  }
+                  aria-current={isActive ? "page" : undefined}
                   className={`
-                    group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
-                    rounded-xl transition-all duration-200 relative
+                    group relative flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
+                    rounded-xl transition-all duration-200
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
                     ${
                       isActive
-                        ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm"
+                        ? "text-blue-800 dark:text-blue-300"
+                        : "text-gray-800 dark:text-zinc-200 hover:text-gray-950 dark:hover:text-white"
                     }
                   `}
                 >
+                  {/* Active background pill */}
+                  <span
+                    aria-hidden="true"
+                    className={`
+                      absolute inset-0 rounded-xl
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 ring-1 ring-blue-200/70 dark:ring-zinc-700 shadow-sm"
+                          : "bg-transparent group-hover:bg-gray-50 dark:group-hover:bg-zinc-800/60 ring-1 ring-transparent group-hover:ring-gray-200/70 dark:group-hover:ring-zinc-700/70"
+                      }
+                    `}
+                  />
                   <item.icon
                     className={`
-                    h-5 w-5 flex-shrink-0 relative z-10
-                    ${
-                      isActive
-                        ? "text-blue-700"
-                        : "text-gray-600 group-hover:text-gray-900"
-                    }
-                    transition-all duration-200
-                    group-hover:scale-110
-                  `}
+                      h-5 w-5 flex-shrink-0 relative z-10
+                      ${isActive ? "text-blue-700 dark:text-blue-400" : "text-gray-600 dark:text-zinc-400 group-hover:text-gray-900 dark:group-hover:text-white"}
+                      transition-all duration-200 group-hover:scale-110
+                    `}
                   />
                   <span className="font-medium text-sm relative z-10">
                     {item.label}
                   </span>
                   {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-r-full" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1.5 rounded-r-full bg-gradient-to-b from-blue-600 to-indigo-600 shadow-[0_0_12px_rgba(37,99,235,0.45)]"
+                    />
                   )}
                 </button>
               );
@@ -199,7 +235,7 @@ export function Sidebar({
           </div>
 
           <div>
-            <h3 className="text-sm font-semibold text-gray-600 mb-3 px-3">
+            <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-zinc-400 mb-2 px-3">
               Konfiguracja
             </h3>
             {configurationItems.map((item) => {
@@ -214,33 +250,51 @@ export function Sidebar({
                   onClick={() =>
                     handleNavigation(item.href as TabContextType["activeTab"])
                   }
+                  onKeyDown={(e) =>
+                    handleKeyActivate(e, () =>
+                      handleNavigation(
+                        item.href as TabContextType["activeTab"],
+                      ),
+                    )
+                  }
+                  aria-current={isActive ? "page" : undefined}
                   className={`
-                    group flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
-                    rounded-xl transition-all duration-200 relative
+                    group relative flex w-full items-center gap-3 px-3 py-2.5 mb-1.5
+                    rounded-xl transition-all duration-200
+                    focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50
                     ${
                       isActive
-                        ? "bg-blue-50 text-blue-700 shadow-sm ring-1 ring-blue-100"
-                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900 hover:shadow-sm"
+                        ? "text-blue-800 dark:text-blue-300"
+                        : "text-gray-800 dark:text-zinc-200 hover:text-gray-950 dark:hover:text-white"
                     }
                   `}
                 >
+                  <span
+                    aria-hidden="true"
+                    className={`
+                      absolute inset-0 rounded-xl
+                      ${
+                        isActive
+                          ? "bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950/40 dark:to-indigo-950/40 ring-1 ring-blue-200/70 dark:ring-zinc-700 shadow-sm"
+                          : "bg-transparent group-hover:bg-gray-50 dark:group-hover:bg-zinc-800/60 ring-1 ring-transparent group-hover:ring-gray-200/70 dark:group-hover:ring-zinc-700/70"
+                      }
+                    `}
+                  />
                   <item.icon
                     className={`
-                    h-5 w-5 flex-shrink-0 relative z-10
-                    ${
-                      isActive
-                        ? "text-blue-700"
-                        : "text-gray-600 group-hover:text-gray-900"
-                    }
-                    transition-all duration-200
-                    group-hover:scale-110
-                  `}
+                      h-5 w-5 flex-shrink-0 relative z-10
+                      ${isActive ? "text-blue-700 dark:text-blue-400" : "text-gray-600 dark:text-zinc-400 group-hover:text-gray-900 dark:group-hover:text-white"}
+                      transition-all duration-200 group-hover:scale-110
+                    `}
                   />
                   <span className="font-medium text-sm relative z-10">
                     {item.label}
                   </span>
                   {isActive && (
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-1 h-8 bg-blue-600 rounded-r-full" />
+                    <span
+                      aria-hidden="true"
+                      className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1.5 rounded-r-full bg-gradient-to-b from-blue-600 to-indigo-600 shadow-[0_0_12px_rgba(37,99,235,0.45)]"
+                    />
                   )}
                 </button>
               );
@@ -250,12 +304,17 @@ export function Sidebar({
 
         {/* User profile */}
         <div
-          className="relative px-3 py-4 border-t border-gray-100 bg-gray-50/50"
+          className="relative px-3 py-4 border-t border-gray-100/70 dark:border-zinc-800/80 bg-gray-50/60 dark:bg-zinc-900/60 backdrop-blur-sm"
           ref={profileRef}
         >
           <button
             onClick={() => setIsProfileOpen(!isProfileOpen)}
-            className="w-full px-3 py-2.5 flex items-center gap-3 rounded-xl hover:bg-white hover:shadow-sm transition-all duration-200"
+            onKeyDown={(e) =>
+              handleKeyActivate(e, () => setIsProfileOpen(!isProfileOpen))
+            }
+            aria-expanded={isProfileOpen}
+            aria-controls="profile-dropdown"
+            className="w-full px-3 py-2.5 flex items-center gap-3 rounded-xl hover:bg-white dark:hover:bg-zinc-800/70 hover:shadow-sm transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50"
           >
             {status === "loading" ? (
               <>
@@ -268,22 +327,22 @@ export function Sidebar({
               </>
             ) : (
               <>
-                <Avatar className="h-9 w-9 ring-2 ring-white shadow-sm">
+                <Avatar className="h-9 w-9 ring-2 ring-white dark:ring-zinc-800 shadow-sm">
                   {session?.user?.image ? (
                     <AvatarImage
                       src={session.user.image}
                       alt={session?.user?.name ?? ""}
                     />
                   ) : null}
-                  <AvatarFallback className="bg-blue-100 text-blue-700">
+                  <AvatarFallback className="bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300">
                     {session?.user?.name?.charAt(0) ?? "U"}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 flex flex-col items-start min-w-0">
-                  <span className="text-sm font-medium text-gray-900 truncate w-full">
+                  <span className="text-sm font-medium text-gray-900 dark:text-white truncate w-full">
                     {session?.user?.name ?? "Użytkownik"}
                   </span>
-                  <span className="text-xs text-gray-600 truncate w-full">
+                  <span className="text-xs text-gray-600 dark:text-zinc-400 truncate w-full">
                     {session?.user?.subscriptionType === "BASIC"
                       ? "Plan Podstawowy"
                       : session?.user?.subscriptionType === "CREATOR"
@@ -292,7 +351,7 @@ export function Sidebar({
                   </span>
                 </div>
                 <ChevronDown
-                  className={`h-5 w-5 text-gray-500 transition-transform duration-200 ${
+                  className={`h-5 w-5 text-gray-500 dark:text-zinc-400 transition-transform duration-200 ${
                     isProfileOpen ? "rotate-180" : ""
                   }`}
                 />
@@ -302,28 +361,30 @@ export function Sidebar({
 
           {/* Profile dropdown */}
           <div
+            id="profile-dropdown"
             className={`
               absolute bottom-full left-0 right-0 m-3 
-              bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden
-              transform transition-all duration-200 ease-in-out
-              ${
-                isProfileOpen
-                  ? "opacity-100 translate-y-0"
-                  : "opacity-0 translate-y-2 pointer-events-none"
-              }
+              bg-white dark:bg-zinc-900 rounded-xl shadow-xl border border-gray-100/80 dark:border-zinc-800 overflow-hidden
+              transform transition-all duration-200 ease-in-out origin-bottom
+              ${isProfileOpen ? "opacity-100 translate-y-0 scale-100" : "opacity-0 translate-y-2 scale-[0.98] pointer-events-none"}
             `}
           >
             <Link
               href="/#pricing"
-              className="w-full px-4 py-3 flex justify-between items-center gap-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors"
+              className="w-full px-4 py-3 flex justify-between items-center gap-3 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <span className="text-sm font-medium">Plany</span>
               <Layout className="h-4 w-4" />
             </Link>
             {isSubscribed && (
               <div
-                className="w-full px-4 py-3 flex justify-between items-center gap-3 text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors hover:cursor-pointer"
+                className="w-full px-4 py-3 flex justify-between items-center gap-3 text-gray-700 dark:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-800 hover:text-gray-900 dark:hover:text-white transition-colors hover:cursor-pointer"
                 onClick={handleManageSubscription}
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) =>
+                  handleKeyActivate(e, handleManageSubscription)
+                }
               >
                 <span className="text-sm font-medium">
                   Zarządzaj subskrypcją
@@ -333,7 +394,8 @@ export function Sidebar({
             )}
             <button
               onClick={() => signOut()}
-              className="w-full px-4 py-3 flex justify-between items-center gap-3 text-red-600 hover:bg-red-50 hover:text-red-700 transition-colors"
+              onKeyDown={(e) => handleKeyActivate(e, () => signOut())}
+              className="w-full px-4 py-3 flex justify-between items-center gap-3 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-700 dark:text-red-400 transition-colors focus:outline-none"
             >
               <span className="text-sm font-medium">Wyloguj się</span>
               <LogOut className="h-4 w-4" />
@@ -342,7 +404,7 @@ export function Sidebar({
         </div>
       </aside>
       {isLoading && (
-        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-white/80 dark:bg-black/60 backdrop-blur-sm">
           <Loader2 className="h-16 w-16 animate-spin text-blue-600" />
         </div>
       )}

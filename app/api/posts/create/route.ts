@@ -11,28 +11,29 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { provider, content, mediaUrls, accountId } = body;
+  const { content, mediaUrls, accountIds, scheduledFor } = body;
 
-  if (!provider || !content || !accountId) {
+  if (!content || !accountIds || !Array.isArray(accountIds) || accountIds.length === 0) {
     return NextResponse.json(
-      { error: "Brak wymaganych pól: provider, content lub accountId" },
+      { error: "Brak wymaganych pól: content lub accountIds" },
       { status: 400 }
     );
   }
 
-  const account = await db.connectedAccount.findFirst({
+  // Sprawdź czy wszystkie konta należą do użytkownika
+  const accounts = await db.connectedAccount.findMany({
     where: {
-      id: accountId,
+      id: { in: accountIds },
       userId: session.user.id,
-      provider: provider.toUpperCase(),
+      status: 'ACTIVE',
     },
   });
 
-  if (!account) {
+  if (accounts.length !== accountIds.length) {
     return NextResponse.json(
       {
-        error: `Nie znaleziono konta ${provider}`,
-        details: `Spróbuj połączyć konto ${provider} ponownie.`,
+        error: "Nie wszystkie wybrane konta są aktywne lub należą do użytkownika",
+        details: "Sprawdź status swoich kont społecznościowych.",
       },
       { status: 400 }
     );
@@ -42,8 +43,9 @@ export async function POST(req: NextRequest) {
     const createdPost = await db.post.create({
       data: {
         content,
-        status: "DRAFT",
+        status: scheduledFor ? "SCHEDULED" : "DRAFT",
         published: false,
+        scheduledFor: scheduledFor ? new Date(scheduledFor) : undefined,
         userId: session.user.id,
         media:
           mediaUrls && Array.isArray(mediaUrls)
@@ -57,17 +59,25 @@ export async function POST(req: NextRequest) {
               }
             : undefined,
         postConnectedAccounts: {
-          create: [
-            {
-              connectedAccountId: account.id,
-              status: "PENDING",
-            },
-          ],
+          create: accountIds.map((accountId: string) => ({
+            connectedAccountId: accountId,
+            status: "PENDING",
+          })),
         },
       },
       include: {
         media: true,
-        postConnectedAccounts: true,
+        postConnectedAccounts: {
+          include: {
+            connectedAccount: {
+              select: {
+                provider: true,
+                displayName: true,
+                username: true,
+              },
+            },
+          },
+        },
       },
     });
 

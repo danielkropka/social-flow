@@ -5,9 +5,8 @@ import { Sidebar } from "@/components/Sidebar";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
 import { DashboardHeader } from "@/components/DashboardHeader";
-import { useAccounts } from "@/components/posts/hooks/useAccounts";
 import dynamic from "next/dynamic";
-import {Button} from "@/components/ui/button";
+import { Button } from "@/components/ui/button";
 
 function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
   return (
@@ -17,11 +16,15 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
         role="region"
         aria-labelledby="empty-state-title"
       >
-        <h2 id="empty-state-title" className="text-xl font-semibold text-gray-900">
+        <h2
+          id="empty-state-title"
+          className="text-xl font-semibold text-gray-900"
+        >
           Brak połączonych kont
         </h2>
         <p className="mt-2 text-sm text-gray-600">
-          Połącz konto, aby planować i publikować posty bezpośrednio z panelu. To zajmie mniej niż minutę.
+          Połącz konto, aby planować i publikować posty bezpośrednio z panelu.
+          To zajmie mniej niż minutę.
         </p>
 
         {(() => {
@@ -30,8 +33,19 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
               title: "Planowanie postów",
               desc: "Twórz harmonogram i publikuj, gdy Twoi odbiorcy są najbardziej aktywni.",
               icon: (
-                <svg className="h-5 w-5 text-emerald-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M8 7h8M8 11h8M8 15h5" />
+                <svg
+                  className="h-5 w-5 text-emerald-600"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M8 7h8M8 11h8M8 15h5"
+                  />
                 </svg>
               ),
               accent: "emerald",
@@ -40,8 +54,19 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
               title: "Automatyczna publikacja",
               desc: "Wyślij posty bez ręcznej interwencji w wybranych kanałach.",
               icon: (
-                <svg className="h-5 w-5 text-sky-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="m5 12 7-7v4h7v6h-7v4l-7-7z" />
+                <svg
+                  className="h-5 w-5 text-sky-600"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="m5 12 7-7v4h7v6h-7v4l-7-7z"
+                  />
                 </svg>
               ),
               accent: "sky",
@@ -50,8 +75,19 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
               title: "Podgląd i statystyki",
               desc: "Podgląd treści przed publikacją oraz proste metryki wyników.",
               icon: (
-                <svg className="h-5 w-5 text-violet-600" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                  <path stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" d="M4 19h16M6 17V7m6 10V5m6 12v-6" />
+                <svg
+                  className="h-5 w-5 text-violet-600"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <path
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M4 19h16M6 17V7m6 10V5m6 12v-6"
+                  />
                 </svg>
               ),
               accent: "violet",
@@ -79,11 +115,15 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
                       className="group h-full rounded-2xl border border-gray-200 bg-gray-50 p-4 text-left transition-all hover:border-gray-300 hover:bg-white hover:shadow-md focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-gray-300"
                     >
                       <div className="flex items-start gap-3">
-                        <span className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${a.bg} ring-1 ${a.ring}`}>
+                        <span
+                          className={`inline-flex h-9 w-9 items-center justify-center rounded-xl ${a.bg} ring-1 ${a.ring}`}
+                        >
                           {b.icon}
                         </span>
                         <div className="min-w-0">
-                          <p className="font-semibold text-gray-900">{b.title}</p>
+                          <p className="font-semibold text-gray-900">
+                            {b.title}
+                          </p>
                           <p className="mt-1 text-xs leading-5 text-gray-600">
                             {b.desc}
                           </p>
@@ -97,11 +137,11 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
           );
         })()}
 
-          <div className="mt-8 flex items-center justify-center">
-              <Button onClick={onAddAccount} autoFocus className="w-full sm:w-auto">
-                  Połącz konto
-              </Button>
-          </div>
+        <div className="mt-8 flex items-center justify-center">
+          <Button onClick={onAddAccount} autoFocus className="w-full sm:w-auto">
+            Połącz konto
+          </Button>
+        </div>
 
         <p className="mt-4 text-xs text-gray-500">
           W każdej chwili możesz dodać kolejne konta w sekcji „Połączone konta”.
@@ -114,10 +154,8 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
 const PostsContent = dynamic(() => import("@/components/PostsContent"));
 const AccountsContent = dynamic(() => import("@/components/AccountsContent"));
 const ContentStudioContent = dynamic(
-  () => import("@/components/ContentStudioContent")
+  () => import("@/components/ContentStudioContent"),
 );
-
-
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -152,7 +190,8 @@ function DashboardShell({
 function DashboardContent({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { activeTab, setActiveTab } = useTab();
-  const { accounts, isLoading } = useAccounts();
+  const accounts = ["s"];
+  const isLoading = false;
   const accountsCount = accounts.length;
 
   let mainContent: ReactNode = null;

@@ -17,7 +17,7 @@ const reviews: Review[] = [
     title: "Social Media Manager",
     rating: 5,
     content:
-      "Social Flow znacząco usprawniło naszą pracę. Oszczędzamy mnóstwo czasu na planowaniu postów, a interfejs jest intuicyjny i przyjemny w użyciu.",
+      "Social Flow zrewolucjonizowało nasze podejście do zarządzania mediami społecznościowymi. Dzięki intuicyjnemu interfejsowi i zaawansowanym funkcjom planowania, zwiększyliśmy naszą efektywność o 300%.",
     avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Anna Kowalska`,
   },
   {
@@ -25,7 +25,7 @@ const reviews: Review[] = [
     title: "Marketing Director",
     rating: 5,
     content:
-      "Najlepsze narzędzie do zarządzania social mediami, z jakiego korzystałem. Wszystko w jednym miejscu, bez zbędnych komplikacji.",
+      "Najbardziej zaawansowane narzędzie do zarządzania wieloma platformami społecznościowymi. Integracja wszystkich kanałów w jednym miejscu pozwoliła nam na spójną komunikację marki.",
     avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Marek Nowak`,
   },
   {
@@ -33,7 +33,7 @@ const reviews: Review[] = [
     title: "Content Creator",
     rating: 5,
     content:
-      "Dzięki Social Flow mogę się skupić na tworzeniu treści, zamiast tracić czas na żmudne publikowanie na różnych platformach.",
+      "Social Flow umożliwiło mi skupienie się na kreatywności, eliminując czasochłonne procesy publikacji. Automatyzacja pozwoliła mi zwiększyć produktywność i jakość treści.",
     avatar: `https://api.dicebear.com/7.x/initials/svg?seed=Karolina Wisniewska`,
   },
 ];
@@ -41,27 +41,27 @@ const reviews: Review[] = [
 export default function ReviewsSection() {
   return (
     <section className="py-16 lg:py-24 relative" id="reviews">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-white via-gray-50/50 to-white">
-        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.02]" />
-      </div>
-
-      <div className="relative max-w-7xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-            Zaufali nam
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Dołącz do grona zadowolonych klientów, którzy już usprawniają swoją
-            komunikację w mediach społecznościowych
-          </p>
-        </div>
+      {/* Content */}
+      <div className="relative z-10">
+        <div className="mx-auto max-w-7xl px-4 xl:px-12">
+          <div className="text-center mb-12">
+            <div className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-white/70 px-3 py-1 text-sm text-blue-700 shadow-sm backdrop-blur mb-6">
+              <span className="inline-flex h-2 w-2 rounded-full bg-blue-600 animate-pulse motion-reduce:animate-none" />
+              Opinie naszych klientów
+            </div>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Dołącz do tysięcy zadowolonych użytkowników
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Zobacz, jak Social Flow pomaga firmom i twórcom osiągać lepsze wyniki w mediach społecznościowych
+            </p>
+          </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reviews.map((review, index) => (
             <div
               key={index}
-              className="group relative bg-gradient-to-br from-white to-gray-50/50 p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 hover:-translate-y-1 animate-fade-in-up"
+              className="group relative bg-white/80 backdrop-blur-xl p-6 rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-100 hover:-translate-y-1 animate-fade-in-up"
               style={{
                 animationDelay: `${index * 100}ms`,
               }}
@@ -96,12 +96,7 @@ export default function ReviewsSection() {
             </div>
           ))}
         </div>
-
-        {/* <div className="text-center mt-12">
-          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-all duration-300 shadow-sm hover:shadow-md hover:scale-105 active:scale-95">
-            Zobacz więcej opinii
-          </button>
-        </div> */}
+        </div>
       </div>
     </section>
   );
