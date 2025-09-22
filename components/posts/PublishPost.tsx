@@ -610,8 +610,7 @@ export default function PublishPost() {
 
                         return (
                           <div key={index} className="space-y-2">
-                            {
-                              <div className="relative group aspect-square rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                            <div className="relative group aspect-square rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
                                 {isImage ? (
                                   <img
                                     src={URL.createObjectURL(file)}
@@ -620,17 +619,9 @@ export default function PublishPost() {
                                   />
                                 ) : isVideo ? (
                                   <div className="relative w-full h-full">
-                                    {thumbnails.length > 0 ? (
-                                      <img
-                                        src={thumbnails[selectedThumbnailIndex]}
-                                        alt={`Video thumbnail ${index + 1}`}
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full flex items-center justify-center">
-                                        <Video className="h-8 w-8 text-gray-400" />
-                                      </div>
-                                    )}
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Video className="h-8 w-8 text-gray-400" />
+                                    </div>
                                     <div className="absolute inset-0 flex items-center justify-center">
                                       <div className="bg-black/50 rounded-full p-2">
                                         <Play className="h-6 w-6 text-white" />
@@ -664,7 +655,6 @@ export default function PublishPost() {
                                   </button>
                                 </div>
                               </div>
-                            )}
                           </div>
                         );
                       })}
