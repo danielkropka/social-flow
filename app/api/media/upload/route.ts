@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { S3Client, PutObjectCommand } from "@aws-sdk/client-s3";
-import { withMiddlewareRateLimit } from "@/middleware/rateLimit";
+import { PutObjectCommand, S3Client } from "@aws-sdk/client-s3";
+import { authOptions } from "@/lib/config/auth";
+import { getServerSession } from "next-auth";
+import { checkFileExtension } from "@/lib/utils/utils";
 
 export const config = {
   api: {
@@ -19,43 +21,58 @@ const s3 = new S3Client({
 });
 
 export async function POST(req: NextRequest) {
-  return withMiddlewareRateLimit(async (req: NextRequest) => {
-    try {
-      const fileName = req.headers.get("X-File-Name");
-      const contentType =
-        req.headers.get("X-File-Type") || "application/octet-stream";
-      const blobUrl = req.headers.get("X-Blob-Url");
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
-      let buffer: Buffer;
-      if (blobUrl) {
-        const response = await fetch(blobUrl);
-        if (!response.ok) {
-          throw new Error("Nie udało się pobrać pliku z URL blob");
-        }
-        const blob = await response.blob();
-        const arrayBuffer = await blob.arrayBuffer();
-        buffer = Buffer.from(arrayBuffer);
-      } else {
-        buffer = Buffer.from(await req.arrayBuffer());
+    const contentType = req.headers.get("content-type");
+
+    if (contentType?.includes("multipart/form-data")) {
+      const formData = await req.formData();
+      const file = formData.get("file") as File;
+
+      if (!file) {
+        return NextResponse.json({ error: "NoFile" }, { status: 400 });
       }
+
+      if (!checkFileExtension(file))
+        return NextResponse.json({ error: "InvalidFileType" }, { status: 400 });
+
+      const fileName = file.name;
+      const fileExtension = fileName.split(".").pop();
+      const fileKey = `uploads/${session.user.id}/${fileName}.${fileExtension}`;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
 
       const command = new PutObjectCommand({
         Bucket: process.env.AWS_S3_BUCKET_NAME!,
-        Key: fileName || `${Date.now()}-file`,
+        Key: fileKey,
         Body: buffer,
-        ContentType: contentType,
+        ContentType: file.type,
       });
 
       await s3.send(command);
 
-      const url = `https://${process.env.AWS_S3_BUCKET_NAME}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileName}`;
-      return NextResponse.json({ url });
-    } catch (error) {
-      console.error("Błąd podczas uploadu do S3:", error);
-      return NextResponse.json(
-        { error: "Błąd podczas uploadu do S3" },
-        { status: 500 }
-      );
+      const url = `https://${process.env.AWS_S3_BUCKET_NAME!}.s3.${process.env.AWS_REGION}.amazonaws.com/${fileKey}`;
+
+      return NextResponse.json({
+        url,
+        fileName: file.name,
+        fileSize: file.size,
+        fileType: file.type,
+      });
     }
-  })(req);
+  } catch (error) {
+    console.error("Error uploading file:", error);
+    return NextResponse.json(
+      {
+        error: "InternalServerError",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
+      { status: 500 },
+    );
+  }
 }

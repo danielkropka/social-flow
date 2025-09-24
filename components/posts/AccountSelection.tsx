@@ -19,6 +19,7 @@ import {
   SortAsc,
   SortDesc,
   Users,
+  XIcon,
 } from "lucide-react";
 import { SiTiktok, SiFacebook, SiX, SiInstagram } from "react-icons/si";
 import { usePostCreation } from "@/context/PostCreationContext";
@@ -87,6 +88,11 @@ export default function AccountSelection() {
   }, []);
 
   const handleAccountToggle = (account: PublicSocialAccount) => {
+    // Zablokuj wybór kont z wygasłymi lub odwołanymi tokenami
+    if (account.status === "EXPIRED" || account.status === "REVOKED") {
+      return;
+    }
+
     const isSelected = selectedAccounts.some(
       (selected) => selected.id === account.id,
     );
@@ -101,7 +107,12 @@ export default function AccountSelection() {
   };
 
   const handleContinue = () => {
-    if (selectedAccounts.length > 0) {
+    // Sprawdź czy są wybrane aktywne konta
+    const activeSelectedAccounts = selectedAccounts.filter(
+      (account) => account.status === "ACTIVE",
+    );
+
+    if (activeSelectedAccounts.length > 0) {
       setCurrentStep(3); // Assuming next step is 3
     }
   };
@@ -177,7 +188,11 @@ export default function AccountSelection() {
   };
 
   const handleSelectAll = () => {
-    setSelectedAccounts(filteredAndSortedAccounts);
+    // Wybierz tylko aktywne konta
+    const activeAccounts = filteredAndSortedAccounts.filter(
+      (account) => account.status === "ACTIVE",
+    );
+    setSelectedAccounts(activeAccounts);
   };
 
   const handleSelectNone = () => {
@@ -188,21 +203,25 @@ export default function AccountSelection() {
     const platformAccounts = filteredAndSortedAccounts.filter(
       (account) => account.provider === platform,
     );
+    // Filtruj tylko aktywne konta z tej platformy
+    const activePlatformAccounts = platformAccounts.filter(
+      (account) => account.status === "ACTIVE",
+    );
     const currentPlatformSelected = selectedAccounts.filter(
       (account) => account.provider === platform,
     );
 
-    if (currentPlatformSelected.length === platformAccounts.length) {
+    if (currentPlatformSelected.length === activePlatformAccounts.length) {
       // Deselect all from this platform
       setSelectedAccounts(
         selectedAccounts.filter((account) => account.provider !== platform),
       );
     } else {
-      // Select all from this platform
+      // Select all active accounts from this platform
       const otherSelected = selectedAccounts.filter(
         (account) => account.provider !== platform,
       );
-      setSelectedAccounts([...otherSelected, ...platformAccounts]);
+      setSelectedAccounts([...otherSelected, ...activePlatformAccounts]);
     }
   };
 
@@ -276,6 +295,45 @@ export default function AccountSelection() {
             <p className="text-xs text-gray-400">
               Połącz swoje konta społecznościowe, aby móc publikować posty.
             </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  // Sprawdź czy wszystkie konta są zablokowane
+  const activeAccounts = accounts.filter(
+    (account) => account.status === "ACTIVE",
+  );
+  if (activeAccounts.length === 0) {
+    return (
+      <section className="w-full">
+        <header className="mb-6">
+          <h2 className="text-2xl font-semibold tracking-tight text-gray-900 dark:text-gray-100">
+            Wybierz konta
+          </h2>
+          <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+            Wybierz konta społecznościowe, na których chcesz opublikować post.
+          </p>
+        </header>
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <p className="text-sm text-orange-600 dark:text-orange-400 mb-2">
+              Wszystkie konta są zablokowane
+            </p>
+            <p className="text-xs text-gray-400 mb-4">
+              Tokeny dostępu wygasły lub zostały odwołane. Przejdź do sekcji
+              &quot;Połączone konta&quot; aby połączyć konta ponownie.
+            </p>
+            <button
+              onClick={() => {
+                // Przekieruj do sekcji kont
+                window.location.href = "/dashboard?tab=accounts";
+              }}
+              className="inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium bg-orange-600 text-white hover:bg-orange-700 transition-colors"
+            >
+              Przejdź do kont
+            </button>
           </div>
         </div>
       </section>
@@ -475,13 +533,33 @@ export default function AccountSelection() {
             {filteredAndSortedAccounts.length === accounts.length
               ? `Wyświetlane wszystkie konta (${accounts.length})`
               : `Wyświetlane ${filteredAndSortedAccounts.length} z ${accounts.length} kont`}
+            {(() => {
+              const blockedCount = filteredAndSortedAccounts.filter(
+                (account) =>
+                  account.status === "EXPIRED" || account.status === "REVOKED",
+              ).length;
+              return blockedCount > 0 ? (
+                <span className="ml-2 text-orange-600 dark:text-orange-400">
+                  ({blockedCount} zablokowanych)
+                </span>
+              ) : null;
+            })()}
           </div>
 
-          {selectedAccounts.length > 0 && (
+          {selectedAccounts.filter((account) => account.status === "ACTIVE")
+            .length > 0 && (
             <div className="flex items-center gap-2 text-xs text-blue-600 dark:text-blue-400">
               <Users className="h-3.5 w-3.5" />
-              Wybrano {selectedAccounts.length}{" "}
-              {selectedAccounts.length === 1 ? "konto" : "kont"}
+              Wybrano{" "}
+              {
+                selectedAccounts.filter(
+                  (account) => account.status === "ACTIVE",
+                ).length
+              }{" "}
+              {selectedAccounts.filter((account) => account.status === "ACTIVE")
+                .length === 1
+                ? "konto"
+                : "kont"}
             </div>
           )}
         </div>
@@ -492,6 +570,8 @@ export default function AccountSelection() {
           const isSelected = selectedAccounts.some(
             (selected) => selected.id === account.id,
           );
+          const isBlocked =
+            account.status === "EXPIRED" || account.status === "REVOKED";
           const platformName =
             PLATFORM_NAMES[account.provider] || account.provider;
           const platformIcon = PLATFORM_ICONS[account.provider];
@@ -502,18 +582,23 @@ export default function AccountSelection() {
               key={account.id}
               type="button"
               onClick={() => handleAccountToggle(account)}
+              disabled={isBlocked}
               className={[
                 "group relative text-left focus:outline-none",
-                "transition-transform duration-150 ease-out hover:-translate-y-0.5",
+                isBlocked
+                  ? "cursor-not-allowed opacity-60"
+                  : "transition-transform duration-150 ease-out hover:-translate-y-0.5",
               ].join(" ")}
             >
               <Card
                 className={[
                   "relative overflow-hidden border transition-colors",
                   "bg-white/70 dark:bg-zinc-900/60 backdrop-blur",
-                  isSelected
-                    ? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/30"
-                    : "hover:border-zinc-300 dark:hover:border-zinc-700",
+                  isBlocked
+                    ? "border-red-200 dark:border-red-800 bg-red-50/30 dark:bg-red-950/20"
+                    : isSelected
+                      ? "border-blue-500 dark:border-blue-400 bg-blue-50/50 dark:bg-blue-950/30"
+                      : "hover:border-zinc-300 dark:hover:border-zinc-700",
                 ].join(" ")}
               >
                 <div
@@ -521,9 +606,11 @@ export default function AccountSelection() {
                   className={[
                     "pointer-events-none absolute inset-x-0 -top-16 h-32",
                     "bg-gradient-to-b",
-                    isSelected
-                      ? "from-blue-500/15 via-blue-500/10 to-transparent"
-                      : "from-zinc-500/10 via-zinc-500/5 to-transparent",
+                    isBlocked
+                      ? "from-red-500/15 via-red-500/10 to-transparent"
+                      : isSelected
+                        ? "from-blue-500/15 via-blue-500/10 to-transparent"
+                        : "from-zinc-500/10 via-zinc-500/5 to-transparent",
                   ].join(" ")}
                 />
 
@@ -541,9 +628,14 @@ export default function AccountSelection() {
                         >
                           {platformIcon}
                         </div>
-                        {isSelected && (
+                        {isSelected && !isBlocked && (
                           <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-500 text-white">
                             <Check className="h-3 w-3" />
+                          </div>
+                        )}
+                        {isBlocked && (
+                          <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white">
+                            <XIcon className="h-3 w-3" />
                           </div>
                         )}
                       </div>
@@ -582,14 +674,26 @@ export default function AccountSelection() {
                     </p>
                   )}
                   {account.status === "EXPIRED" && (
-                    <p className="text-xs text-red-600 dark:text-red-400">
-                      ⚠ Token wygasł
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        ⚠ Token wygasł
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Przejdź do &quot;Połączone konta&quot; aby połączyć
+                        ponownie
+                      </p>
+                    </div>
                   )}
                   {account.status === "REVOKED" && (
-                    <p className="text-xs text-red-600 dark:text-red-400">
-                      ✗ Dostęp odwołany
-                    </p>
+                    <div className="space-y-1">
+                      <p className="text-xs text-red-600 dark:text-red-400">
+                        ✗ Dostęp odwołany
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        Przejdź do &quot;Połączone konta&quot; aby połączyć
+                        ponownie
+                      </p>
+                    </div>
                   )}
                 </CardHeader>
 
@@ -633,19 +737,46 @@ export default function AccountSelection() {
         </div>
       )}
 
-      {selectedAccounts.length > 0 && (
+      {selectedAccounts.filter((account) => account.status === "ACTIVE")
+        .length > 0 && (
         <div className="mt-8 flex items-center justify-between">
           <div className="text-sm text-gray-600 dark:text-gray-400">
-            Wybrano {selectedAccounts.length}{" "}
-            {selectedAccounts.length === 1 ? "konto" : "kont"}
+            Wybrano{" "}
+            {
+              selectedAccounts.filter((account) => account.status === "ACTIVE")
+                .length
+            }{" "}
+            {selectedAccounts.filter((account) => account.status === "ACTIVE")
+              .length === 1
+              ? "konto"
+              : "kont"}
+            {selectedAccounts.filter((account) => account.status !== "ACTIVE")
+              .length > 0 && (
+              <span className="ml-2 text-orange-600 dark:text-orange-400">
+                (
+                {
+                  selectedAccounts.filter(
+                    (account) => account.status !== "ACTIVE",
+                  ).length
+                }{" "}
+                zablokowanych)
+              </span>
+            )}
           </div>
           <button
             onClick={handleContinue}
+            disabled={
+              selectedAccounts.filter((account) => account.status === "ACTIVE")
+                .length === 0
+            }
             className={[
               "inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium",
-              "bg-blue-600 text-white shadow-sm transition-colors",
-              "hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
+              "shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2",
               "dark:focus:ring-offset-zinc-900",
+              selectedAccounts.filter((account) => account.status === "ACTIVE")
+                .length === 0
+                ? "bg-gray-300 text-gray-500 cursor-not-allowed dark:bg-gray-700 dark:text-gray-400"
+                : "bg-blue-600 text-white hover:bg-blue-700",
             ].join(" ")}
           >
             Kontynuuj

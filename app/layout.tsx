@@ -61,7 +61,7 @@ export default async function RootLayout({
       <body
         className={cn(
           "h-full min-h-screen relative overflow-x-hidden",
-          inter.className
+          inter.className,
         )}
       >
         {/* Continuous gradient background */}
@@ -74,12 +74,12 @@ export default async function RootLayout({
           <div className="pointer-events-none absolute -top-24 -left-24 h-[32rem] w-[32rem] rounded-full bg-gradient-to-br from-blue-500/25 via-fuchsia-400/20 to-transparent blur-3xl" />
           <div className="pointer-events-none absolute -bottom-24 -right-24 h-[28rem] w-[28rem] rounded-full bg-gradient-to-tr from-indigo-400/25 via-sky-400/20 to-transparent blur-3xl" />
         </div>
-        
+
         <Providers>
           <div className="relative z-10 h-full">
             {children}
             <SpeedInsights />
-            <Toaster position="top-center" />
+            <Toaster position="bottom-right" />
           </div>
         </Providers>
       </body>

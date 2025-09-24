@@ -8,7 +8,7 @@ import {
   useCallback,
   useMemo,
 } from "react";
-import { PublicSocialAccount } from "@/types";
+import { PublicSocialAccount, UploadedFileData } from "@/types";
 
 interface PostText {
   default: string;
@@ -19,7 +19,7 @@ interface PostText {
 }
 
 export interface PostCreationState {
-  selectedFiles: File[];
+  selectedFiles: UploadedFileData[];
   selectedAccounts: PublicSocialAccount[];
   postText: PostText;
   scheduledDate: Date | undefined;
@@ -29,7 +29,7 @@ export interface PostCreationState {
 }
 
 type PostCreationAction =
-  | { type: "SET_SELECTED_FILES"; payload: File[] }
+  | { type: "SET_SELECTED_FILES"; payload: UploadedFileData[] }
   | { type: "SET_SELECTED_ACCOUNTS"; payload: PublicSocialAccount[] }
   | { type: "SET_POST_TEXT"; payload: PostText }
   | { type: "SET_SCHEDULED_DATE"; payload: Date | undefined }
@@ -88,7 +88,7 @@ function postCreationReducer(
 
 interface PostCreationContextType {
   state: PostCreationState;
-  setSelectedFiles: (files: File[]) => void;
+  setSelectedFiles: (files: UploadedFileData[]) => void;
   setSelectedAccounts: (accounts: PublicSocialAccount[]) => void;
   setPostText: (text: PostText) => void;
   setScheduledDate: (date: Date | undefined) => void;
@@ -105,7 +105,7 @@ const PostCreationContext = createContext<PostCreationContextType | undefined>(
 export function PostCreationProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(postCreationReducer, initialState);
 
-  const setSelectedFiles = useCallback((files: File[]) => {
+  const setSelectedFiles = useCallback((files: UploadedFileData[]) => {
     dispatch({ type: "SET_SELECTED_FILES", payload: files });
   }, []);
 

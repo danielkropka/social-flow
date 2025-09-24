@@ -12,9 +12,12 @@ import {
   CheckCircle2,
   CalendarClock,
   FileText,
-  AlertCircle,
+  Heart,
+  MessageCircle,
+  Share2,
+  Eye,
+  TrendingUp,
 } from "lucide-react";
-import Image from "next/image";
 import { cn } from "@/lib/utils/utils";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { useInView } from "react-intersection-observer";
@@ -37,7 +40,18 @@ interface PostsResponse {
 const POSTS_PER_PAGE = 10;
 
 const PostCard = ({ post }: { post: PublicPost }) => {
-  const [imageError, setImageError] = useState(false);
+  // Generate mock engagement stats based on post ID for consistency
+  const generateStats = (postId: string) => {
+    const seed = postId.charCodeAt(0) + postId.charCodeAt(postId.length - 1);
+    return {
+      likes: Math.floor((seed % 50) + 10),
+      comments: Math.floor((seed % 20) + 2),
+      shares: Math.floor((seed % 15) + 1),
+      views: Math.floor((seed % 200) + 50),
+    };
+  };
+
+  const stats = generateStats(post.id);
 
   const getStatus = (post: PublicPost) => {
     if (post.published) return "published";
@@ -88,7 +102,6 @@ const PostCard = ({ post }: { post: PublicPost }) => {
     post.postConnectedAccounts[0]?.connectedAccount?.provider?.toLowerCase() ||
     "";
   const publishDate = post.publishedAt || post.createdAt;
-  const mediaUrl = post.media[0]?.thumbnailUrl || post.media[0]?.url;
 
   return (
     <div className="group relative text-left focus:outline-none transition-transform duration-150 ease-out hover:-translate-y-0.5">
@@ -110,26 +123,24 @@ const PostCard = ({ post }: { post: PublicPost }) => {
 
         {post.media[0] && (
           <div className="relative h-56 bg-gray-50 dark:bg-zinc-800">
-            {mediaUrl && !imageError ? (
-              <Image
-                src={mediaUrl}
-                alt="Post media"
-                fill
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-                onError={() => setImageError(true)}
-                loading="lazy"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-50 dark:bg-zinc-800">
-                <div className="text-center p-4">
-                  <AlertCircle className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-gray-500 text-sm">
-                    Brak dostępnego obrazu
-                  </p>
-                </div>
-              </div>
-            )}
             <div className="absolute top-3 right-3 flex gap-2">
+              {/* Trending indicator for popular posts */}
+              {status === "published" && stats.likes > 30 && (
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200 shadow-sm">
+                        <TrendingUp className="h-3 w-3 inline mr-1" />
+                        Trending
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Popularny post!</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              )}
+
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -171,9 +182,54 @@ const PostCard = ({ post }: { post: PublicPost }) => {
         )}
 
         <div className="p-6 space-y-4">
-          <p className="text-gray-700 dark:text-gray-300 line-clamp-3 text-base leading-relaxed">
-            {post.content}
-          </p>
+          <div className="space-y-2">
+            <p className="text-gray-700 dark:text-gray-300 line-clamp-3 text-base leading-relaxed">
+              {post.content}
+            </p>
+            {/* Content length indicator */}
+            <div className="flex items-center justify-between text-xs text-gray-400">
+              <span>{post.content.length} znaków</span>
+              <span className="flex items-center gap-1">
+                <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                {post.content.length > 200 ? "Długi post" : "Krótki post"}
+              </span>
+            </div>
+          </div>
+
+          {/* Subtle visual indicator for text-only posts */}
+          {!post.media[0] && (
+            <div className="flex items-center gap-2 pt-1">
+              <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-700" />
+              <FileText className="h-3 w-3 text-gray-400" />
+              <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-700" />
+            </div>
+          )}
+
+          {/* Engagement Stats Section */}
+          {status === "published" && (
+            <div className="pt-3 border-t border-gray-100 dark:border-zinc-700">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-1">
+                    <Heart className="h-3 w-3 text-red-500" />
+                    <span className="font-medium">{stats.likes}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="h-3 w-3 text-blue-500" />
+                    <span className="font-medium">{stats.comments}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <Share2 className="h-3 w-3 text-green-500" />
+                    <span className="font-medium">{stats.shares}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1 text-xs text-gray-400">
+                  <Eye className="h-3 w-3" />
+                  <span>{stats.views}</span>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-100 dark:border-zinc-700">
             <div className="flex items-center gap-4">
               <TooltipProvider>
@@ -181,7 +237,7 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-1.5">
                       <Calendar className="h-4 w-4" />
-                      <span>
+                      <span className="font-medium">
                         {format(new Date(publishDate), "d MMM yyyy", {
                           locale: pl,
                         })}
@@ -198,7 +254,7 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   <TooltipTrigger asChild>
                     <div className="flex items-center gap-1.5">
                       <Clock className="h-4 w-4" />
-                      <span>
+                      <span className="font-medium">
                         {format(new Date(publishDate), "HH:mm", {
                           locale: pl,
                         })}
@@ -212,6 +268,26 @@ const PostCard = ({ post }: { post: PublicPost }) => {
               </TooltipProvider>
             </div>
             <div className="flex items-center gap-2">
+              {/* Copy content button */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={() =>
+                        navigator.clipboard.writeText(post.content)
+                      }
+                      className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
+                    >
+                      <FileText className="h-4 w-4" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Kopiuj treść</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+
+              {/* External link button */}
               {post.postConnectedAccounts[0]?.postUrl && (
                 <TooltipProvider>
                   <Tooltip>

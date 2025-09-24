@@ -12,7 +12,7 @@ import {
   Upload,
   X,
   Send,
-  Image,
+  Image as ImageIcon,
   Video,
   FileText,
   Eye,
@@ -25,6 +25,13 @@ import {
 import { SiTiktok, SiFacebook, SiX, SiInstagram } from "react-icons/si";
 import { usePostCreation } from "@/context/PostCreationContext";
 import { toast } from "sonner";
+import { UploadedFileData } from "@/types";
+import Image from "next/image";
+
+interface MediaUrl {
+  url: string;
+  type: string;
+}
 
 const PLATFORM_BADGE_STYLES: Record<string, string> = {
   TWITTER:
@@ -66,38 +73,126 @@ export default function PublishPost() {
   const [isPublishing, setIsPublishing] = useState(false);
   const [customTexts, setCustomTexts] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [failedImages, setFailedImages] = useState<Set<string>>(new Set());
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const selectedPlatforms = Array.from(
     new Set(selectedAccounts.map((account) => account.provider)),
-  );
+  ) as string[];
 
   const handleFileUpload = useCallback(
-    (event: React.ChangeEvent<HTMLInputElement>) => {
+    async (event: React.ChangeEvent<HTMLInputElement>) => {
       const files = Array.from(event.target.files || []);
       if (files.length === 0) return;
 
+      // Sprawdź czy już trwa upload - zapobiega wielokrotnym wywołaniom
+      if (isUploading) {
+        console.warn("Upload already in progress, skipping...");
+        return;
+      }
+
       setIsUploading(true);
 
-      // Simulate upload delay
-      setTimeout(() => {
-        const newFiles = [...selectedFiles, ...files];
+      try {
+        const uploadPromises = files.map(
+          async (file: File): Promise<UploadedFileData> => {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/api/media/upload", {
+              method: "POST",
+              body: formData,
+              headers: {
+                "X-File-Name": file.name,
+                "X-File-Type": file.type,
+              },
+            });
+
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error);
+            }
+
+            const result = await response.json();
+
+            if (!result.url) {
+              throw new Error(`Brak URL w odpowiedzi dla pliku ${file.name}`);
+            }
+
+            return {
+              file: file,
+              url: result.url,
+              fileName: result.fileName,
+              contentType: result.fileType,
+              size: result.fileSize,
+            };
+          },
+        );
+
+        const uploadResults = await Promise.all(uploadPromises);
+
+        const newFiles = [...selectedFiles, ...uploadResults];
         setSelectedFiles(newFiles);
 
+        toast.success(
+          `Pomyślnie przesłano ${files.length} plik${files.length === 1 ? "" : files.length < 5 ? "ów" : "ów"} na AWS S3`,
+        );
+      } catch (error) {
+        console.error("Error uploading files:", error);
+
+        if (error instanceof Error) {
+          switch (error.message) {
+            case "TooManyRequests":
+              toast.error(
+                "Zbyt wiele prób uploadu mediów. Spróbuj ponownie za godzinę.",
+              );
+              break;
+            case "FileTooLarge":
+              toast.error("Plik jest za duży. Maksymalny rozmiar to 250MB.");
+              break;
+            case "InvalidFileType":
+              toast.error("Nieobsługiwany format pliku. Wybierz inny plik.");
+              break;
+            case "NoFile":
+              toast.error("Dodaj plik i spróbuj ponownie.");
+              break;
+            default:
+              toast.error(`Błąd podczas przesyłania plików: ${error.message}`);
+          }
+        } else {
+          toast.error("Wystąpił nieznany błąd podczas przesyłania plików");
+        }
+      } finally {
         setIsUploading(false);
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
         }
-      }, 1000);
+      }
     },
-    [selectedFiles, setSelectedFiles],
+    [selectedFiles, setSelectedFiles, isUploading],
   );
 
   const removeFile = useCallback(
-    (index: number) => {
+    async (index: number) => {
+      const fileToRemove = selectedFiles[index];
       const newFiles = selectedFiles.filter((_, i) => i !== index);
       setSelectedFiles(newFiles);
+
+      // Opcjonalnie: możemy dodać endpoint do usuwania plików z AWS S3
+      // jeśli plik ma fileName (został przesłany na S3), możemy go usunąć
+      if (fileToRemove && "fileName" in fileToRemove && fileToRemove.fileName) {
+        try {
+          // TODO: Dodać endpoint do usuwania plików z S3
+          // await fetch(`/api/media/delete/${fileToRemove.fileName}`, { method: 'DELETE' });
+          console.log(
+            `Plik ${fileToRemove.fileName} został usunięty z listy (usunięcie z S3 można dodać później)`,
+          );
+        } catch (error) {
+          console.error("Error removing file from S3:", error);
+          // Nie pokazujemy błędu użytkownikowi, bo plik został już usunięty z listy
+        }
+      }
     },
     [selectedFiles, setSelectedFiles],
   );
@@ -169,38 +264,25 @@ export default function PublishPost() {
   const handlePublish = useCallback(async () => {
     if (!validateForm()) return;
 
+    // Sprawdź czy już trwa publikacja - zapobiega wielokrotnym wywołaniom
+    if (isPublishing) {
+      console.warn("Publishing already in progress, skipping...");
+      return;
+    }
+
     setIsPublishing(true);
 
     try {
-      // Najpierw przesyłamy media do S3 (jeśli są)
-      let mediaUrls: { url: string; type: string }[] = [];
+      // Przygotowujemy media URLs (pliki już zostały przesłane na AWS S3)
+      let mediaUrls: MediaUrl[] = [];
 
       if (selectedFiles.length > 0) {
-        const uploadPromises = selectedFiles.map(async (file) => {
-          const formData = new FormData();
-          formData.append("file", file);
-
-          const response = await fetch("/api/media/upload", {
-            method: "POST",
-            body: formData,
-            headers: {
-              "X-File-Name": file.name,
-              "X-File-Type": file.type,
-            },
-          });
-
-          if (!response.ok) {
-            throw new Error(`Błąd podczas przesyłania pliku ${file.name}`);
-          }
-
-          const result = await response.json();
+        mediaUrls = selectedFiles.map((fileData) => {
           return {
-            url: result.url,
-            type: file.type,
+            url: fileData.url,
+            type: fileData.contentType,
           };
         });
-
-        mediaUrls = await Promise.all(uploadPromises);
       }
 
       // Tworzymy post w bazie danych
@@ -238,31 +320,67 @@ export default function PublishPost() {
           }),
         });
 
+        const publishData = await publishResponse.json();
+
         if (!publishResponse.ok) {
-          const errorData = await publishResponse.json();
           throw new Error(
-            `Błąd publikacji na ${account.provider}: ${errorData.error || errorData.message}`,
+            `Błąd publikacji na ${account.provider}: ${publishData.error || publishData.message}`,
           );
         }
 
-        return await publishResponse.json();
+        // Sprawdź czy publikacja rzeczywiście się powiodła
+        if (!publishData.success) {
+          throw new Error(
+            `Publikacja na ${account.provider} nie powiodła się: ${publishData.message}`,
+          );
+        }
+
+        return publishData;
       });
 
-      await Promise.all(publishPromises);
+      const publishResults = await Promise.all(publishPromises);
 
       // Resetujemy formularz i wracamy do pierwszego kroku
       setCurrentStep(1);
 
-      // Opcjonalnie: pokazujemy komunikat o sukcesie
-      toast.success("Post został pomyślnie opublikowany!");
+      // Pokazujemy komunikat o sukcesie tylko jeśli wszystkie publikacje się powiodły
+      toast.success("Post został pomyślnie opublikowany!", {
+        description: `Opublikowano na ${publishResults.length} platformach`,
+      });
     } catch (error) {
       console.error("Error publishing post:", error);
-      // Tutaj możesz dodać toast notification z błędem
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Wystąpił błąd podczas publikacji posta",
-      );
+
+      let errorMessage = "Wystąpił błąd podczas publikacji posta";
+      if (error instanceof Error) {
+        if (error.message.includes("Unauthorized")) {
+          errorMessage = "Brak autoryzacji. Zaloguj się ponownie.";
+        } else if (error.message.includes("Nie wszystkie wybrane konta")) {
+          errorMessage =
+            "Niektóre konta społecznościowe nie są aktywne. Sprawdź status swoich kont.";
+        } else if (
+          error.message.includes("Token dostępu wygasł") ||
+          error.message.includes("TOKEN_EXPIRED")
+        ) {
+          errorMessage =
+            "Token dostępu wygasł. Przejdź do sekcji 'Połączone konta' i połącz konto ponownie.";
+        } else if (error.message.includes("Twitter")) {
+          errorMessage =
+            "Błąd publikacji na Twitter/X. Sprawdź czy konto jest aktywne i ma odpowiednie uprawnienia.";
+        } else if (error.message.includes("Instagram")) {
+          errorMessage = "Publikacja na Instagramie nie jest jeszcze dostępna.";
+        } else if (error.message.includes("Facebook")) {
+          errorMessage = "Publikacja na Facebooku nie jest jeszcze dostępna.";
+        } else if (error.message.includes("TikTok")) {
+          errorMessage = "Publikacja na TikToku nie jest jeszcze dostępna.";
+        } else if (error.message.includes("ECONNREFUSED")) {
+          errorMessage =
+            "Brak połączenia z serwerem. Sprawdź połączenie internetowe.";
+        } else {
+          errorMessage = error.message;
+        }
+      }
+
+      toast.error(errorMessage);
     } finally {
       setIsPublishing(false);
     }
@@ -274,15 +392,22 @@ export default function PublishPost() {
     postText,
     customTexts,
     setCurrentStep,
+    isPublishing,
   ]);
 
-  const getFileType = (file: File) => {
-    if (file.type.startsWith("image/")) return "image";
-    if (file.type.startsWith("video/")) return "video";
+  const getFileType = (
+    fileData: UploadedFileData,
+  ): "image" | "video" | "unknown" => {
+    const fileType = fileData.contentType;
+
+    if (fileType?.startsWith("image/")) return "image";
+    if (fileType?.startsWith("video/")) return "video";
     return "unknown";
   };
 
-  const formatFileSize = (bytes: number) => {
+  const formatFileSize = (fileData: UploadedFileData): string => {
+    const bytes = fileData.size;
+
     if (bytes === 0) return "0 Bytes";
     const k = 1024;
     const sizes = ["Bytes", "KB", "MB", "GB"];
@@ -363,7 +488,7 @@ export default function PublishPost() {
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                     Dostosuj tekst dla platform
                   </h4>
-                  {selectedPlatforms.map((platform) => {
+                  {selectedPlatforms.map((platform: string) => {
                     const platformName = PLATFORM_NAMES[platform] || platform;
                     const platformIcon = PLATFORM_ICONS[platform];
                     const platformStyle = PLATFORM_BADGE_STYLES[platform];
@@ -405,7 +530,7 @@ export default function PublishPost() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   {postType === "images" ? (
-                    <Image className="h-5 w-5" />
+                    <ImageIcon className="h-5 w-5" />
                   ) : (
                     <Video className="h-5 w-5" />
                   )}
@@ -474,71 +599,92 @@ export default function PublishPost() {
                     <div className="flex items-center justify-between">
                       <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         Przesłane pliki ({selectedFiles.length}/{getMaxFiles()})
+                        {failedImages.size > 0 && (
+                          <span className="ml-2 text-xs text-orange-600 dark:text-orange-400">
+                            ({failedImages.size} nieudanych)
+                          </span>
+                        )}
                       </h4>
-                      <button
-                        onClick={() => setSelectedFiles([])}
-                        className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1"
-                      >
-                        <Trash2 className="h-3 w-3" />
-                        Usuń wszystkie
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={async () => {
+                            // Usuwamy wszystkie pliki z listy
+                            setSelectedFiles([]);
+                            setFailedImages(new Set());
+
+                            // Opcjonalnie: możemy dodać usuwanie wszystkich plików z S3
+                            // const deletePromises = selectedFiles
+                            //   .filter(file => file.fileName)
+                            //   .map(file => fetch(`/api/media/delete/${file.fileName}`, { method: 'DELETE' }));
+                            // await Promise.all(deletePromises);
+                          }}
+                          className="text-xs text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 flex items-center gap-1"
+                        >
+                          <Trash2 className="h-3 w-3" />
+                          Usuń wszystkie
+                        </button>
+                      </div>
                     </div>
                     <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-                      {selectedFiles.map((file, index) => {
-                        const fileType = getFileType(file);
-                        const isImage = fileType === "image";
-                        const isVideo = fileType === "video";
+                      {selectedFiles.map(
+                        (fileData: UploadedFileData, index) => {
+                          const fileType = getFileType(fileData);
+                          const isImage = fileType === "image";
+                          const isVideo = fileType === "video";
 
-                        return (
-                          <div key={index} className="space-y-2">
-                            <div className="relative group aspect-square rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
-                              {isImage ? (
-                                <img
-                                  src={URL.createObjectURL(file)}
-                                  alt={`Preview ${index + 1}`}
-                                  className="w-full h-full object-cover"
-                                />
-                              ) : isVideo ? (
-                                <div className="relative w-full h-full">
-                                  <div className="w-full h-full flex items-center justify-center">
-                                    <Video className="h-8 w-8 text-gray-400" />
-                                  </div>
-                                  <div className="absolute inset-0 flex items-center justify-center">
-                                    <div className="bg-black/50 rounded-full p-2">
-                                      <Play className="h-6 w-6 text-white" />
+                          return (
+                            <div key={index} className="space-y-2">
+                              <div className="relative group aspect-square rounded-lg overflow-hidden bg-zinc-100 dark:bg-zinc-800">
+                                {isImage ? (
+                                  <Image
+                                    src={fileData.url}
+                                    alt={`Preview ${index + 1}`}
+                                    width={200}
+                                    height={200}
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : isVideo ? (
+                                  <div className="relative w-full h-full">
+                                    <div className="w-full h-full flex items-center justify-center">
+                                      <Video className="h-8 w-8 text-gray-400" />
+                                    </div>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                      <div className="bg-black/50 rounded-full p-2">
+                                        <Play className="h-6 w-6 text-white" />
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              ) : (
-                                <div className="w-full h-full flex items-center justify-center">
-                                  <FileText className="h-8 w-8 text-gray-400" />
-                                </div>
-                              )}
+                                ) : (
+                                  <div className="w-full h-full flex items-center justify-center">
+                                    <FileText className="h-8 w-8 text-gray-400" />
+                                  </div>
+                                )}
 
-                              {/* File info overlay */}
-                              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
-                                <div className="text-white text-xs">
-                                  <p className="font-medium truncate">
-                                    {file.name}
-                                  </p>
-                                  <p>{formatFileSize(file.size)}</p>
+                                {/* File info overlay */}
+                                <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2">
+                                  <div className="text-white text-xs">
+                                    <p className="font-medium truncate">
+                                      {fileData.fileName}
+                                    </p>
+                                    <p>{formatFileSize(fileData)}</p>
+                                  </div>
                                 </div>
-                              </div>
 
-                              {/* Action buttons */}
-                              <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button
-                                  onClick={() => removeFile(index)}
-                                  className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
-                                  title="Usuń plik"
-                                >
-                                  <X className="h-3 w-3" />
-                                </button>
+                                {/* Action buttons */}
+                                <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    onClick={() => removeFile(index)}
+                                    className="p-1 rounded-full bg-red-500 text-white hover:bg-red-600"
+                                    title="Usuń plik"
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </button>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        },
+                      )}
                     </div>
                   </div>
                 )}
@@ -659,9 +805,19 @@ export default function PublishPost() {
                   <div className="mb-3">
                     {postType === "images" ? (
                       <div className="grid grid-cols-2 gap-1 rounded-lg overflow-hidden">
-                        {selectedFiles.slice(0, 4).map((file, index) => {
-                          const fileType = getFileType(file);
+                        {selectedFiles.slice(0, 4).map((fileData, index) => {
+                          const fileType = getFileType(fileData);
                           const isImage = fileType === "image";
+
+                          // Określamy URL obrazu
+                          let imageUrl: string;
+                          if ("url" in fileData) {
+                            // UploadedFileData
+                            imageUrl = fileData.url;
+                          } else {
+                            // File object
+                            imageUrl = URL.createObjectURL(fileData as File);
+                          }
 
                           return (
                             <div
@@ -670,7 +826,7 @@ export default function PublishPost() {
                             >
                               {isImage ? (
                                 <img
-                                  src={URL.createObjectURL(file)}
+                                  src={imageUrl}
                                   alt={`Preview ${index + 1}`}
                                   className="w-full h-full object-cover"
                                 />
@@ -701,7 +857,7 @@ export default function PublishPost() {
 
               {/* Platform indicators */}
               <div className="flex flex-wrap gap-2">
-                {selectedPlatforms.map((platform) => {
+                {selectedPlatforms.map((platform: string) => {
                   const platformName = PLATFORM_NAMES[platform] || platform;
                   const platformIcon = PLATFORM_ICONS[platform];
                   const platformStyle = PLATFORM_BADGE_STYLES[platform];
