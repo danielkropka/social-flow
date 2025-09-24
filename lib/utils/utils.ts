@@ -30,6 +30,12 @@ export const checkFileExtension = (file: File) => {
     : ACCEPTED_VIDEO_TYPES.includes(file.type);
 };
 
+export const getFileType = (file: File) => {
+  const isImage = file.type.startsWith("image/");
+  const isVideo = file.type.startsWith("video/");
+  return isImage ? "image" : isVideo ? "video" : "unknown";
+};
+
 export function encryptToken(token: string): string {
   const algorithm = "aes-256-cbc";
   const key = crypto.scryptSync(

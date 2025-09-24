@@ -4,14 +4,6 @@ import { authOptions } from "@/lib/config/auth";
 import { getServerSession } from "next-auth";
 import { checkFileExtension } from "@/lib/utils/utils";
 
-export const config = {
-  api: {
-    bodyParser: {
-      sizeLimit: "250mb",
-    },
-  },
-};
-
 const s3 = new S3Client({
   region: process.env.AWS_REGION!,
   credentials: {
@@ -36,6 +28,8 @@ export async function POST(req: NextRequest) {
       if (!file) {
         return NextResponse.json({ error: "NoFile" }, { status: 400 });
       }
+      if (file.size > 4 * 1024 * 1024)
+        return NextResponse.json({ error: "FileTooLarge" }, { status: 413 });
 
       if (!checkFileExtension(file))
         return NextResponse.json({ error: "InvalidFileType" }, { status: 400 });

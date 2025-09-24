@@ -135,12 +135,8 @@ export default function PublishPost() {
         const newFiles = [...selectedFiles, ...uploadResults];
         setSelectedFiles(newFiles);
 
-        toast.success(
-          `Pomyślnie przesłano ${files.length} plik${files.length === 1 ? "" : files.length < 5 ? "ów" : "ów"} na AWS S3`,
-        );
+        toast.success(`Pomyślnie przesłano plik/i.`);
       } catch (error) {
-        console.error("Error uploading files:", error);
-
         if (error instanceof Error) {
           switch (error.message) {
             case "TooManyRequests":
@@ -149,7 +145,7 @@ export default function PublishPost() {
               );
               break;
             case "FileTooLarge":
-              toast.error("Plik jest za duży. Maksymalny rozmiar to 250MB.");
+              toast.error("Plik jest za duży. Maksymalny rozmiar to 4MB.");
               break;
             case "InvalidFileType":
               toast.error("Nieobsługiwany format pliku. Wybierz inny plik.");
@@ -158,10 +154,8 @@ export default function PublishPost() {
               toast.error("Dodaj plik i spróbuj ponownie.");
               break;
             default:
-              toast.error(`Błąd podczas przesyłania plików: ${error.message}`);
+              toast.error("Wystąpił nieznany błąd podczas przesyłania plików");
           }
-        } else {
-          toast.error("Wystąpił nieznany błąd podczas przesyłania plików");
         }
       } finally {
         setIsUploading(false);
