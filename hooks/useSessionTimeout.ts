@@ -17,7 +17,7 @@ export function useSessionTimeout() {
   const updateLastActivity = useCallback(() => {
     const now = Date.now();
     lastActivityRef.current = now;
-    
+
     // Only update warning state if it was showing
     if (showWarning) {
       setShowWarning(false);
@@ -27,26 +27,26 @@ export function useSessionTimeout() {
   // Throttled activity update to reduce function calls
   const throttledUpdateActivity = useCallback(() => {
     const now = Date.now();
-    if (now - lastActivityRef.current > 1000) { // Only update if more than 1 second passed
+    if (now - lastActivityRef.current > 1000) {
+      // Only update if more than 1 second passed
       updateLastActivity();
     }
   }, [updateLastActivity]);
 
   // Memoize event list to prevent recreation
-  const events = useMemo(() => [
-    "mousedown",
-    "mousemove", 
-    "keypress",
-    "scroll",
-    "touchstart",
-  ], []);
+  const events = useMemo(
+    () => ["mousedown", "mousemove", "keypress", "scroll", "touchstart"],
+    [],
+  );
 
   useEffect(() => {
     if (!session) return;
 
     // Add throttled event listeners
     events.forEach((event) => {
-      window.addEventListener(event, throttledUpdateActivity, { passive: true });
+      window.addEventListener(event, throttledUpdateActivity, {
+        passive: true,
+      });
     });
 
     const checkInactivity = () => {
@@ -56,11 +56,10 @@ export function useSessionTimeout() {
 
       // Only check if enough time has passed since last check
       if (timeSinceLastCheck < CHECK_INTERVAL) return;
-      
+
       lastCheckRef.current = currentTime;
 
       if (inactiveTime >= SESSION_TIMEOUT) {
-        toast.message("Sesja wygasła - zostaniesz wylogowany.");
         setShowWarning(false);
         setShowExpired(true);
         signOut({ redirect: false });

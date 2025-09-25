@@ -35,8 +35,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "InvalidFileType" }, { status: 400 });
 
       const fileName = file.name;
-      const fileExtension = fileName.split(".").pop();
-      const fileKey = `uploads/${session.user.id}/${fileName}.${fileExtension}`;
+      const fileKey = `uploads/${session.user.id}/${fileName}`;
 
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);

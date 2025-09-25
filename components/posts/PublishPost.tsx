@@ -137,6 +137,7 @@ export default function PublishPost() {
 
         toast.success(`Pomyślnie przesłano plik/i.`);
       } catch (error) {
+        console.log(error);
         if (error instanceof Error) {
           switch (error.message) {
             case "TooManyRequests":
