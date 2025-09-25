@@ -27,6 +27,7 @@ import { usePostCreation } from "@/context/PostCreationContext";
 import { toast } from "sonner";
 import { UploadedFileData } from "@/types";
 import Image from "next/image";
+import { logger } from "@smithy/core/serde";
 
 interface MediaUrl {
   url: string;
@@ -111,6 +112,7 @@ export default function PublishPost() {
 
             if (!response.ok) {
               const errorData = await response.json();
+              logger.error(errorData);
               throw new Error(errorData.error);
             }
 
