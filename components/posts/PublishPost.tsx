@@ -112,7 +112,7 @@ export default function PublishPost() {
 
             if (!response.ok) {
               const errorData = await response.json();
-              logger.error(errorData);
+              console.error(errorData);
               throw new Error(errorData.error);
             }
 
