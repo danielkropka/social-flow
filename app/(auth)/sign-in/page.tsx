@@ -37,62 +37,62 @@ export default function SignIn() {
 
   const onSubmit = async (data: LoginFormValues) => {
     setIsLoading(true);
-    try {
-      const result = await signIn("credentials", {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+    const result = await signIn("credentials", {
+      email: data.email,
+      password: data.password,
+      redirect: false,
+    });
 
-      if (!result) {
-        toast.error("Wystąpił nieoczekiwany błąd podczas logowania");
-        return;
-      }
-
-      switch (result.error) {
-        case "GoogleAccount":
-          toast.error(
-            "To konto zostało utworzone przez Google. Użyj przycisku 'Kontynuuj z Google' aby się zalogować."
-          );
-          break;
-        case "EmailNotVerified":
-          toast.error(
-            "Twój email nie został jeszcze zweryfikowany. Sprawdź swoją skrzynkę pocztową i kliknij w link weryfikacyjny."
-          );
-          break;
-        case "InvalidCredentials":
-          setError("email", {
-            type: "manual",
-            message: "Nieprawidłowy email lub hasło.",
-          });
-          setError("password", {
-            type: "manual",
-            message: "Nieprawidłowy email lub hasło.",
-          });
-          toast.error("Nieprawidłowy email lub hasło");
-          break;
-        case "Email i hasło są wymagane":
-          toast.error("Proszę wypełnić wszystkie pola");
-          break;
-        default:
-          if (result.error) {
-            toast.error(`Wystąpił błąd: ${result.error}`);
-          } else {
-            toast.success("Zalogowano pomyślnie");
-            router.push("/dashboard");
-            router.refresh();
-          }
-      }
-    } catch (error) {
-      console.error("Sign in error:", error);
-      if (error instanceof Error) {
-        toast.error(`Wystąpił błąd: ${error.message}`);
-      } else {
-        toast.error("Wystąpił nieoczekiwany błąd podczas logowania");
-      }
-    } finally {
+    if (!result) {
+      toast.error("Wystąpił nieoczekiwany błąd podczas logowania");
       setIsLoading(false);
+      return;
     }
+
+    switch (result.error) {
+      case "GoogleAccount":
+        toast.error(
+          "To konto zostało utworzone przez Google. Użyj przycisku 'Kontynuuj z Google' aby się zalogować.",
+        );
+        break;
+      case "InvalidCredentials":
+        setError("email", {
+          type: "manual",
+          message: "Nieprawidłowy email lub hasło.",
+        });
+        setError("password", {
+          type: "manual",
+          message: "Nieprawidłowy email lub hasło.",
+        });
+        toast.error("Nieprawidłowy email lub hasło");
+        break;
+      case "TooManyRequests":
+        toast.error("Zbyt wiele prób logowania. Spróbuj ponownie za godzinę.");
+        break;
+      case "PasswordNotSet":
+        toast.error(
+          "To konto nie ma ustawionego hasła. Zaloguj się za pomocą jednej z usług i ustaw hasło w ustawieniach konta.",
+        );
+        break;
+      case "EmailNotVerified":
+        toast.error(
+          "Twój email nie został jeszcze zweryfikowany. Sprawdź swoją skrzynkę pocztową.",
+        );
+        break;
+      case "BadRequest":
+        toast.error("Proszę wypełnić wszystkie pola");
+        break;
+      default:
+        if (result.error) {
+          toast.error(`Wystąpił nieznany błąd: ${result.error}`);
+        } else {
+          toast.success("Zalogowano pomyślnie");
+          router.push("/dashboard");
+          router.refresh();
+        }
+    }
+
+    setIsLoading(false);
   };
 
   const handleGoogleLogin = async () => {

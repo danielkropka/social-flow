@@ -6,7 +6,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/config/prisma";
 import { User } from "next-auth";
 import { PlanType, PlanStatus, PlanInterval } from "@prisma/client";
-import { checkRateLimit } from "@/middleware/rateLimit";
+import { checkRateLimit } from "@/lib/middleware/rateLimitMiddleware";
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(db),
@@ -36,29 +36,23 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials): Promise<User | null> {
         try {
-          // Sprawdź limit prób logowania
+          // Rate limiting dla prób logowania
+          const email = credentials?.email || "anonymous";
+          const key = `auth-rate-limit:${email}`;
+
           const isAllowed = await checkRateLimit(
-            `auth-rate-limit:${credentials?.email || "anonymous"}`,
-            5,
-            60 * 60 * 1000
+            key,
+            5, // max 5 prób
+            60 * 60 * 1000, // w ciągu 1 godziny
           );
+
           if (!isAllowed) {
-            throw new Error("TooManyAttempts");
+            throw new Error("TooManyRequests");
           }
 
-          if (!credentials?.email || !credentials?.password) {
-            throw new Error("Email i hasło są wymagane");
-          }
+          if (!credentials?.email || !credentials?.password)
+            throw new Error("MissingCredentials");
 
-          // Walidacja formatu email
-          const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-          if (!emailRegex.test(credentials.email)) {
-            throw new Error("InvalidEmailFormat");
-          }
-          // Walidacja długości hasła
-          if (credentials.password.length < 8) {
-            throw new Error("PasswordTooShort");
-          }
           const user = await db.user.findUnique({
             where: {
               email: credentials.email,
@@ -70,38 +64,20 @@ export const authOptions: NextAuthOptions = {
               password: true,
               image: true,
               emailVerified: true,
-              accounts: {
-                select: {
-                  provider: true,
-                },
-              },
             },
           });
-          if (!user) {
-            throw new Error("InvalidCredentials");
-          }
-          // const hasGoogleAccount = user.accounts.some(
-          //   (account) => account.provider === "google"
-          // );
-          // if (hasGoogleAccount) {
-          //   throw new Error("GoogleAccount");
-          // }
 
-          if (!user.emailVerified) {
-            throw new Error("EmailNotVerified");
-          }
-          if (!user.password) {
-            throw new Error(
-              "Brak hasła. Zaloguj się przez Google lub ustaw hasło przez reset hasła."
-            );
-          }
+          if (!user) throw new Error("InvalidCredentials");
+          if (!user.password) throw new Error("PasswordNotSet");
+          if (!user.emailVerified) throw new Error("EmailNotVerified");
+
           const isCorrectPassword = await bcrypt.compare(
             credentials.password,
-            user.password
+            user.password,
           );
-          if (!isCorrectPassword) {
-            throw new Error("InvalidCredentials");
-          }
+
+          if (!isCorrectPassword) throw new Error("InvalidCredentials");
+
           return {
             id: user.id,
             name: user.name,
@@ -109,41 +85,48 @@ export const authOptions: NextAuthOptions = {
             image: user.image,
           } as User;
         } catch (error) {
-          console.error("Błąd autoryzacji:", error);
           throw error;
         }
       },
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
         token.email = user.email;
         token.name = user.name;
       }
 
-      const dbUser = await db.user.findUnique({
-        where: { id: token.id as string },
-        select: {
-          stripeCustomerId: true,
-          stripeSubscriptionId: true,
-          subscriptionType: true,
-          subscriptionStatus: true,
-          subscriptionStart: true,
-          subscriptionEnd: true,
-          subscriptionInterval: true,
-        },
-      });
+      // Only fetch subscription data on sign in or when explicitly triggered
+      // This prevents database queries on every request
+      if (
+        trigger === "signIn" ||
+        trigger === "update" ||
+        !token.subscriptionType
+      ) {
+        const dbUser = await db.user.findUnique({
+          where: { id: token.id as string },
+          select: {
+            stripeCustomerId: true,
+            stripeSubscriptionId: true,
+            subscriptionType: true,
+            subscriptionStatus: true,
+            subscriptionStart: true,
+            subscriptionEnd: true,
+            subscriptionInterval: true,
+          },
+        });
 
-      if (dbUser) {
-        token.stripeCustomerId = dbUser.stripeCustomerId;
-        token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
-        token.subscriptionType = dbUser.subscriptionType;
-        token.subscriptionStatus = dbUser.subscriptionStatus;
-        token.subscriptionStart = dbUser.subscriptionStart;
-        token.subscriptionEnd = dbUser.subscriptionEnd;
-        token.subscriptionInterval = dbUser.subscriptionInterval;
+        if (dbUser) {
+          token.stripeCustomerId = dbUser.stripeCustomerId;
+          token.stripeSubscriptionId = dbUser.stripeSubscriptionId;
+          token.subscriptionType = dbUser.subscriptionType;
+          token.subscriptionStatus = dbUser.subscriptionStatus;
+          token.subscriptionStart = dbUser.subscriptionStart;
+          token.subscriptionEnd = dbUser.subscriptionEnd;
+          token.subscriptionInterval = dbUser.subscriptionInterval;
+        }
       }
 
       return token;

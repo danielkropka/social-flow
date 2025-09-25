@@ -7,12 +7,13 @@ import { Menu, X } from "lucide-react";
 import { useSession } from "next-auth/react";
 import Image from "next/image";
 import { getInitials } from "@/lib/utils/utils";
+import { Skeleton } from "./ui/skeleton";
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [activeId, setActiveId] = useState<string>("#reviews");
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const backdropRef = useRef<HTMLDivElement | null>(null);
 
   const sections = ["#reviews", "#platforms", "#pricing", "#faq"] as const;
@@ -48,7 +49,6 @@ export default function Navbar() {
     return () => observer.disconnect();
   }, []);
 
-  // ... existing code ...
   const toggleMenu = () => setIsOpen((s) => !s);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -83,6 +83,15 @@ export default function Navbar() {
   }, [isOpen]);
 
   const AuthButtons = () => {
+    if (status === "loading") {
+      return (
+        <div className="flex items-center gap-2 rounded-full px-4 py-2 border border-gray-200 dark:border-gray-700">
+          <Skeleton className="h-7 w-7 rounded-full" />
+          <Skeleton className="h-4 w-20" />
+        </div>
+      );
+    }
+
     if (session?.user) {
       return (
         <Link href="/dashboard">

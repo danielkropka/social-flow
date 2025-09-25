@@ -34,7 +34,11 @@ function SessionManager({ children }: { children: React.ReactNode }) {
 
 export default function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
+    <SessionProvider 
+      refetchInterval={10 * 60} // Increased to 10 minutes for better performance
+      refetchOnWindowFocus={false} // Disabled to prevent unnecessary refetches
+      refetchWhenOffline={false} // Disabled to prevent refetches when offline
+    >
       <QueryClientProvider client={queryClient}>
         <TabProvider>
           <SessionManager>{children}</SessionManager>

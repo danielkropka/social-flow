@@ -23,7 +23,10 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
             <video
               src={URL.createObjectURL(file)}
               className={cn("max-h-[70vh] h-auto rounded-lg", className)}
-              onError={() => setVideoError(true)}
+              onError={() => {
+                console.error('Video load error:', file.name);
+                setVideoError(true);
+              }}
               controls
               loop
               muted
@@ -51,7 +54,10 @@ export function MediaPreview({ file, className }: MediaPreviewProps) {
           src={URL.createObjectURL(file)}
           alt="Podgląd"
           className={cn("w-full h-full object-cover rounded-lg", className)}
-          onError={() => setImageError(true)}
+          onError={() => {
+            console.error('Image load error in MediaPreview:', file.name);
+            setImageError(true);
+          }}
           style={{ objectFit: "cover", width: "100%", height: "100%" }}
           loading="lazy"
         />

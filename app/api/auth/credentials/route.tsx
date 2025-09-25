@@ -2,7 +2,6 @@ import { hash } from "bcryptjs";
 import { NextResponse, NextRequest } from "next/server";
 import { db } from "@/lib/config/prisma";
 import { registerSchema } from "@/lib/validations/auth";
-import { withAuthRateLimit } from "@/middleware/rateLimit";
 import { Resend } from "resend";
 
 interface CredentialsRequestBody {
@@ -57,94 +56,92 @@ function getEmailVerificationHtml(userName: string, verifyUrl: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  return withAuthRateLimit(async (req: NextRequest) => {
-    const body = (await req.json()) as CredentialsRequestBody;
+  const body = (await req.json()) as CredentialsRequestBody;
 
-    switch (body.action) {
-      case "register":
-        try {
-          const result = registerSchema.safeParse(body.data);
+  switch (body.action) {
+    case "register":
+      try {
+        const result = registerSchema.safeParse(body.data);
 
-          if (!result.success) {
-            return NextResponse.json(
-              {
-                error: "ValidationError",
-                details: result.error.errors.map((err) => err.message),
-              },
-              { status: 400 }
-            );
-          }
-
-          const { email, password, firstName, lastName } = result.data;
-
-          const existingUser = await db.user.findUnique({
-            where: { email },
-          });
-
-          if (existingUser) {
-            return NextResponse.json(
-              {
-                error: "UserAlreadyExists",
-                message: "Konto z tym adresem e-mail już istnieje.",
-              },
-              { status: 409 }
-            );
-          }
-
-          const hashedPassword = await hash(password, 12);
-
-          const user = await db.user.create({
-            data: {
-              name: `${firstName} ${lastName}`,
-              email,
-              password: hashedPassword,
-            },
-          });
-
-          const rawToken = await generateToken();
-          const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
-          await db.emailVerificationToken.create({
-            data: {
-              userId: user.id,
-              token: rawToken,
-              expiresAt: expires,
-            },
-          });
-
-          const verifyUrl = `${
-            process.env.NEXT_PUBLIC_APP_URL
-          }/verify-email?token=${encodeURIComponent(rawToken)}&uid=${user.id}`;
-
-          const html = getEmailVerificationHtml(firstName, verifyUrl);
-
-          const resend = new Resend(process.env.RESEND_API_KEY);
-          await resend.emails.send({
-            from: "no-reply@" + process.env.NEXT_PUBLIC_MAIL_DOMAIN,
-            to: email,
-            subject: "Potwierdź swój adres e-mail w Social Flow",
-            html,
-          });
-
-          return NextResponse.json({
-            success: true,
-            createdUser: {
-              id: user.id,
-              email: user.email,
-              name: user.name,
-            },
-          });
-        } catch (error) {
-          console.error("Register error:", error);
+        if (!result.success) {
           return NextResponse.json(
             {
-              error: "InternalServerError",
-              message: "Wystąpił nieoczekiwany błąd podczas rejestracji",
+              error: "ValidationError",
+              details: result.error.errors.map((err) => err.message),
             },
-            { status: 500 }
+            { status: 400 },
           );
         }
-      default:
-        return NextResponse.json({ error: "Nieznana akcja" }, { status: 400 });
-    }
-  })(req);
+
+        const { email, password, firstName, lastName } = result.data;
+
+        const existingUser = await db.user.findUnique({
+          where: { email },
+        });
+
+        if (existingUser) {
+          return NextResponse.json(
+            {
+              error: "UserAlreadyExists",
+              message: "Konto z tym adresem e-mail już istnieje.",
+            },
+            { status: 409 },
+          );
+        }
+
+        const hashedPassword = await hash(password, 12);
+
+        const user = await db.user.create({
+          data: {
+            name: `${firstName} ${lastName}`,
+            email,
+            password: hashedPassword,
+          },
+        });
+
+        const rawToken = await generateToken();
+        const expires = new Date(Date.now() + 24 * 60 * 60 * 1000);
+        await db.emailVerificationToken.create({
+          data: {
+            userId: user.id,
+            token: rawToken,
+            expiresAt: expires,
+          },
+        });
+
+        const verifyUrl = `${
+          process.env.NEXT_PUBLIC_APP_URL
+        }/verify-email?token=${encodeURIComponent(rawToken)}&uid=${user.id}`;
+
+        const html = getEmailVerificationHtml(firstName, verifyUrl);
+
+        const resend = new Resend(process.env.RESEND_API_KEY);
+        await resend.emails.send({
+          from: "no-reply@" + process.env.NEXT_PUBLIC_MAIL_DOMAIN,
+          to: email,
+          subject: "Potwierdź swój adres e-mail w Social Flow",
+          html,
+        });
+
+        return NextResponse.json({
+          success: true,
+          createdUser: {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+          },
+        });
+      } catch (error) {
+        console.error("Register error:", error);
+        return NextResponse.json(
+          {
+            error: "InternalServerError",
+            message: "Wystąpił nieoczekiwany błąd podczas rejestracji",
+          },
+          { status: 500 },
+        );
+      }
+    default:
+      return NextResponse.json({ error: "Nieznana akcja" }, { status: 400 });
+  }
 }

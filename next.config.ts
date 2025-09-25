@@ -1,6 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
+  // Performance optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['@radix-ui/react-icons', 'lucide-react'],
+  },
+  
+  // Compiler optimizations
+  compiler: {
+    removeConsole: process.env.NODE_ENV === "production",
+  },
+  
+  // Image optimizations
   images: {
     remotePatterns: [
       {
@@ -33,7 +45,25 @@ const nextConfig: NextConfig = {
       },
     ],
     dangerouslyAllowSVG: true, // delete this after testing
+    formats: ['image/webp', 'image/avif'],
+    minimumCacheTTL: 60,
   },
+  
+  // Headers for better caching
+  async headers() {
+    return [
+      {
+        source: '/api/auth/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, s-maxage=300',
+          },
+        ],
+      },
+    ];
+  },
+  
   env: {
     NEXTAUTH_URL: process.env.NEXTAUTH_URL,
   },
