@@ -77,9 +77,7 @@ export default function PostCreationSheet() {
           {/* Step content card */}
           <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70 shadow-sm">
             <div className="p-4 sm:p-6">
-              {currentStep === 1 && (
-                <TypeSelectionSheet onClose={handleClose} />
-              )}
+              {currentStep === 1 && <TypeSelectionSheet />}
               {currentStep === 2 && (
                 <AccountSelectionSheet onClose={handleClose} />
               )}
