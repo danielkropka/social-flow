@@ -4,6 +4,7 @@ import { getServerSession } from "next-auth/next";
 import { authOptions } from "@/lib/config/auth";
 import { Provider } from "@prisma/client";
 import { handleTwitterConnect } from "./providers/twitter";
+import { handleInstagramConnect } from "@/app/api/accounts/connect/providers/instagram";
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
@@ -21,6 +22,8 @@ export async function GET(request: NextRequest) {
   switch (provider) {
     case Provider.TWITTER:
       return handleTwitterConnect(session.user.id);
+    case Provider.INSTAGRAM:
+      return handleInstagramConnect();
     default:
       return NextResponse.json(
         { error: "UnsupportedProvider" },
