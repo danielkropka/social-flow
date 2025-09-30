@@ -11,13 +11,10 @@ import {
   Video,
   ArrowLeft,
   Loader2,
-  AlertCircle,
   Trash2,
-  ArrowRight,
   Sparkles,
   File,
   CheckCircle,
-  XCircle,
   CloudUpload,
 } from "lucide-react";
 import { SiTiktok, SiFacebook, SiX, SiInstagram } from "react-icons/si";

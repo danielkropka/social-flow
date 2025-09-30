@@ -6,7 +6,6 @@ import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
 import { DashboardHeader } from "@/components/DashboardHeader";
 import PostCreationSheet from "@/components/posts/PostCreationSheet";
-import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Loader2, Calendar, Zap, BarChart3, Users, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";

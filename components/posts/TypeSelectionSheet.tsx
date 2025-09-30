@@ -13,7 +13,6 @@ import {
   Images,
   Clapperboard,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 import { SiTiktok, SiFacebook, SiX, SiInstagram } from "react-icons/si";
 import {
@@ -103,13 +102,7 @@ const cards: Array<{
   },
 ];
 
-interface TypeSelectionSheetProps {
-  onClose: () => void;
-}
-
-export default function TypeSelectionSheet({
-  onClose,
-}: TypeSelectionSheetProps) {
+export default function TypeSelectionSheet() {
   const { setCurrentStep, setPostType } = usePostCreation();
 
   const handleTypeSelect = (type: PostType) => {
