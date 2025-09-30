@@ -12,7 +12,6 @@ import { useQuery } from "@tanstack/react-query";
 import { SafeAccount } from "@/types";
 import PostsContent from "@/components/PostsContent";
 import AccountsContent from "@/components/AccountsContent";
-import WeeklyCalendar from "@/components/WeeklyCalendar";
 import { useSearchParams } from "next/navigation";
 import InstagramConnectionModal from "@/components/InstagramConnectionModal";
 
@@ -259,11 +258,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       const { referer } = await req.json();
 
       setIsValidCode(referer === "https://l.instagram.com/");
-      
+
       // Show Instagram modal if we're connecting to Instagram
       if (referer === "https://l.instagram.com/") {
         setShowInstagramModal(true);
-        
+
         // Auto-hide modal after 10 seconds
         setTimeout(() => {
           setShowInstagramModal(false);
@@ -292,8 +291,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <PostCreationProvider>
       <DashboardContent>{children}</DashboardContent>
-      <InstagramConnectionModal 
-        isOpen={showInstagramModal} 
+      <InstagramConnectionModal
+        isOpen={showInstagramModal}
         onClose={() => setShowInstagramModal(false)}
         isSuccess={isValidCode}
       />
