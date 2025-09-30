@@ -24,6 +24,8 @@ export async function GET(req: NextRequest) {
     const search = searchParams.get("search");
     const status = searchParams.get("status");
     const platform = searchParams.get("platform");
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
 
     const where: Prisma.PostWhereInput = {
       userId: session.user.id,
@@ -60,6 +62,38 @@ export async function GET(req: NextRequest) {
           },
         },
       };
+    }
+
+    // Date filtering
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      
+      where.OR = [
+        // Posts scheduled for this period
+        {
+          scheduledFor: {
+            gte: start,
+            lte: end,
+          },
+        },
+        // Posts published in this period
+        {
+          publishedAt: {
+            gte: start,
+            lte: end,
+          },
+        },
+        // Posts created in this period (for drafts)
+        {
+          createdAt: {
+            gte: start,
+            lte: end,
+          },
+          scheduledFor: null,
+          publishedAt: null,
+        },
+      ];
     }
 
     const posts = await db.post.findMany({

@@ -103,34 +103,73 @@ const PostCard = ({ post }: { post: PublicPost }) => {
     "";
   const publishDate = post.publishedAt || post.createdAt;
 
+  // Format post content with proper paragraphs
+  const formatPostContent = (content: string) => {
+    return content
+      .split('\n')
+      .filter(line => line.trim())
+      .map((paragraph, index) => (
+        <p key={index} className="mb-3 last:mb-0 text-gray-800 dark:text-gray-200 leading-relaxed">
+          {paragraph.trim()}
+        </p>
+      ));
+  };
+
   return (
-    <div className="group relative text-left focus:outline-none transition-transform duration-150 ease-out hover:-translate-y-0.5">
+    <article className="group relative">
       <div
         className={cn(
-          "relative overflow-hidden border transition-colors",
-          "bg-white/70 dark:bg-zinc-900/60 backdrop-blur",
-          "hover:border-zinc-300 dark:hover:border-zinc-700",
+          "relative overflow-hidden rounded-xl border transition-all duration-300 ease-out",
+          "bg-white dark:bg-zinc-900",
+          "border-gray-200 dark:border-zinc-800",
+          "hover:border-gray-300 dark:hover:border-zinc-700",
+          "hover:shadow-lg hover:shadow-gray-100 dark:hover:shadow-zinc-900/50",
+          "hover:-translate-y-1",
         )}
       >
-        <div
-          aria-hidden
-          className={cn(
-            "pointer-events-none absolute inset-x-0 -top-16 h-32",
-            "bg-gradient-to-b",
-            "from-zinc-500/10 via-zinc-500/5 to-transparent",
-          )}
-        />
+        {/* Header with badges */}
+        <div className="relative p-5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-b border-gray-200 dark:border-zinc-800">
+          <div className="flex justify-between items-start gap-3">
+            <div className="flex flex-wrap gap-2">
+              {/* Post Type Badge */}
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={cn(
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                        "shadow-sm border",
+                        post.media[0] 
+                          ? "bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200 dark:from-purple-950/50 dark:to-purple-900/50 dark:text-purple-300 dark:border-purple-800"
+                          : "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200 dark:from-blue-950/50 dark:to-blue-900/50 dark:text-blue-300 dark:border-blue-800"
+                      )}
+                    >
+                      {post.media[0] ? (
+                        <>
+                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
+                          Z mediami
+                        </>
+                      ) : (
+                        <>
+                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
+                          Tekstowy
+                        </>
+                      )}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Typ postu: {post.media[0] ? "Z mediami" : "Tekstowy"}</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
-        {post.media[0] && (
-          <div className="relative h-56 bg-gray-50 dark:bg-zinc-800">
-            <div className="absolute top-3 right-3 flex gap-2">
-              {/* Trending indicator for popular posts */}
+              {/* Trending Badge */}
               {status === "published" && stats.likes > 30 && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="px-2 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800 dark:bg-orange-950/40 dark:text-orange-200 shadow-sm">
-                        <TrendingUp className="h-3 w-3 inline mr-1" />
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border border-orange-200 dark:from-orange-950/50 dark:to-orange-900/50 dark:text-orange-300 dark:border-orange-800 shadow-sm">
+                        <TrendingUp className="h-3 w-3" />
                         Trending
                       </span>
                     </TooltipTrigger>
@@ -140,17 +179,25 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   </Tooltip>
                 </TooltipProvider>
               )}
+            </div>
 
+            <div className="flex flex-wrap gap-2">
+              {/* Status Badge */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span
                       className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium shadow-sm cursor-help",
-                        "shadow-[0_1px_0_0_rgba(0,0,0,0.03)]",
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border",
                         getStatusColor(status),
+                        "border-gray-200 dark:border-zinc-700"
                       )}
                     >
+                      <div className={cn(
+                        "w-2 h-2 rounded-full",
+                        status === "published" ? "bg-green-500" : 
+                        status === "scheduled" ? "bg-blue-500" : "bg-gray-500"
+                      )}></div>
                       {getStatusText(status)}
                     </span>
                   </TooltipTrigger>
@@ -159,16 +206,30 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
+
+              {/* Platform Badge */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span
                       className={cn(
-                        "px-3 py-1 rounded-full text-xs font-medium shadow-sm cursor-help",
-                        "shadow-[0_1px_0_0_rgba(0,0,0,0.03)]",
+                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border",
                         getPlatformColor(platform),
+                        "border-gray-200 dark:border-zinc-700"
                       )}
                     >
+                      {(() => {
+                        const IconComponent =
+                          platform in PLATFORM_DISPLAY
+                            ? PLATFORM_DISPLAY[
+                                platform as keyof typeof PLATFORM_DISPLAY
+                              ].icon
+                            : null;
+                        if (IconComponent) {
+                          return <IconComponent className="h-3 w-3" />;
+                        }
+                        return <Globe className="h-3 w-3" />;
+                      })()}
                       {platform.charAt(0).toUpperCase() + platform.slice(1)}
                     </span>
                   </TooltipTrigger>
@@ -179,169 +240,176 @@ const PostCard = ({ post }: { post: PublicPost }) => {
               </TooltipProvider>
             </div>
           </div>
-        )}
+        </div>
 
-        <div className="p-6 space-y-4">
-          <div className="space-y-2">
-            <p className="text-gray-700 dark:text-gray-300 line-clamp-3 text-base leading-relaxed">
-              {post.content}
-            </p>
-            {/* Content length indicator */}
-            <div className="flex items-center justify-between text-xs text-gray-400">
-              <span>{post.content.length} znaków</span>
-              <span className="flex items-center gap-1">
-                <div className="w-2 h-2 rounded-full bg-green-500"></div>
-                {post.content.length > 200 ? "Długi post" : "Krótki post"}
-              </span>
+        {/* Content Section */}
+        <div className="p-6 space-y-5">
+          {/* Post Content */}
+          <div className="space-y-4">
+            <div className="prose prose-sm max-w-none dark:prose-invert">
+              {formatPostContent(post.content)}
+            </div>
+            
+            {/* Content Stats */}
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-zinc-800">
+              <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                <span className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+                  {post.content.length} znaków
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <div className={cn(
+                    "w-1.5 h-1.5 rounded-full",
+                    post.content.length > 200 ? "bg-green-500" : "bg-blue-500"
+                  )}></div>
+                  {post.content.length > 200 ? "Długi post" : "Krótki post"}
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Subtle visual indicator for text-only posts */}
-          {!post.media[0] && (
-            <div className="flex items-center gap-2 pt-1">
-              <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-700" />
-              <FileText className="h-3 w-3 text-gray-400" />
-              <div className="flex-1 h-px bg-gray-200 dark:bg-zinc-700" />
-            </div>
-          )}
-
-          {/* Engagement Stats Section */}
+          {/* Engagement Stats */}
           {status === "published" && (
-            <div className="pt-3 border-t border-gray-100 dark:border-zinc-700">
+            <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
-                  <div className="flex items-center gap-1">
-                    <Heart className="h-3 w-3 text-red-500" />
-                    <span className="font-medium">{stats.likes}</span>
+                <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
+                  <div className="flex items-center gap-2">
+                    <Heart className="h-4 w-4 text-red-500" />
+                    <span className="font-semibold">{stats.likes}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <MessageCircle className="h-3 w-3 text-blue-500" />
-                    <span className="font-medium">{stats.comments}</span>
+                  <div className="flex items-center gap-2">
+                    <MessageCircle className="h-4 w-4 text-blue-500" />
+                    <span className="font-semibold">{stats.comments}</span>
                   </div>
-                  <div className="flex items-center gap-1">
-                    <Share2 className="h-3 w-3 text-green-500" />
-                    <span className="font-medium">{stats.shares}</span>
+                  <div className="flex items-center gap-2">
+                    <Share2 className="h-4 w-4 text-green-500" />
+                    <span className="font-semibold">{stats.shares}</span>
                   </div>
                 </div>
-                <div className="flex items-center gap-1 text-xs text-gray-400">
-                  <Eye className="h-3 w-3" />
-                  <span>{stats.views}</span>
+                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                  <Eye className="h-4 w-4" />
+                  <span className="font-medium">{stats.views}</span>
                 </div>
               </div>
             </div>
           )}
-          <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 pt-3 border-t border-gray-100 dark:border-zinc-700">
-            <div className="flex items-center gap-4">
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-4 w-4" />
-                      <span className="font-medium">
-                        {format(new Date(publishDate), "d MMM yyyy", {
-                          locale: pl,
-                        })}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Data publikacji</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center gap-1.5">
-                      <Clock className="h-4 w-4" />
-                      <span className="font-medium">
-                        {format(new Date(publishDate), "HH:mm", {
-                          locale: pl,
-                        })}
-                      </span>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Godzina publikacji</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Copy content button */}
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <button
-                      onClick={() =>
-                        navigator.clipboard.writeText(post.content)
-                      }
-                      className="inline-flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700"
-                    >
-                      <FileText className="h-4 w-4" />
-                    </button>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Kopiuj treść</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
 
-              {/* External link button */}
-              {post.postConnectedAccounts[0]?.postUrl && (
+          {/* Footer with Date and Actions */}
+          <div className="pt-4 border-t border-gray-100 dark:border-zinc-800">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-6 text-sm text-gray-600 dark:text-gray-400">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <a
-                        href={post.postConnectedAccounts[0].postUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className={cn(
-                          "inline-flex items-center justify-center w-8 h-8 rounded-full transition-all duration-200",
-                          "ring-1 ring-inset ring-zinc-200/60 dark:ring-zinc-700/60",
-                          platform === SUPPORTED_PLATFORMS.TWITTER &&
-                            "bg-[#1DA1F2]/10 text-[#1DA1F2] hover:bg-[#1DA1F2]/20",
-                          platform === SUPPORTED_PLATFORMS.FACEBOOK &&
-                            "bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20",
-                          platform === SUPPORTED_PLATFORMS.INSTAGRAM &&
-                            "bg-gradient-to-r from-[#833AB4]/10 via-[#FD1D1D]/10 to-[#F77737]/10 text-[#E4405F] hover:from-[#833AB4]/20 hover:via-[#FD1D1D]/20 hover:to-[#F77737]/20",
-                          platform === SUPPORTED_PLATFORMS.TIKTOK &&
-                            "bg-neutral-900/10 text-neutral-900 hover:bg-neutral-900/20",
-                          !(platform in SUPPORTED_PLATFORMS) &&
-                            "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
-                        )}
-                      >
-                        {(() => {
-                          const IconComponent =
-                            platform in PLATFORM_DISPLAY
-                              ? PLATFORM_DISPLAY[
-                                  platform as keyof typeof PLATFORM_DISPLAY
-                                ].icon
-                              : null;
-                          if (IconComponent) {
-                            return <IconComponent className="h-4 w-4" />;
-                          }
-                          return <Globe className="h-4 w-4" />;
-                        })()}
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <Calendar className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">
+                          {format(new Date(publishDate), "d MMM yyyy", {
+                            locale: pl,
+                          })}
+                        </span>
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p>
-                        Otwórz post na{" "}
-                        {
-                          post.postConnectedAccounts[0].connectedAccount
-                            .provider
-                        }
-                      </p>
+                      <p>Data publikacji</p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              )}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="flex items-center gap-2">
+                        <Clock className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">
+                          {format(new Date(publishDate), "HH:mm", {
+                            locale: pl,
+                          })}
+                        </span>
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Godzina publikacji</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                {/* Copy Button */}
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={() =>
+                          navigator.clipboard.writeText(post.content)
+                        }
+                        className="inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 bg-gray-100 text-gray-600 hover:bg-gray-200 hover:text-gray-800 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700 dark:hover:text-zinc-200 hover:scale-105"
+                      >
+                        <FileText className="h-4 w-4" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Kopiuj treść</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+
+                {/* External Link Button */}
+                {post.postConnectedAccounts[0]?.postUrl && (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <a
+                          href={post.postConnectedAccounts[0].postUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={cn(
+                            "inline-flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-200 hover:scale-105",
+                            "ring-1 ring-inset ring-gray-200 dark:ring-zinc-700",
+                            platform === SUPPORTED_PLATFORMS.TWITTER &&
+                              "bg-[#1DA1F2]/10 text-[#1DA1F2] hover:bg-[#1DA1F2]/20",
+                            platform === SUPPORTED_PLATFORMS.FACEBOOK &&
+                              "bg-[#1877F2]/10 text-[#1877F2] hover:bg-[#1877F2]/20",
+                            platform === SUPPORTED_PLATFORMS.INSTAGRAM &&
+                              "bg-gradient-to-r from-[#833AB4]/10 via-[#FD1D1D]/10 to-[#F77737]/10 text-[#E4405F] hover:from-[#833AB4]/20 hover:via-[#FD1D1D]/20 hover:to-[#F77737]/20",
+                            platform === SUPPORTED_PLATFORMS.TIKTOK &&
+                              "bg-neutral-900/10 text-neutral-900 hover:bg-neutral-900/20",
+                            !(platform in SUPPORTED_PLATFORMS) &&
+                              "bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-zinc-800 dark:text-zinc-400 dark:hover:bg-zinc-700",
+                          )}
+                        >
+                          {(() => {
+                            const IconComponent =
+                              platform in PLATFORM_DISPLAY
+                                ? PLATFORM_DISPLAY[
+                                    platform as keyof typeof PLATFORM_DISPLAY
+                                  ].icon
+                                : null;
+                            if (IconComponent) {
+                              return <IconComponent className="h-4 w-4" />;
+                            }
+                            return <Globe className="h-4 w-4" />;
+                          })()}
+                        </a>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>
+                          Otwórz post na{" "}
+                          {
+                            post.postConnectedAccounts[0].connectedAccount
+                              .provider
+                          }
+                        </p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                )}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </article>
   );
 };
 
@@ -451,7 +519,7 @@ export default function PostsContent() {
 
     return (
       <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}

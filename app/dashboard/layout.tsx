@@ -5,11 +5,14 @@ import { Sidebar } from "@/components/Sidebar";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
 import { DashboardHeader } from "@/components/DashboardHeader";
+import PostCreationSheet from "@/components/posts/PostCreationSheet";
 import dynamic from "next/dynamic";
 import { Button } from "@/components/ui/button";
 import { Loader2, Calendar, Zap, BarChart3, Users, Plus } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { SafeAccount } from "@/types";
+import PostsContent from "@/components/PostsContent";
+import AccountsContent from "@/components/AccountsContent";
 
 const fetchAccounts = async (): Promise<SafeAccount[]> => {
   const response = await fetch("/api/accounts");
@@ -144,9 +147,6 @@ function EmptyState({ onAddAccount }: { onAddAccount: () => void }) {
   );
 }
 
-const PostsContent = dynamic(() => import("@/components/PostsContent"));
-const AccountsContent = dynamic(() => import("@/components/AccountsContent"));
-
 interface DashboardLayoutProps {
   children: ReactNode;
   header?: ReactNode;
@@ -180,14 +180,14 @@ function DashboardShell({
 function DashboardContent({ children }: { children: ReactNode }) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { activeTab, setActiveTab } = useTab();
-  
+
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["accounts"],
     queryFn: fetchAccounts,
     staleTime: 1000 * 60 * 5, // Dane są "świeże" przez 5 minut
     refetchInterval: 1000 * 60 * 5, // Automatyczne odświeżanie co 5 minut
   });
-  
+
   const accountsCount = accounts.length;
 
   let mainContent: ReactNode = null;
@@ -215,20 +215,25 @@ function DashboardContent({ children }: { children: ReactNode }) {
   }
 
   return (
-    <DashboardShell
-      header={<DashboardHeader onMenuClick={() => setIsMobileMenuOpen(true)} />}
-      sidebar={
-        <Sidebar
-          isOpen={isMobileMenuOpen}
-          onClose={() => setIsMobileMenuOpen(false)}
-          onTabChange={setActiveTab}
-          activeTab={activeTab}
-        />
-      }
-      main={mainContent}
-    >
-      {children}
-    </DashboardShell>
+    <>
+      <DashboardShell
+        header={
+          <DashboardHeader onMenuClick={() => setIsMobileMenuOpen(true)} />
+        }
+        sidebar={
+          <Sidebar
+            isOpen={isMobileMenuOpen}
+            onClose={() => setIsMobileMenuOpen(false)}
+            onTabChange={setActiveTab}
+            activeTab={activeTab}
+          />
+        }
+        main={mainContent}
+      >
+        {children}
+      </DashboardShell>
+      <PostCreationSheet />
+    </>
   );
 }
 

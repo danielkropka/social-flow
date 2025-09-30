@@ -55,3 +55,7 @@ export interface UploadedFileData {
   contentType: string;
   size: number;
 }
+
+export interface MediaUploadResponse {
+  url: string;
+}

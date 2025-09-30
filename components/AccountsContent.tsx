@@ -385,9 +385,9 @@ export default function AccountsContent() {
                         key={account.id}
                         className={[
                           "group flex items-center justify-between gap-3 p-4 rounded-lg border transition-colors",
-                          account.status === "EXPIRED" 
+                          account.status === "EXPIRED"
                             ? "bg-orange-50/50 dark:bg-orange-900/20 border-orange-200 dark:border-orange-800 hover:bg-orange-100/50 dark:hover:bg-orange-800/30"
-                            : "bg-zinc-50/50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100/50 dark:hover:bg-zinc-700/50"
+                            : "bg-zinc-50/50 dark:bg-zinc-800/50 border-zinc-100 dark:border-zinc-700 hover:bg-zinc-100/50 dark:hover:bg-zinc-700/50",
                         ].join(" ")}
                       >
                         <div className="flex items-center gap-3 min-w-0">
@@ -418,17 +418,20 @@ export default function AccountsContent() {
                                 @{account.username}
                               </p>
                             )}
-                            {account.status === "EXPIRED" && account.lastErrorMessage && (
-                              <p className="text-xs text-orange-600 dark:text-orange-400 truncate mt-1">
-                                {account.lastErrorMessage}
-                              </p>
-                            )}
+                            {account.status === "EXPIRED" &&
+                              account.lastErrorMessage && (
+                                <p className="text-xs text-orange-600 dark:text-orange-400 truncate mt-1">
+                                  {account.lastErrorMessage}
+                                </p>
+                              )}
                           </div>
                         </div>
                         <div className="flex items-center gap-1 flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
                           {account.status === "EXPIRED" && (
                             <button
-                              onClick={() => handleAddAccount(account.provider.toLowerCase())}
+                              onClick={() =>
+                                handleAddAccount(account.provider.toLowerCase())
+                              }
                               className="text-blue-500 hover:text-blue-600 p-1 hover:bg-blue-50 dark:hover:bg-blue-950/20 rounded-full transition-colors"
                               title="Połącz ponownie"
                             >
@@ -520,19 +523,54 @@ export default function AccountsContent() {
                       `/api/accounts/connect?provider=${showModal?.toUpperCase()}`,
                       { method: "GET" },
                     );
+
                     if (!response.ok) {
-                      throw new Error("Nie udało się pobrać URL autoryzacji");
+                      const errorResponse = await response.json();
+
+                      throw new Error(errorResponse.error);
                     }
                     const data = await response.json();
                     if (!data.authUrl) {
-                      throw new Error("Brak URL autoryzacji");
+                      throw new Error("NoURL");
                     }
                     router.push(data.authUrl);
-                  } catch (error) {
-                    console.error(error);
-                    toast.error(
-                      `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`,
-                    );
+                  } catch (error: unknown) {
+                    if (error instanceof Error) {
+                      switch (error.message) {
+                        case "UnsupportedProvider":
+                          toast.error(
+                            "Nieobsługiwana platforma. Spróbuj ponownie później, lub skontaktuj się z administratorem aplikacji.",
+                          );
+                          break;
+                        case "Unauthorized":
+                          toast.error(
+                            "Nie jesteś zalogowany. Jeżeli, problem występuje po ponownym zalogowaniu skontaktuj się z administratorem aplikacji.",
+                          );
+                          break;
+                        case "NoURL":
+                          toast.error(
+                            `Brak linku autoryzacyjnego w odpowiedzi od ${PLATFORM_DISPLAY[showModal as PlatformKey].label}.`,
+                          );
+                          break;
+                        case "NoEnvConfiguration":
+                          toast.error(
+                            `Brak plików konfiguracyjnych z platformą ${PLATFORM_DISPLAY[showModal as PlatformKey].label}.`,
+                          );
+                          break;
+                        case "NoToken":
+                          toast.error(
+                            "Brak tokenów dostępu w odpowiedzi platformy. Spróbuj ponownie później.",
+                          );
+                          break;
+                        default:
+                          toast.error(
+                            `Wystąpił nieznany bład podczas próby autoryzacji z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}.`,
+                          );
+                      }
+                    } else
+                      toast.error(
+                        `Nie udało się połączyć z ${PLATFORM_DISPLAY[showModal as PlatformKey].label}`,
+                      );
                   } finally {
                     setIsConnecting(false);
                   }

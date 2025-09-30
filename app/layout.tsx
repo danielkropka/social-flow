@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Poppins } from "next/font/google";
 import "./globals.css";
 import { cn } from "@/lib/utils/utils";
 import { Toaster } from "sonner";
@@ -7,7 +7,11 @@ import Providers from "@/components/Providers";
 import { SpeedInsights } from "@vercel/speed-insights/next";
 import { headers } from "next/headers";
 
-const inter = Inter({ subsets: ["latin"] });
+const poppins = Poppins({ 
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  variable: "--font-poppins"
+});
 
 export const metadata: Metadata = {
   title: "Social Flow",
@@ -57,11 +61,12 @@ export default async function RootLayout({
       <head>
         <link rel="canonical" href={canonicalUrl} />
         <meta property="og:url" content={canonicalUrl} />
+        <title>Social Flow</title>
       </head>
       <body
         className={cn(
           "h-full min-h-screen relative overflow-x-hidden",
-          inter.className,
+          poppins.className,
         )}
       >
         {/* Continuous gradient background */}
@@ -79,8 +84,8 @@ export default async function RootLayout({
           <div className="relative z-10 h-full">
             {children}
             <SpeedInsights />
-            <Toaster position="bottom-right" />
           </div>
+          <Toaster position="bottom-left" />
         </Providers>
       </body>
     </html>

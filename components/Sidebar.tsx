@@ -11,6 +11,7 @@ import {
   BarChart2,
   ExternalLink,
   Loader2,
+  Home,
 } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { useState, useRef, useEffect } from "react";
@@ -20,8 +21,8 @@ import { useSubscription } from "@/hooks/useSubscription";
 import { loadStripe } from "@stripe/stripe-js";
 import { toast } from "sonner";
 import { TabContextType } from "@/context/TabContext";
+import { usePostCreation } from "@/context/PostCreationContext";
 
-// Dodatkowe: poprawa dostępności dla Enter/Space na elementach interaktywnych
 const handleKeyActivate = (e: React.KeyboardEvent, cb: () => void) => {
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
@@ -30,7 +31,7 @@ const handleKeyActivate = (e: React.KeyboardEvent, cb: () => void) => {
 };
 
 const contentCreationItems = [
-  { href: "dashboard", icon: PlusCircle, label: "Nowy post" },
+  { href: "dashboard", icon: Home, label: "Strona główna" },
   { href: "posts", icon: List, label: "Lista postów" },
 ];
 
@@ -59,6 +60,7 @@ export function Sidebar({
 }: SidebarProps) {
   const { data: session, status } = useSession();
   const { type, isSubscribed } = useSubscription();
+  const { setIsSheetOpen, resetState } = usePostCreation();
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const profileRef = useRef<HTMLDivElement>(null);
@@ -81,6 +83,12 @@ export function Sidebar({
 
   const handleNavigation = (tab: TabContextType["activeTab"]) => {
     onTabChange(tab);
+    onClose();
+  };
+
+  const handleCreatePost = () => {
+    resetState();
+    setIsSheetOpen(true);
     onClose();
   };
 
@@ -170,6 +178,22 @@ export function Sidebar({
 
         {/* Main navigation */}
         <nav className="flex-1 px-3 py-4 overflow-y-auto scrollbar-thin scrollbar-thumb-blue-200/60 dark:scrollbar-thumb-zinc-700/60">
+          {/* Nowy post button */}
+          <div className="mb-6">
+            <button
+              onClick={handleCreatePost}
+              onKeyDown={(e) => handleKeyActivate(e, handleCreatePost)}
+              className="group relative flex w-full items-center gap-3 px-3 py-2.5 mb-1.5 rounded-xl transition-all duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/50 text-white bg-gradient-to-r from-blue-600 via-blue-500 to-blue-700 hover:from-blue-700 hover:via-blue-600 hover:to-blue-800 shadow-md hover:shadow-lg transition-transform duration-200 hover:scale-[1.02]"
+            >
+              <span
+                aria-hidden="true"
+                className="absolute inset-0 rounded-xl bg-gradient-to-r from-blue-600 via-blue-500 to-blue-700 group-hover:from-blue-700 group-hover:via-blue-600 group-hover:to-blue-800"
+              />
+              <PlusCircle className="h-5 w-5 flex-shrink-0 relative z-10 text-white transition-all duration-200 group-hover:scale-110" />
+              <span className="font-medium text-sm relative z-10">Nowy post</span>
+            </button>
+          </div>
+
           <div className="mb-5">
             <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-zinc-400 mb-2 px-3">
               Tworzenie treści
@@ -180,7 +204,9 @@ export function Sidebar({
                 <button
                   key={item.href}
                   onClick={() =>
-                    handleNavigation(item.href as TabContextType["activeTab"])
+                    handleNavigation(
+                      item.href as TabContextType["activeTab"],
+                    )
                   }
                   onKeyDown={(e) =>
                     handleKeyActivate(e, () =>

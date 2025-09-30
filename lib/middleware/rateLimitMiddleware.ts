@@ -73,7 +73,7 @@ export async function handleRateLimit(
 ): Promise<NextResponse | null> {
   const { pathname } = req.nextUrl;
 
-  if (!pathname.startsWith("/api/")) {
+  if (!pathname || !pathname.startsWith("/api/")) {
     return null;
   }
 

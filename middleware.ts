@@ -4,16 +4,22 @@ import { NextResponse } from "next/server";
 import { handleRateLimit } from "@/lib/middleware/rateLimitMiddleware";
 
 export async function middleware(request: NextRequest) {
-  const rateLimitResponse = await handleRateLimit(request);
-  if (rateLimitResponse) {
-    return rateLimitResponse;
-  }
   const { pathname } = request.nextUrl;
 
-  const isSignIn = pathname === "/sign-in" || pathname === "/sign-in/";
-  const isSignUp = pathname === "/sign-up" || pathname === "/sign-up/";
-  const isDashboard = pathname.startsWith("/dashboard");
-  const isSuccess = pathname === "/success" || pathname === "/success/";
+  if (pathname && pathname.startsWith("/api/")) {
+    // Continue with rate limiting for API routes
+    const rateLimitResponse = await handleRateLimit(request);
+    if (rateLimitResponse) {
+      return rateLimitResponse;
+    }
+
+    return NextResponse.next();
+  }
+
+  const isSignIn = pathname && pathname.startsWith("/sign-in");
+  const isSignUp = pathname && pathname.startsWith("/sign-up");
+  const isDashboard = pathname && pathname.startsWith("/dashboard");
+  const isSuccess = pathname && pathname.startsWith("/success");
 
   const needsAuthCheck = isSignIn || isSignUp || isDashboard || isSuccess;
   const token = needsAuthCheck

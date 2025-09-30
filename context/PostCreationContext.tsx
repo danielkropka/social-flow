@@ -26,6 +26,7 @@ export interface PostCreationState {
   currentStep: number;
   isTextOnly: boolean;
   postType: "images" | "video" | "text" | null;
+  isSheetOpen: boolean;
 }
 
 type PostCreationAction =
@@ -36,6 +37,7 @@ type PostCreationAction =
   | { type: "SET_CURRENT_STEP"; payload: number }
   | { type: "SET_IS_TEXT_ONLY"; payload: boolean }
   | { type: "SET_POST_TYPE"; payload: "images" | "video" | "text" | null }
+  | { type: "SET_IS_SHEET_OPEN"; payload: boolean }
   | { type: "RESET_STATE" };
 
 const initialState: PostCreationState = {
@@ -48,6 +50,7 @@ const initialState: PostCreationState = {
   currentStep: 1,
   isTextOnly: false,
   postType: null,
+  isSheetOpen: false,
 };
 
 function postCreationReducer(
@@ -69,6 +72,8 @@ function postCreationReducer(
       return { ...state, isTextOnly: action.payload };
     case "SET_POST_TYPE":
       return { ...state, postType: action.payload };
+    case "SET_IS_SHEET_OPEN":
+      return { ...state, isSheetOpen: action.payload };
     case "RESET_STATE":
       return {
         selectedFiles: [],
@@ -80,6 +85,7 @@ function postCreationReducer(
         currentStep: 1,
         isTextOnly: false,
         postType: null,
+        isSheetOpen: false,
       };
     default:
       return state;
@@ -95,6 +101,7 @@ interface PostCreationContextType {
   setCurrentStep: (step: number) => void;
   setIsTextOnly: (value: boolean) => void;
   setPostType: (type: "images" | "video" | "text" | null) => void;
+  setIsSheetOpen: (value: boolean) => void;
   resetState: () => void;
 }
 
@@ -136,6 +143,10 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const setIsSheetOpen = useCallback((value: boolean) => {
+    dispatch({ type: "SET_IS_SHEET_OPEN", payload: value });
+  }, []);
+
   const resetState = useCallback(() => {
     dispatch({ type: "RESET_STATE" });
   }, []);
@@ -150,6 +161,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
       setCurrentStep,
       setIsTextOnly,
       setPostType,
+      setIsSheetOpen,
       resetState,
     }),
     [
@@ -161,6 +173,7 @@ export function PostCreationProvider({ children }: { children: ReactNode }) {
       setCurrentStep,
       setIsTextOnly,
       setPostType,
+      setIsSheetOpen,
       resetState,
     ],
   );
@@ -188,6 +201,7 @@ export function usePostCreation() {
     setCurrentStep: context.setCurrentStep,
     setIsTextOnly: context.setIsTextOnly,
     setPostType: context.setPostType,
+    setIsSheetOpen: context.setIsSheetOpen,
     resetState: context.resetState,
   };
 }
