@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ReactNode } from "react";
+import React, { useState, ReactNode, useEffect } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
@@ -12,6 +12,9 @@ import { useQuery } from "@tanstack/react-query";
 import { SafeAccount } from "@/types";
 import PostsContent from "@/components/PostsContent";
 import AccountsContent from "@/components/AccountsContent";
+import WeeklyCalendar from "@/components/WeeklyCalendar";
+import { useSearchParams } from "next/navigation";
+import InstagramConnectionModal from "@/components/InstagramConnectionModal";
 
 const fetchAccounts = async (): Promise<SafeAccount[]> => {
   const response = await fetch("/api/accounts");
@@ -237,9 +240,63 @@ function DashboardContent({ children }: { children: ReactNode }) {
 }
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
+  const searchParams = useSearchParams();
+  const code = searchParams.get("code");
+  const [isValidCode, setIsValidCode] = useState(false);
+  const [showInstagramModal, setShowInstagramModal] = useState(false);
+  const { setActiveTab } = useTab();
+
+  useEffect(() => {
+    const checkHeaders = async () => {
+      const req = await fetch("/api/get-headers");
+
+      if (!req.ok) {
+        setIsValidCode(false);
+        setShowInstagramModal(false);
+        return;
+      }
+
+      const { referer } = await req.json();
+
+      setIsValidCode(referer === "https://l.instagram.com/");
+      
+      // Show Instagram modal if we're connecting to Instagram
+      if (referer === "https://l.instagram.com/") {
+        setShowInstagramModal(true);
+        
+        // Auto-hide modal after 10 seconds
+        setTimeout(() => {
+          setShowInstagramModal(false);
+        }, 10000);
+      }
+    };
+
+    if (code) {
+      setActiveTab("accounts");
+      checkHeaders();
+    }
+  }, [code, setActiveTab]);
+
+  // Hide modal when Instagram connection is successful
+  useEffect(() => {
+    if (isValidCode && showInstagramModal) {
+      // Hide modal after a short delay to show success
+      setTimeout(() => {
+        setShowInstagramModal(false);
+      }, 2000);
+    }
+  }, [isValidCode, showInstagramModal]);
+
+  console.log(isValidCode);
+
   return (
     <PostCreationProvider>
       <DashboardContent>{children}</DashboardContent>
+      <InstagramConnectionModal 
+        isOpen={showInstagramModal} 
+        onClose={() => setShowInstagramModal(false)}
+        isSuccess={isValidCode}
+      />
     </PostCreationProvider>
   );
 }
