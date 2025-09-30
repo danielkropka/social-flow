@@ -27,7 +27,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PLATFORM_DISPLAY, SUPPORTED_PLATFORMS } from "@/constants";
@@ -73,6 +73,28 @@ export default function AccountsContent() {
   const modalPlatformInfo = showModal
     ? PLATFORM_DISPLAY[showModal as PlatformKey]
     : null;
+  const searchParams = useSearchParams();
+  const code = searchParams.get("code");
+  const error = searchParams.get("error");
+
+  // Walidacja kodu Instagrama - tylko prawdziwe kody mogą wyświetlić komponent
+  const isValidInstagramCode = (code: string | null): boolean => {
+    if (!code) return false;
+
+    // Instagram kod ma specyficzny format - zwykle długi string alfanumeryczny
+    // Sprawdzamy czy kod ma odpowiednią długość i format
+    if (code.length < 20 || code.length > 200) return false;
+
+    // Sprawdzamy czy kod zawiera tylko dozwolone znaki (alfanumeryczne + niektóre symbole)
+    if (!/^[A-Za-z0-9_-]+$/.test(code)) return false;
+
+    // Dodatkowo można sprawdzić czy nie ma błędów w URL
+    if (error) return false;
+
+    return true;
+  };
+
+  const shouldShowInstagramComponent = isValidInstagramCode(code);
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["accounts"],
@@ -632,6 +654,24 @@ export default function AccountsContent() {
             </DialogFooter>
           </DialogContent>
         </Dialog>
+      )}
+
+      {/* Komponent Instagrama - wyświetla się tylko gdy kod jest prawidłowy */}
+      {shouldShowInstagramComponent && (
+        <div className="mt-6 p-4 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+          <h3 className="text-lg font-semibold text-green-800 dark:text-green-200 mb-2">
+            Kod Instagrama otrzymany!
+          </h3>
+          <p className="text-sm text-green-700 dark:text-green-300 mb-3">
+            Kod:{" "}
+            <code className="bg-green-100 dark:bg-green-900 px-2 py-1 rounded text-xs font-mono">
+              {code}
+            </code>
+          </p>
+          <p className="text-sm text-green-600 dark:text-green-400">
+            Tutaj możesz dodać swój komponent do obsługi tego kodu.
+          </p>
+        </div>
       )}
     </section>
   );
