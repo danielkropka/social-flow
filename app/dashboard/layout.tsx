@@ -14,6 +14,7 @@ import PostsContent from "@/components/PostsContent";
 import AccountsContent from "@/components/AccountsContent";
 import { useSearchParams } from "next/navigation";
 import InstagramConnectionModal from "@/components/InstagramConnectionModal";
+import { toast } from "sonner";
 
 const fetchAccounts = async (): Promise<SafeAccount[]> => {
   const response = await fetch("/api/accounts");
@@ -240,62 +241,38 @@ function DashboardContent({ children }: { children: ReactNode }) {
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
-  const code = searchParams.get("code");
-  const [isValidCode, setIsValidCode] = useState(false);
-  const [showInstagramModal, setShowInstagramModal] = useState(false);
-  const { setActiveTab } = useTab();
+  const error = searchParams.get("error");
+  const connected = searchParams.get("connected");
 
   useEffect(() => {
-    const checkHeaders = async () => {
-      const req = await fetch("/api/get-headers");
-
-      if (!req.ok) {
-        setIsValidCode(false);
-        setShowInstagramModal(false);
-        return;
+    if (error) {
+      switch (error) {
+        case "connect_denied":
+          toast.error("Anulowałeś łączenie konta.");
+          break;
+        case "unsupported_provider":
+          toast.error("Nieobsługiwana platforma.");
+          break;
+        case "session_expired":
+          toast.error("Sesja wygasła. Spróbuj ponownie.");
+          break;
+        case "twitter_callback":
+          toast.error("Wystąpił błąd w trakcie łączenia konta X");
+          break;
+        case "missing_params":
+          toast.error("Brak parametrów w odpowiedzi od platformy.");
+          break;
       }
-
-      const { referer } = await req.json();
-
-      setIsValidCode(referer === "https://l.instagram.com/");
-
-      // Show Instagram modal if we're connecting to Instagram
-      if (referer === "https://l.instagram.com/") {
-        setShowInstagramModal(true);
-
-        // Auto-hide modal after 10 seconds
-        setTimeout(() => {
-          setShowInstagramModal(false);
-        }, 10000);
-      }
-    };
-
-    if (code) {
-      setActiveTab("accounts");
-      checkHeaders();
     }
-  }, [code, setActiveTab]);
 
-  // Hide modal when Instagram connection is successful
-  useEffect(() => {
-    if (isValidCode && showInstagramModal) {
-      // Hide modal after a short delay to show success
-      setTimeout(() => {
-        setShowInstagramModal(false);
-      }, 2000);
+    if (connected) {
+      toast.success(`Pomyślnie połączono konto ${connected.toLowerCase()}.`);
     }
-  }, [isValidCode, showInstagramModal]);
-
-  console.log(isValidCode);
+  }, [error, connected]);
 
   return (
     <PostCreationProvider>
       <DashboardContent>{children}</DashboardContent>
-      <InstagramConnectionModal
-        isOpen={showInstagramModal}
-        onClose={() => setShowInstagramModal(false)}
-        isSuccess={isValidCode}
-      />
     </PostCreationProvider>
   );
 }
