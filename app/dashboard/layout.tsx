@@ -13,7 +13,6 @@ import { SafeAccount } from "@/types";
 import PostsContent from "@/components/PostsContent";
 import AccountsContent from "@/components/AccountsContent";
 import { useSearchParams } from "next/navigation";
-import InstagramConnectionModal from "@/components/InstagramConnectionModal";
 import { toast } from "sonner";
 
 const fetchAccounts = async (): Promise<SafeAccount[]> => {
