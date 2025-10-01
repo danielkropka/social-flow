@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, ReactNode, useEffect } from "react";
+import React, { useState, ReactNode, useEffect, Suspense } from "react";
 import { Sidebar } from "@/components/Sidebar";
 import { PostCreationProvider } from "@/context/PostCreationContext";
 import { useTab } from "@/context/TabContext";
@@ -12,7 +12,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SafeAccount } from "@/types";
 import PostsContent from "@/components/PostsContent";
 import AccountsContent from "@/components/AccountsContent";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 
 const fetchAccounts = async (): Promise<SafeAccount[]> => {
@@ -238,39 +238,76 @@ function DashboardContent({ children }: { children: ReactNode }) {
   );
 }
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+function DashboardToastHandler() {
   const searchParams = useSearchParams();
   const error = searchParams.get("error");
   const connected = searchParams.get("connected");
+  const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
-    if (error) {
-      switch (error) {
-        case "connect_denied":
-          toast.error("Anulowałeś łączenie konta.");
-          break;
-        case "unsupported_provider":
-          toast.error("Nieobsługiwana platforma.");
-          break;
-        case "session_expired":
-          toast.error("Sesja wygasła. Spróbuj ponownie.");
-          break;
-        case "twitter_callback":
-          toast.error("Wystąpił błąd w trakcie łączenia konta X");
-          break;
-        case "missing_params":
-          toast.error("Brak parametrów w odpowiedzi od platformy.");
-          break;
+    const getHeaders = async () => {
+      const req = await fetch("/api/get-headers");
+
+      if (!req.ok) {
+        return;
       }
-    }
 
-    if (connected) {
-      toast.success(`Pomyślnie połączono konto ${connected.toLowerCase()}.`);
-    }
-  }, [error, connected]);
+      const params = new URLSearchParams(searchParams.toString());
+      const { referer } = await req.json();
 
+      if (error && referer === "https://x.com/") {
+        switch (error) {
+          case "connect_denied":
+            toast.error("Anulowałeś łączenie konta.", { duration: 5000 });
+            break;
+          case "unsupported_provider":
+            toast.error("Nieobsługiwana platforma.");
+            break;
+          case "session_expired":
+            toast.error("Sesja wygasła. Spróbuj ponownie.");
+            break;
+          case "twitter_callback":
+            toast.error("Wystąpił błąd w trakcie łączenia konta X");
+            break;
+          case "missing_params":
+            toast.error("Brak parametrów w odpowiedzi od platformy.");
+            break;
+        }
+        params.delete("error");
+      }
+
+      if (connected && referer === "https://x.com/") {
+        toast.success(`Pomyślnie połączono konto ${connected.toLowerCase()}.`);
+        params.delete("connected");
+      }
+
+      const newUrl = params.toString()
+        ? `${pathname}?${params.toString()}`
+        : pathname;
+      router.push(newUrl);
+    };
+
+    if (error || connected) {
+      getHeaders();
+    }
+  }, [error, connected, searchParams, pathname, router]);
+
+  return null;
+}
+
+export default function DashboardLayout({ children }: { children: ReactNode }) {
   return (
     <PostCreationProvider>
+      <Suspense
+        fallback={
+          <div className="flex-1 animate-pulse">
+            <div className="h-6 w-48 bg-gray-200 rounded mb-4" />
+          </div>
+        }
+      >
+        <DashboardToastHandler />
+      </Suspense>
       <DashboardContent>{children}</DashboardContent>
     </PostCreationProvider>
   );
