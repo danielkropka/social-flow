@@ -1,6 +1,7 @@
 import { TwitterApi } from "twitter-api-v2";
 import { db } from "@/lib/config/prisma";
 import { ConnectedAccount } from "@prisma/client";
+import { decryptToken } from "@/lib/utils/utils";
 
 export interface TwitterPublishResult {
   success: boolean;
@@ -27,11 +28,18 @@ export interface TwitterApiError extends Error {
 
 export class TwitterPublisher {
   private client: TwitterApi;
+  private account: ConnectedAccount;
 
   /**
    * Konwertuje tablicę media IDs na odpowiedni typ dla Twitter API
    */
-  private formatMediaIds(mediaIds: string[]): [string] | [string, string] | [string, string, string] | [string, string, string, string] {
+  private formatMediaIds(
+    mediaIds: string[],
+  ):
+    | [string]
+    | [string, string]
+    | [string, string, string]
+    | [string, string, string, string] {
     if (mediaIds.length === 1) return [mediaIds[0]];
     if (mediaIds.length === 2) return [mediaIds[0], mediaIds[1]];
     if (mediaIds.length === 3) return [mediaIds[0], mediaIds[1], mediaIds[2]];
@@ -43,12 +51,71 @@ export class TwitterPublisher {
       throw new Error("Brak tokenów dostępu do Twitter API");
     }
 
+    this.account = account;
     this.client = new TwitterApi({
       appKey: process.env.TWITTER_API_KEY!,
       appSecret: process.env.TWITTER_API_SECRET!,
-      accessToken: account.accessToken,
-      accessSecret: account.accessSecret,
+      accessToken: decryptToken(account.accessToken),
+      accessSecret: decryptToken(account.accessSecret),
     });
+  }
+
+  /**
+   * Sprawdza czy tokeny są ważne i aktualizuje status konta w przypadku błędu
+   */
+  private async validateTokens(): Promise<{ valid: boolean; error?: string }> {
+    try {
+      await this.client.v2.me({ "user.fields": ["id", "username", "name"] });
+      return { valid: true };
+    } catch (error: unknown) {
+      console.error("Twitter token validation error:", error);
+
+      let errorMessage = "Nie można zweryfikować tokenów Twitter/X";
+      let shouldUpdateStatus = false;
+
+      const twitterError = error as TwitterApiError;
+      if (twitterError?.code === 401) {
+        errorMessage =
+          "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
+        shouldUpdateStatus = true;
+      } else if (twitterError?.code === 403) {
+        errorMessage = "Brak uprawnień do konta Twitter/X";
+        shouldUpdateStatus = true;
+      } else if (error instanceof Error) {
+        if (
+          error.message.includes("unauthorized") ||
+          error.message.includes("401")
+        ) {
+          errorMessage =
+            "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
+          shouldUpdateStatus = true;
+        } else if (
+          error.message.includes("forbidden") ||
+          error.message.includes("403")
+        ) {
+          errorMessage = "Brak uprawnień do konta Twitter/X";
+          shouldUpdateStatus = true;
+        }
+      }
+
+      // Aktualizuj status konta w bazie danych jeśli tokeny są nieważne
+      if (shouldUpdateStatus) {
+        try {
+          await db.connectedAccount.update({
+            where: { id: this.account.id },
+            data: {
+              status: "EXPIRED",
+              lastErrorAt: new Date(),
+              lastErrorMessage: errorMessage,
+            },
+          });
+        } catch (dbError) {
+          console.error("Failed to update account status:", dbError);
+        }
+      }
+
+      return { valid: false, error: errorMessage };
+    }
   }
 
   /**
@@ -62,6 +129,16 @@ export class TwitterPublisher {
           success: false,
           message: "Tekst posta przekracza limit 280 znaków dla Twitter/X",
           error: "TEXT_TOO_LONG",
+        };
+      }
+
+      // Sprawdź czy tokeny są ważne przed publikacją
+      const tokenValidation = await this.validateTokens();
+      if (!tokenValidation.valid) {
+        return {
+          success: false,
+          message: tokenValidation.error || "Błąd weryfikacji konta Twitter/X",
+          error: "TOKEN_EXPIRED",
         };
       }
 
@@ -82,13 +159,15 @@ export class TwitterPublisher {
       // Sprawdź kod błędu z Twitter API
       const twitterError = error as TwitterApiError;
       if (twitterError?.code === 401) {
-        errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
+        errorMessage =
+          "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
         errorCode = "UNAUTHORIZED";
       } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do publikacji na Twitter/X";
         errorCode = "FORBIDDEN";
       } else if (twitterError?.code === 429) {
-        errorMessage = "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
+        errorMessage =
+          "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
         errorCode = "RATE_LIMIT";
       } else if (error instanceof Error) {
         if (error.message.includes("duplicate")) {
@@ -150,6 +229,16 @@ export class TwitterPublisher {
         };
       }
 
+      // Sprawdź czy tokeny są ważne przed publikacją
+      const tokenValidation = await this.validateTokens();
+      if (!tokenValidation.valid) {
+        return {
+          success: false,
+          message: tokenValidation.error || "Błąd weryfikacji konta Twitter/X",
+          error: "TOKEN_EXPIRED",
+        };
+      }
+
       // Przesyłamy zdjęcia do Twitter API
       const mediaIds: string[] = [];
 
@@ -188,13 +277,15 @@ export class TwitterPublisher {
       // Sprawdź kod błędu z Twitter API
       const twitterError = error as TwitterApiError;
       if (twitterError?.code === 401) {
-        errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
+        errorMessage =
+          "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
         errorCode = "UNAUTHORIZED";
       } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do publikacji na Twitter/X";
         errorCode = "FORBIDDEN";
       } else if (twitterError?.code === 429) {
-        errorMessage = "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
+        errorMessage =
+          "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
         errorCode = "RATE_LIMIT";
       } else if (error instanceof Error) {
         if (error.message.includes("duplicate")) {
@@ -247,6 +338,16 @@ export class TwitterPublisher {
         };
       }
 
+      // Sprawdź czy tokeny są ważne przed publikacją
+      const tokenValidation = await this.validateTokens();
+      if (!tokenValidation.valid) {
+        return {
+          success: false,
+          message: tokenValidation.error || "Błąd weryfikacji konta Twitter/X",
+          error: "TOKEN_EXPIRED",
+        };
+      }
+
       // Przesyłamy film do Twitter API
       const uploadResult = await this.uploadMedia(videoUrl, "video");
       if (!uploadResult.success || !uploadResult.mediaId) {
@@ -280,13 +381,15 @@ export class TwitterPublisher {
       // Sprawdź kod błędu z Twitter API
       const twitterError = error as TwitterApiError;
       if (twitterError?.code === 401) {
-        errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
+        errorMessage =
+          "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
         errorCode = "UNAUTHORIZED";
       } else if (twitterError?.code === 403) {
         errorMessage = "Brak uprawnień do publikacji na Twitter/X";
         errorCode = "FORBIDDEN";
       } else if (twitterError?.code === 429) {
-        errorMessage = "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
+        errorMessage =
+          "Przekroczono limit publikacji na Twitter/X. Spróbuj ponownie później";
         errorCode = "RATE_LIMIT";
       } else if (error instanceof Error) {
         if (error.message.includes("duplicate")) {
@@ -330,12 +433,19 @@ export class TwitterPublisher {
     mediaType: "image" | "video",
   ): Promise<TwitterMediaUploadResult> {
     try {
-      // Pobieramy plik z URL
-      const response = await fetch(mediaUrl);
+      // Pobieramy plik z URL (AWS S3 lub innego źródła)
+      const response = await fetch(mediaUrl, {
+        headers: {
+          "User-Agent": "SocialFlow/1.0",
+        },
+        // Dodajemy timeout dla dużych plików
+        signal: AbortSignal.timeout(30000), // 30 sekund timeout
+      });
+
       if (!response.ok) {
         return {
           success: false,
-          error: `Nie można pobrać pliku z URL: ${response.statusText}`,
+          error: `Nie można pobrać pliku z URL: ${response.status} ${response.statusText}`,
         };
       }
 
@@ -351,11 +461,37 @@ export class TwitterPublisher {
         };
       }
 
+      // Sprawdzamy czy plik nie jest pusty
+      if (buffer.length === 0) {
+        return {
+          success: false,
+          error: "Plik jest pusty",
+        };
+      }
+
+      // Określamy typ MIME na podstawie URL lub nagłówków
+      let mimeType = response.headers.get("content-type");
+      if (!mimeType) {
+        // Fallback na podstawie rozszerzenia URL
+        const urlPath = new URL(mediaUrl).pathname.toLowerCase();
+        if (urlPath.includes(".jpg") || urlPath.includes(".jpeg")) {
+          mimeType = "image/jpeg";
+        } else if (urlPath.includes(".png")) {
+          mimeType = "image/png";
+        } else if (urlPath.includes(".gif")) {
+          mimeType = "image/gif";
+        } else if (urlPath.includes(".webp")) {
+          mimeType = "image/webp";
+        } else if (urlPath.includes(".mp4")) {
+          mimeType = "video/mp4";
+        } else {
+          mimeType = mediaType === "image" ? "image/jpeg" : "video/mp4";
+        }
+      }
+
       // Przesyłamy media do Twitter API
       const mediaId = await this.client.v1.uploadMedia(buffer, {
-        mimeType:
-          response.headers.get("content-type") ||
-          (mediaType === "image" ? "image/jpeg" : "video/mp4"),
+        mimeType: mimeType,
       });
 
       return {
@@ -367,10 +503,16 @@ export class TwitterPublisher {
 
       let errorMessage = "Nieznany błąd podczas przesyłania mediów";
       if (error instanceof Error) {
-        if (error.message.includes("file size")) {
+        if (error.name === "AbortError") {
+          errorMessage = "Timeout podczas pobierania pliku";
+        } else if (error.message.includes("file size")) {
           errorMessage = "Plik jest za duży dla Twitter/X";
         } else if (error.message.includes("unsupported")) {
           errorMessage = "Nieobsługiwany format pliku";
+        } else if (error.message.includes("ECONNREFUSED")) {
+          errorMessage = "Brak połączenia z serwerem";
+        } else if (error.message.includes("ENOTFOUND")) {
+          errorMessage = "Nie można znaleźć pliku";
         } else {
           errorMessage = `Błąd przesyłania mediów: ${error.message}`;
         }
@@ -387,40 +529,7 @@ export class TwitterPublisher {
    * Sprawdza czy konto jest aktywne i ma odpowiednie uprawnienia
    */
   async verifyAccount(): Promise<{ valid: boolean; error?: string }> {
-    try {
-      await this.client.v2.me({ "user.fields": ["id", "username", "name"] });
-      return { valid: true };
-    } catch (error: unknown) {
-      console.error("Twitter account verification error:", error);
-
-      let errorMessage = "Nie można zweryfikować konta Twitter/X";
-      
-      // Sprawdź kod błędu z Twitter API
-      const twitterError = error as TwitterApiError;
-      if (twitterError?.code === 401) {
-        errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
-      } else if (twitterError?.code === 403) {
-        errorMessage = "Brak uprawnień do konta Twitter/X";
-      } else if (twitterError?.code === 429) {
-        errorMessage = "Przekroczono limit zapytań do Twitter API. Spróbuj ponownie później";
-      } else if (error instanceof Error) {
-        if (
-          error.message.includes("unauthorized") ||
-          error.message.includes("401")
-        ) {
-          errorMessage = "Token dostępu wygasł lub jest nieprawidłowy. Połącz konto ponownie";
-        } else if (
-          error.message.includes("forbidden") ||
-          error.message.includes("403")
-        ) {
-          errorMessage = "Brak uprawnień do konta Twitter/X";
-        } else {
-          errorMessage = `Błąd weryfikacji: ${error.message}`;
-        }
-      }
-
-      return { valid: false, error: errorMessage };
-    }
+    return await this.validateTokens();
   }
 }
 

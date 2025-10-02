@@ -16,7 +16,7 @@ export function ImagePreviewModal({ file, children }: ImagePreviewModalProps) {
   const [isOpen, setIsOpen] = useState(false);
 
   const handleError = (e: React.SyntheticEvent<HTMLImageElement>) => {
-    console.error("Błąd ładowania obrazu:", file.name);
+    console.error("Błąd ładowania obrazu:", file.name, "URL:", URL.createObjectURL(file));
     const imgElement = e.target as HTMLImageElement;
     imgElement.src = "/placeholder-image.jpg";
   };
@@ -38,6 +38,7 @@ export function ImagePreviewModal({ file, children }: ImagePreviewModalProps) {
             priority={isOpen}
             sizes="(max-width: 768px) 100vw, 90vw"
             quality={90}
+            unoptimized={true} // Wyłączamy optymalizację Next.js dla lokalnych plików
           />
         </div>
       </DialogContent>

@@ -68,16 +68,6 @@ export async function POST(req: NextRequest) {
       case "twitter":
         try {
           const twitterPublisher = await createTwitterPublisher(accountId, session.user.id);
-          
-          // Sprawdź czy konto jest aktywne
-          const verification = await twitterPublisher.verifyAccount();
-          if (!verification.valid) {
-            publishResult = {
-              success: false,
-              message: `Błąd weryfikacji konta Twitter/X: ${verification.error}`,
-            };
-            break;
-          }
 
           // Określ typ posta na podstawie mediów
           const hasImages = post.media.some(media => media.type.startsWith('image/'));

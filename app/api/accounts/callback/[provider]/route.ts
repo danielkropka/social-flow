@@ -37,14 +37,14 @@ export async function GET(
         const denied = searchParams.get("denied");
         if (denied)
           return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=twitter_denied`, url),
+            new URL(`${DASHBOARD_REDIRECT}?error=connect_denied`, url),
           );
 
         const oauth_token = searchParams.get("oauth_token");
         const oauth_verifier = searchParams.get("oauth_verifier");
         if (!oauth_token || !oauth_verifier)
           return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=twitter_missing_params`, url),
+            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
           );
 
         const client = new Redis({
@@ -124,13 +124,19 @@ export async function GET(
           },
         });
         return NextResponse.redirect(
-          new URL(`${DASHBOARD_REDIRECT}?connected=${provider}`, url),
+          new URL(
+            `${DASHBOARD_REDIRECT}?tab=accounts&connected=${provider}`,
+            url,
+          ),
         );
     }
   } catch (error) {
     console.error(`[${provider}] callback error:`, error);
     return NextResponse.redirect(
-      new URL(`${DASHBOARD_REDIRECT}?error=${provider}_callback`, url),
+      new URL(
+        `${DASHBOARD_REDIRECT}?error=${provider.toLowerCase()}_callback`,
+        url,
+      ),
     );
   }
 }

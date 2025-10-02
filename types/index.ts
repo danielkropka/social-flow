@@ -47,3 +47,15 @@ export type PublicPost = Post & {
     connectedAccount: PublicSocialAccount;
   })[];
 };
+
+export interface UploadedFileData {
+  file: File;
+  url: string;
+  fileName: string;
+  contentType: string;
+  size: number;
+}
+
+export interface MediaUploadResponse {
+  url: string;
+}
