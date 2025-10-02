@@ -22,9 +22,21 @@ export async function middleware(request: NextRequest) {
   const isSuccess = pathname && pathname.startsWith("/success");
 
   const needsAuthCheck = isSignIn || isSignUp || isDashboard || isSuccess;
-  const token = needsAuthCheck
-    ? await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET })
-    : null;
+  
+  if (!needsAuthCheck) {
+    return NextResponse.next();
+  }
+
+  // Sprawdź czy NEXTAUTH_SECRET jest dostępny
+  if (!process.env.NEXTAUTH_SECRET) {
+    console.error("NEXTAUTH_SECRET is not defined in middleware");
+    if (isDashboard) {
+      return NextResponse.redirect(new URL("/sign-in", request.url));
+    }
+    return NextResponse.next();
+  }
+
+  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
 
   if (token && (isSignIn || isSignUp)) {
     return NextResponse.redirect(new URL("/dashboard", request.url));

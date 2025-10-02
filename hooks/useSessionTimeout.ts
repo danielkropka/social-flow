@@ -1,6 +1,5 @@
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { useSession, signOut } from "next-auth/react";
-import { toast } from "sonner";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 
 const SESSION_TIMEOUT = 24 * 60 * 60 * 1000; // 24 godziny
 const WARNING_TIME = 5 * 60 * 1000; // 5 minutes before expiration
@@ -15,8 +14,7 @@ export function useSessionTimeout() {
 
   // Memoize event handlers to prevent unnecessary re-renders
   const updateLastActivity = useCallback(() => {
-    const now = Date.now();
-    lastActivityRef.current = now;
+    lastActivityRef.current = Date.now();
 
     // Only update warning state if it was showing
     if (showWarning) {
