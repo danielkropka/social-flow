@@ -3,7 +3,7 @@ import { useSession } from "next-auth/react";
 
 export function useSubscription() {
   const { data: session, status } = useSession();
-  const user = session?.user as any;
+  const user = session?.user;
 
   return {
     isSubscribed:
