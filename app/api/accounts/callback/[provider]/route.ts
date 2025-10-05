@@ -6,8 +6,9 @@ import { TwitterApi } from "twitter-api-v2";
 import { db } from "@/lib/config/prisma";
 import { Redis } from "@upstash/redis";
 import { encryptToken } from "@/lib/utils/utils";
+import { logger } from "@smithy/core/serde";
 
-const DASHBOARD_REDIRECT = "/dashboard";
+const DASHBOARD_REDIRECT = "/dashboard?tab=accounts";
 
 export async function GET(
   req: Request,
@@ -19,7 +20,7 @@ export async function GET(
   const provider = (await params).provider.toUpperCase() as Provider;
   if (!provider || !Object.values(Provider).includes(provider)) {
     return NextResponse.redirect(
-      new URL(`/dashboard?error=unsupported_provider`, url),
+      new URL(`${DASHBOARD_REDIRECT}&error=unsupported_provider`, url),
     );
   }
 
@@ -124,10 +125,68 @@ export async function GET(
           },
         });
         return NextResponse.redirect(
-          new URL(
-            `${DASHBOARD_REDIRECT}?tab=accounts&connected=${provider}`,
-            url,
-          ),
+          new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
+        );
+
+      case Provider.INSTAGRAM:
+        const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
+        if (!APP_SECRET) {
+          return NextResponse.redirect(
+            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
+          );
+        }
+
+        const error = searchParams.get("error");
+        switch (error) {
+          case "access_denied":
+            return NextResponse.redirect(
+              new URL(`${DASHBOARD_REDIRECT}?error=connect_denied`, url),
+            );
+        }
+        const code = searchParams.get("code");
+        if (!code)
+          return NextResponse.redirect(
+            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
+          );
+
+        const requestAccessToken = await fetch(
+          `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${code}`,
+        );
+
+        if (!requestAccessToken.ok) {
+          const error = await requestAccessToken.json();
+
+          console.error(error);
+          throw new Error(error);
+        }
+
+        const { access_token, token_type, expires_in } =
+          await requestAccessToken.json();
+
+        const fields = [
+          "followers_count",
+          "follows_count",
+          "name",
+          "profile_picture_url",
+          "username",
+          "id",
+        ];
+
+        const requestMe = await fetch(
+          `https://graph.instagram.com/v23.0/me?fields=${fields.join(",")}&access_token=${access_token}`,
+        );
+
+        if (!requestMe.ok) {
+          const error = await requestMe.json();
+          console.error(error);
+          throw new Error(error);
+        }
+
+        const responseMe = await requestMe.json();
+        console.log(responseMe);
+
+        return NextResponse.redirect(
+          new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
         );
     }
   } catch (error) {

@@ -104,7 +104,8 @@ export default function PublishPostSheet({ onClose }: PublishPostSheetProps) {
             if (file.size > 4 * 1024 * 1024) throw new Error("FileTooLarge");
 
             // check file type before uploading
-            if (!checkFileExtension(file)) throw new Error("InvalidFileType");
+            if (!checkFileExtension(file, postType))
+              throw new Error("InvalidFileType");
 
             // Initialize progress for this file
             setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }));

@@ -74,16 +74,9 @@ export default function PostCreationSheet() {
 
         {/* Content area */}
         <div className="px-5 sm:px-6 py-6">
-          {/* Step content card */}
-          <div className="rounded-2xl border border-gray-200 dark:border-gray-800 bg-white/70 dark:bg-gray-900/70 shadow-sm">
-            <div className="p-4 sm:p-6">
-              {currentStep === 1 && <TypeSelectionSheet />}
-              {currentStep === 2 && (
-                <AccountSelectionSheet onClose={handleClose} />
-              )}
-              {currentStep === 3 && <PublishPostSheet onClose={handleClose} />}
-            </div>
-          </div>
+          {currentStep === 1 && <TypeSelectionSheet />}
+          {currentStep === 2 && <AccountSelectionSheet onClose={handleClose} />}
+          {currentStep === 3 && <PublishPostSheet onClose={handleClose} />}
         </div>
       </SheetContent>
     </Sheet>

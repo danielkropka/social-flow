@@ -86,19 +86,37 @@ export async function DELETE(request: Request) {
       });
     }
 
-    // Delete the account
+    // First, find all posts that are connected to this account
+    const postsToDelete = await db.post.findMany({
+      where: {
+        postConnectedAccounts: {
+          some: {
+            connectedAccountId: id,
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    // Delete the account (this will cascade delete PostConnectedAccount records)
     await db.connectedAccount.delete({
       where: {
         id: id,
       },
     });
 
-    // Also delete any scheduled posts for this account
-    await db.post.deleteMany({
-      where: {
-        userId: id,
-      },
-    });
+    // Delete the posts that were connected to this account
+    if (postsToDelete.length > 0) {
+      await db.post.deleteMany({
+        where: {
+          id: {
+            in: postsToDelete.map(post => post.id),
+          },
+        },
+      });
+    }
 
     return new Response(JSON.stringify({ success: true }), {
       status: 200,
