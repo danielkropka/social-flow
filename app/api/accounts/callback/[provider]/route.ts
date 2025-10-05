@@ -161,6 +161,12 @@ export async function GET(
 
         const { access_token } = await requestAccessToken.json();
 
+        if (!access_token) {
+          return NextResponse.redirect(
+            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
+          );
+        }
+
         const fields = [
           "followers_count",
           "follows_count",
@@ -181,8 +187,8 @@ export async function GET(
         }
 
         const responseMe = await requestMe.json();
-        console.log(responseMe);
-
+        console.log(responseMe.accounts);
+        // TODO: Add support for Instagram and improve error handling
         return NextResponse.redirect(
           new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
         );
