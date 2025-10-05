@@ -160,8 +160,7 @@ export async function GET(
           throw new Error(error);
         }
 
-        const { access_token, token_type, expires_in } =
-          await requestAccessToken.json();
+        const { access_token } = await requestAccessToken.json();
 
         const fields = [
           "followers_count",
