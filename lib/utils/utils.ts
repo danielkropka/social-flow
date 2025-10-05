@@ -27,7 +27,8 @@ export const getInitials = (name?: string) => {
   return (parts[0][0] + parts[1][0]).toUpperCase();
 };
 
-export const checkFileExtension = (file: File, type: string | null) => {
+export const checkFileExtension = (file: File) => {
+  const type = file.type.startsWith("image/") ? "images" : "video";
   return type === "images"
     ? ACCEPTED_IMAGE_TYPES.includes(file.type)
     : ACCEPTED_VIDEO_TYPES.includes(file.type);
