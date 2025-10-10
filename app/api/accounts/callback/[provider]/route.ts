@@ -130,23 +130,16 @@ export async function GET(
       case Provider.INSTAGRAM:
         const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
         if (!APP_SECRET) {
-          return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
-          );
+          throw new Error("NO_CONFIGURATION");
         }
 
         const error = searchParams.get("error");
         switch (error) {
           case "access_denied":
-            return NextResponse.redirect(
-              new URL(`${DASHBOARD_REDIRECT}?error=connect_denied`, url),
-            );
+            throw new Error("ACCESS_DENIED");
         }
         const code = searchParams.get("code");
-        if (!code)
-          return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
-          );
+        if (!code) throw new Error("NO_CODE");
 
         const requestAccessToken = await fetch(
           `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${code}`,
@@ -162,9 +155,7 @@ export async function GET(
         const { access_token } = await requestAccessToken.json();
 
         if (!access_token) {
-          return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
-          );
+          throw new Error("NO_ACCESS_TOKEN");
         }
 
         const fields = [
