@@ -200,7 +200,7 @@ export async function GET(
           "profile_picture_url",
         ];
         const responseMe = await fetch(
-          `https://graph.instagram.com/${user_id}?fields=${fields.join(",")}`,
+          `https://graph.instagram.com/v24.0/${user_id}?fields=${fields.join(",")}`,
         );
 
         if (!responseMe.ok) {
