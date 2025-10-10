@@ -6,7 +6,6 @@ import { TwitterApi } from "twitter-api-v2";
 import { db } from "@/lib/config/prisma";
 import { Redis } from "@upstash/redis";
 import { encryptToken } from "@/lib/utils/utils";
-import { A } from "@upstash/redis/zmscore-CjoCv9kz";
 
 const DASHBOARD_REDIRECT = "/dashboard?tab=accounts";
 
