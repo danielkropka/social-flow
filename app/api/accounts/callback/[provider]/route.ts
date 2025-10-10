@@ -150,10 +150,12 @@ export async function GET(
 
         if (!requestAccessToken.ok) {
           const error = await requestAccessToken.json();
+          console.log(error);
           throw new Error(error || "NoToken");
         }
 
         const responseToken = await requestAccessToken.json();
+        console.log(responseToken);
         const accessToken = responseToken.access_token;
 
         if (!accessToken) {
