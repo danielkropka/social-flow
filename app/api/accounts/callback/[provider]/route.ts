@@ -186,7 +186,7 @@ export async function GET(
       } catch (error) {
         if (error instanceof Error) {
           return NextResponse.json(
-            { error: `[${provider}] callback error: ${error.message}` },
+            { error: `[${provider}] callback error: ${JSON.stringify(error)}` },
             { status: 500 },
           );
         }
