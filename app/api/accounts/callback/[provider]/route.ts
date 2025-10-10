@@ -176,13 +176,8 @@ export async function GET(
         );
 
         if (!requestShortToken.ok) {
-          const { error_type, code, error_message } =
-            await requestShortToken.json();
-
-          return NextResponse.json(
-            { error: error_type, message: error_message },
-            { status: code },
-          );
+          const { error_type, error_message } = await requestShortToken.json();
+          throw new Error(error_type, { cause: error_message });
         }
 
         const responseShortToken = await requestShortToken.json();
@@ -194,12 +189,8 @@ export async function GET(
         );
 
         if (!responseLongToken.ok) {
-          const { error_type, code, error_message } =
-            await responseLongToken.json();
-          return NextResponse.json(
-            { error: error_type, message: error_message },
-            { status: code },
-          );
+          const { error_type, error_message } = await responseLongToken.json();
+          throw new Error(error_type, { cause: error_message });
         }
 
         const {
@@ -269,15 +260,13 @@ export async function GET(
       } catch (error) {
         console.error(`[INSTAGRAM] Callback error:`, error);
         if (error instanceof Error) {
-          return NextResponse.json(
-            { error: `[${provider}] callback error: ${error.message}` },
-            { status: 500 },
+          return NextResponse.redirect(
+            new URL(`${DASHBOARD_REDIRECT}?error=${error.message}`, url),
           );
         }
 
-        return NextResponse.json(
-          { error: `[${provider}]: Wystąpił nieznany błąd.` },
-          { status: 500 },
+        return NextResponse.redirect(
+          new URL(`${DASHBOARD_REDIRECT}?error=Unknown`, url),
         );
       }
   }
