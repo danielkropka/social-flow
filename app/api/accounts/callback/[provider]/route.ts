@@ -6,6 +6,7 @@ import { TwitterApi } from "twitter-api-v2";
 import { db } from "@/lib/config/prisma";
 import { Redis } from "@upstash/redis";
 import { encryptToken } from "@/lib/utils/utils";
+import { A } from "@upstash/redis/zmscore-CjoCv9kz";
 
 const DASHBOARD_REDIRECT = "/dashboard?tab=accounts";
 
@@ -128,46 +129,74 @@ export async function GET(
 
     case Provider.INSTAGRAM:
       try {
+        console.log(
+          `[INSTAGRAM] Callback started for user: ${session.user.id}`,
+        );
+
+        const APP_ID = process.env.INSTAGRAM_APP_ID;
         const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
-        if (!APP_SECRET) {
+        const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
+
+        if (!APP_ID || !APP_SECRET || !REDIRECT_URI) {
+          console.error("[INSTAGRAM] Missing environment variables");
           throw new Error("NoEnvConfiguration");
         }
 
         const error = searchParams.get("error");
-        switch (error) {
-          case "access_denied":
-            throw new Error("AccessDenied");
+        if (error) {
+          console.error(`[INSTAGRAM] OAuth error: ${error}`);
+          switch (error) {
+            case "access_denied":
+              throw new Error("AccessDenied");
+            default:
+              throw new Error(`OAuthError: ${error}`);
+          }
         }
+
         const code = searchParams.get("code");
-        if (!code) throw new Error("NoCode");
+        if (!code) {
+          console.error("[INSTAGRAM] No authorization code received");
+          throw new Error("NoCode");
+        }
 
-        // trim hashtag at the end of the code
-        const formattedCode = code.replace(/#$/, "");
+        console.log(`[INSTAGRAM] Received code: ${code.substring(0, 10)}...`);
 
-        const requestAccessToken = await fetch(
-          `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${formattedCode}`,
+        // Exchange code for short-lived access token
+        const requestShortToken = await fetch(
+          `https://api.instagram.com/oauth/access_token`,
+          {
+            method: "POST",
+            body: new URLSearchParams({
+              client_id: APP_ID,
+              client_secret: APP_SECRET,
+              grant_type: "authorization_code",
+              redirect_uri: REDIRECT_URI,
+              code,
+            }),
+          },
         );
 
-        if (!requestAccessToken.ok) {
-          const error = await requestAccessToken.json();
-          console.log(error);
-          throw new Error(error || "NoToken");
+        if (!requestShortToken.ok) {
+          const { error_type, code, error_message } =
+            await requestShortToken.json();
+
+          return NextResponse.json(
+            { error: error_type, message: error_message },
+            { status: code },
+          );
         }
 
-        const responseToken = await requestAccessToken.json();
-        console.log(responseToken);
-        const accessToken = responseToken.access_token;
+        const responseShortToken = await requestShortToken.json();
+        console.log(responseShortToken);
+        /*        const { access_token, user_id, permissions } =
+          responseShortToken.data[0];*/
 
-        if (!accessToken) {
-          throw new Error("NoToken");
-        }
-
-        return NextResponse.json({ success: true }, { status: 500 });
+        return NextResponse.json({ success: true });
       } catch (error) {
-        console.error(JSON.stringify(error));
+        console.error(`[INSTAGRAM] Callback error:`, error);
         if (error instanceof Error) {
           return NextResponse.json(
-            { error: `[${provider}] callback error: ${JSON.stringify(error)}` },
+            { error: `[${provider}] callback error: ${error.message}` },
             { status: 500 },
           );
         }
