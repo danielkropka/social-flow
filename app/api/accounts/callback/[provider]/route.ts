@@ -128,10 +128,6 @@ export async function GET(
 
     case Provider.INSTAGRAM:
       try {
-        console.log(
-          `[INSTAGRAM] Callback started for user: ${session.user.id}`,
-        );
-
         const APP_ID = process.env.INSTAGRAM_APP_ID;
         const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
         const REDIRECT_URI = process.env.INSTAGRAM_REDIRECT_URI;
@@ -158,8 +154,6 @@ export async function GET(
           throw new Error("NoCode");
         }
 
-        console.log(`[INSTAGRAM] Received code: ${code.substring(0, 10)}...`);
-
         // Exchange code for short-lived access token
         const requestShortToken = await fetch(
           `https://api.instagram.com/oauth/access_token`,
@@ -181,8 +175,7 @@ export async function GET(
         }
 
         const responseShortToken = await requestShortToken.json();
-        const { access_token, user_id, permissions } =
-          responseShortToken.data[0];
+        const { access_token, user_id, permissions } = responseShortToken;
 
         const responseLongToken = await fetch(
           `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${access_token}`,
