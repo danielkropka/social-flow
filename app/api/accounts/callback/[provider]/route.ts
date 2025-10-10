@@ -189,17 +189,16 @@ export async function GET(
         const responseMe = await requestMe.json();
         console.log(responseMe.accounts);
         // TODO: Add support for Instagram and improve error handling
-        return NextResponse.redirect(
-          new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
+        return NextResponse.json(
+          { success: true, user: responseMe },
+          { status: 200 },
         );
     }
   } catch (error) {
     console.error(`[${provider}] callback error:`, error);
-    return NextResponse.redirect(
-      new URL(
-        `${DASHBOARD_REDIRECT}?error=${provider.toLowerCase()}_callback`,
-        url,
-      ),
+    return NextResponse.json(
+      { error: `[${provider}] callback error: ${error}` },
+      { status: 500 },
     );
   }
 }
