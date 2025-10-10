@@ -164,6 +164,7 @@ export async function GET(
 
         return NextResponse.json({ success: true }, { status: 500 });
       } catch (error) {
+        console.log(error);
         if (error instanceof Error) {
           return NextResponse.json(
             { error: `[${provider}] callback error: ${JSON.stringify(error)}` },
