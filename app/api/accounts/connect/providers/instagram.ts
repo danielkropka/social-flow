@@ -20,9 +20,7 @@ export async function handleInstagramConnect() {
   const request = await fetch(authorizeURL);
 
   if (!request.ok) {
-    const errorTxt = await request.text();
-    console.error("Error fetching Instagram authorization URL:", errorTxt);
-    return NextResponse.json({ error: errorTxt }, { status: 500 });
+    return NextResponse.json({ error: "NoToken" }, { status: 500 });
   }
 
   const { url } = request;

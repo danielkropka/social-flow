@@ -530,10 +530,13 @@ export default function AccountsContent() {
 
                       throw new Error(errorResponse.error);
                     }
+
                     const data = await response.json();
+
                     if (!data.authUrl) {
                       throw new Error("NoURL");
                     }
+
                     router.push(data.authUrl);
                   } catch (error: unknown) {
                     if (error instanceof Error) {

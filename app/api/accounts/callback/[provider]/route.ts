@@ -130,59 +130,37 @@ export async function GET(
       try {
         const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
         if (!APP_SECRET) {
-          throw new Error("NO_CONFIGURATION");
+          throw new Error("NoEnvConfiguration");
         }
 
         const error = searchParams.get("error");
         switch (error) {
           case "access_denied":
-            throw new Error("ACCESS_DENIED");
+            throw new Error("AccessDenied");
         }
         const code = searchParams.get("code");
-        if (!code) throw new Error("NO_CODE");
+        if (!code) throw new Error("NoCode");
+
+        // trim hashtag at the end of the code
+        const formattedCode = code.replace(/#$/, "");
 
         const requestAccessToken = await fetch(
-          `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${code}`,
+          `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${formattedCode}`,
         );
 
         if (!requestAccessToken.ok) {
           const error = await requestAccessToken.json();
-
-          console.error(error);
-          throw new Error(error);
+          throw new Error(error || "NoToken");
         }
 
-        const { access_token } = await requestAccessToken.json();
+        const responseToken = await requestAccessToken.json();
+        const accessToken = responseToken.access_token;
 
-        if (!access_token) {
-          throw new Error("NO_ACCESS_TOKEN");
+        if (!accessToken) {
+          throw new Error("NoToken");
         }
 
-        const fields = [
-          "followers_count",
-          "follows_count",
-          "name",
-          "profile_picture_url",
-          "username",
-          "id",
-        ];
-
-        const requestMe = await fetch(
-          `https://graph.instagram.com/v23.0/me?fields=${fields.join(",")}&access_token=${access_token}`,
-        );
-
-        if (!requestMe.ok) {
-          const error = await requestMe.json();
-          throw new Error(error);
-        }
-
-        const responseMe = await requestMe.json();
-        console.log(responseMe);
-        // TODO: Add support for Instagram and improve error handling
-        return NextResponse.json(
-          { success: true, user: responseMe },
-          { status: 200 },
-        );
+        return NextResponse.json({ success: true }, { status: 500 });
       } catch (error) {
         if (error instanceof Error) {
           return NextResponse.json(
