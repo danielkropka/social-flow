@@ -83,6 +83,7 @@ export default function AccountsContent() {
 
     if (error) {
       // handle error function
+      toast.error(`Wystąpił błąd w trakcie łączenia konta: ${error}.`);
     }
 
     if (connected) {
