@@ -186,11 +186,86 @@ export async function GET(
         }
 
         const responseShortToken = await requestShortToken.json();
-        console.log(responseShortToken);
-        /*        const { access_token, user_id, permissions } =
-          responseShortToken.data[0];*/
+        const { access_token, user_id, permissions } =
+          responseShortToken.data[0];
 
-        return NextResponse.json({ success: true });
+        const responseLongToken = await fetch(
+          `https://graph.instagram.com/access_token?grant_type=ig_exchange_token&client_secret=${APP_SECRET}&access_token=${access_token}`,
+        );
+
+        if (!responseLongToken.ok) {
+          const { error_type, code, error_message } =
+            await responseLongToken.json();
+          return NextResponse.json(
+            { error: error_type, message: error_message },
+            { status: code },
+          );
+        }
+
+        const {
+          access_token: longToken,
+          expires_in,
+          token_type,
+        } = await responseLongToken.json();
+
+        const fields = [
+          "followers_count",
+          "follows_count",
+          "name",
+          "username",
+          "profile_picture_url",
+        ];
+        const responseMe = await fetch(
+          `https://graph.instagram.com/${user_id}?fields=${fields.join(",")}`,
+        );
+
+        if (!responseMe.ok) {
+          const { error } = await responseMe.json();
+          throw new Error(error.message);
+        }
+        const { name, username, profile_picture_url } = await responseMe.json();
+
+        // Save the long-lived access token to the database
+        await db.connectedAccount.upsert({
+          where: {
+            provider_providerAccountId: {
+              provider: Provider.INSTAGRAM,
+              providerAccountId: user_id,
+            },
+          },
+          update: {
+            userId: session.user.id,
+            provider: Provider.INSTAGRAM,
+            providerAccountId: user_id,
+            status: AccountStatus.ACTIVE,
+            accessToken: encryptToken(longToken),
+            accessTokenExpiresAt: expires_in,
+            tokenType: token_type,
+            scope: permissions,
+            lastSyncedAt: new Date(),
+            displayName: name,
+            username: username,
+            profileImageUrl: profile_picture_url,
+          },
+          create: {
+            userId: session.user.id,
+            provider: Provider.INSTAGRAM,
+            providerAccountId: user_id,
+            status: AccountStatus.ACTIVE,
+            accessToken: encryptToken(longToken),
+            accessTokenExpiresAt: expires_in,
+            tokenType: token_type,
+            scope: permissions,
+            oauthVersion: "OAUTH2",
+            displayName: name,
+            username: username,
+            profileImageUrl: profile_picture_url,
+          },
+        });
+
+        return NextResponse.redirect(
+          new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
+        );
       } catch (error) {
         console.error(`[INSTAGRAM] Callback error:`, error);
         if (error instanceof Error) {
