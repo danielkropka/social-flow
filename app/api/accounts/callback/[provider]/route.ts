@@ -31,103 +31,103 @@ export async function GET(
     );
   }
 
-  try {
-    switch (provider) {
-      case Provider.TWITTER:
-        const denied = searchParams.get("denied");
-        if (denied)
-          return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=connect_denied`, url),
-          );
-
-        const oauth_token = searchParams.get("oauth_token");
-        const oauth_verifier = searchParams.get("oauth_verifier");
-        if (!oauth_token || !oauth_verifier)
-          return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
-          );
-
-        const client = new Redis({
-          url: process.env.UPSTASH_REDIS_REST_URL,
-          token: process.env.UPSTASH_REDIS_REST_TOKEN,
-        });
-
-        const redisKey = `tw:oauth:req_secret:${session.user.id}:${oauth_token}`;
-        const requestTokenSecret = await client.get(redisKey);
-
-        if (!requestTokenSecret) {
-          return NextResponse.redirect(
-            new URL(`${DASHBOARD_REDIRECT}?error=session_expired`, url),
-          );
-        }
-
-        await client.del(redisKey);
-
-        const oauth = new TwitterApi({
-          appKey: process.env.TWITTER_API_KEY!,
-          appSecret: process.env.TWITTER_API_SECRET!,
-          accessToken: oauth_token,
-          accessSecret: requestTokenSecret as string,
-        });
-
-        const { accessToken, accessSecret, screenName, userId } =
-          await oauth.login(oauth_verifier);
-
-        const authed = new TwitterApi({
-          appKey: process.env.TWITTER_API_KEY!,
-          appSecret: process.env.TWITTER_API_SECRET!,
-          accessToken,
-          accessSecret,
-        });
-
-        const me = await authed.v1.verifyCredentials();
-        const avatar =
-          me.profile_image_url_https?.replace("_normal", "") ?? undefined;
-        const name = me.name ?? screenName ?? "Twitter User";
-        const username = me.screen_name ?? screenName ?? "";
-        const profileUrl = username
-          ? `https://twitter.com/${username}`
-          : undefined;
-
-        await db.connectedAccount.upsert({
-          where: {
-            provider_providerAccountId: {
-              provider,
-              providerAccountId: userId,
-            },
-          },
-          update: {
-            accessToken: encryptToken(accessToken),
-            accessSecret: encryptToken(accessSecret),
-            oauthVersion: "OAUTH1",
-            displayName: name ?? undefined,
-            username: username ?? undefined,
-            profileImageUrl: avatar ?? undefined,
-            profileUrl: avatar ?? undefined,
-            lastSyncedAt: new Date(),
-            status: AccountStatus.ACTIVE,
-            lastErrorAt: null,
-            lastErrorMessage: null,
-          },
-          create: {
-            userId: session.user.id,
-            provider,
-            providerAccountId: userId,
-            accessToken: encryptToken(accessToken),
-            accessSecret: encryptToken(accessSecret),
-            oauthVersion: "OAUTH1",
-            oauthTokenSecret: null,
-            displayName: name ?? undefined,
-            username: username ?? undefined,
-            profileImageUrl: avatar ?? undefined,
-            profileUrl: profileUrl ?? undefined,
-          },
-        });
+  switch (provider) {
+    case Provider.TWITTER:
+      const denied = searchParams.get("denied");
+      if (denied)
         return NextResponse.redirect(
-          new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
+          new URL(`${DASHBOARD_REDIRECT}?error=connect_denied`, url),
         );
 
-      case Provider.INSTAGRAM:
+      const oauth_token = searchParams.get("oauth_token");
+      const oauth_verifier = searchParams.get("oauth_verifier");
+      if (!oauth_token || !oauth_verifier)
+        return NextResponse.redirect(
+          new URL(`${DASHBOARD_REDIRECT}?error=missing_params`, url),
+        );
+
+      const client = new Redis({
+        url: process.env.UPSTASH_REDIS_REST_URL,
+        token: process.env.UPSTASH_REDIS_REST_TOKEN,
+      });
+
+      const redisKey = `tw:oauth:req_secret:${session.user.id}:${oauth_token}`;
+      const requestTokenSecret = await client.get(redisKey);
+
+      if (!requestTokenSecret) {
+        return NextResponse.redirect(
+          new URL(`${DASHBOARD_REDIRECT}?error=session_expired`, url),
+        );
+      }
+
+      await client.del(redisKey);
+
+      const oauth = new TwitterApi({
+        appKey: process.env.TWITTER_API_KEY!,
+        appSecret: process.env.TWITTER_API_SECRET!,
+        accessToken: oauth_token,
+        accessSecret: requestTokenSecret as string,
+      });
+
+      const { accessToken, accessSecret, screenName, userId } =
+        await oauth.login(oauth_verifier);
+
+      const authed = new TwitterApi({
+        appKey: process.env.TWITTER_API_KEY!,
+        appSecret: process.env.TWITTER_API_SECRET!,
+        accessToken,
+        accessSecret,
+      });
+
+      const me = await authed.v1.verifyCredentials();
+      const avatar =
+        me.profile_image_url_https?.replace("_normal", "") ?? undefined;
+      const name = me.name ?? screenName ?? "Twitter User";
+      const username = me.screen_name ?? screenName ?? "";
+      const profileUrl = username
+        ? `https://twitter.com/${username}`
+        : undefined;
+
+      await db.connectedAccount.upsert({
+        where: {
+          provider_providerAccountId: {
+            provider,
+            providerAccountId: userId,
+          },
+        },
+        update: {
+          accessToken: encryptToken(accessToken),
+          accessSecret: encryptToken(accessSecret),
+          oauthVersion: "OAUTH1",
+          displayName: name ?? undefined,
+          username: username ?? undefined,
+          profileImageUrl: avatar ?? undefined,
+          profileUrl: avatar ?? undefined,
+          lastSyncedAt: new Date(),
+          status: AccountStatus.ACTIVE,
+          lastErrorAt: null,
+          lastErrorMessage: null,
+        },
+        create: {
+          userId: session.user.id,
+          provider,
+          providerAccountId: userId,
+          accessToken: encryptToken(accessToken),
+          accessSecret: encryptToken(accessSecret),
+          oauthVersion: "OAUTH1",
+          oauthTokenSecret: null,
+          displayName: name ?? undefined,
+          username: username ?? undefined,
+          profileImageUrl: avatar ?? undefined,
+          profileUrl: profileUrl ?? undefined,
+        },
+      });
+      return NextResponse.redirect(
+        new URL(`${DASHBOARD_REDIRECT}&connected=${provider}`, url),
+      );
+
+    case Provider.INSTAGRAM:
+      try {
         const APP_SECRET = process.env.INSTAGRAM_APP_SECRET;
         if (!APP_SECRET) {
           throw new Error("NO_CONFIGURATION");
@@ -173,29 +173,28 @@ export async function GET(
 
         if (!requestMe.ok) {
           const error = await requestMe.json();
-          console.error(error);
           throw new Error(error);
         }
 
         const responseMe = await requestMe.json();
-        console.log(responseMe.accounts);
+        console.log(responseMe);
         // TODO: Add support for Instagram and improve error handling
         return NextResponse.json(
           { success: true, user: responseMe },
           { status: 200 },
         );
-    }
-  } catch (error) {
-    console.error(`[${provider}] callback error:`, error);
-    if (error instanceof Error) {
-      return NextResponse.json(
-        { error: `[${provider}] callback error: ${error.message}` },
-        { status: 500 },
-      );
-    }
-    return NextResponse.json(
-      { error: `[${provider}]: Wystąpił nieznany błąd.` },
-      { status: 500 },
-    );
+      } catch (error) {
+        if (error instanceof Error) {
+          return NextResponse.json(
+            { error: `[${provider}] callback error: ${error.message}` },
+            { status: 500 },
+          );
+        }
+
+        return NextResponse.json(
+          { error: `[${provider}]: Wystąpił nieznany błąd.` },
+          { status: 500 },
+        );
+      }
   }
 }
