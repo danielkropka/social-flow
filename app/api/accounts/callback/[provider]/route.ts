@@ -196,8 +196,14 @@ export async function GET(
     }
   } catch (error) {
     console.error(`[${provider}] callback error:`, error);
+    if (error instanceof Error) {
+      return NextResponse.json(
+        { error: `[${provider}] callback error: ${error.message}` },
+        { status: 500 },
+      );
+    }
     return NextResponse.json(
-      { error: `[${provider}] callback error: ${error}` },
+      { error: `[${provider}]: Wystąpił nieznany błąd.` },
       { status: 500 },
     );
   }
