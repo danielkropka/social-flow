@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -27,7 +27,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { PLATFORM_DISPLAY, SUPPORTED_PLATFORMS } from "@/constants";
@@ -74,6 +74,23 @@ export default function AccountsContent() {
   const modalPlatformInfo = showModal
     ? PLATFORM_DISPLAY[showModal as PlatformKey]
     : null;
+  const searchParams = useSearchParams();
+
+  // handle errors from provider
+  useEffect(() => {
+    const error = searchParams.get("error");
+    const connected = searchParams.get("connected");
+
+    if (error) {
+      // handle error function
+    }
+
+    if (connected) {
+      toast.success(
+        `Pomyślnie połączono konto z ${connected.toLowerCase()}. Od tego momentu możesz publikować posty na tej platformie.`,
+      );
+    }
+  }, [searchParams]);
 
   const { data: accounts = [], isLoading } = useQuery({
     queryKey: ["accounts"],
