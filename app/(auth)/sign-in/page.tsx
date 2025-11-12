@@ -88,7 +88,6 @@ export default function SignIn() {
         } else {
           toast.success("Zalogowano pomyślnie");
           router.push("/dashboard");
-          router.refresh();
         }
     }
 
@@ -106,7 +105,6 @@ export default function SignIn() {
       } else {
         toast.error("Wystąpił błąd podczas logowania przez Google");
       }
-    } finally {
       setIsLoading(false);
     }
   };

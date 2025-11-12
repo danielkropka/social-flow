@@ -8,7 +8,12 @@ export const ACCEPTED_IMAGE_TYPES = [
   "image/png",
   "image/gif",
 ];
-export const ACCEPTED_VIDEO_TYPES = ["video/mp4", "video/webm", "video/ogg"];
+export const ACCEPTED_VIDEO_TYPES = [
+  "video/mp4",
+  "video/webm",
+  "video/ogg",
+  "video/quicktime",
+];
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,17 +28,10 @@ export const getInitials = (name?: string) => {
 };
 
 export const checkFileExtension = (file: File) => {
-  const isImage = file.type.startsWith("image/");
-
-  return isImage
+  const type = file.type.startsWith("image/") ? "images" : "video";
+  return type === "images"
     ? ACCEPTED_IMAGE_TYPES.includes(file.type)
     : ACCEPTED_VIDEO_TYPES.includes(file.type);
-};
-
-export const getFileType = (file: File) => {
-  const isImage = file.type.startsWith("image/");
-  const isVideo = file.type.startsWith("video/");
-  return isImage ? "image" : isVideo ? "video" : "unknown";
 };
 
 export function encryptToken(token: string): string {

@@ -106,10 +106,13 @@ const PostCard = ({ post }: { post: PublicPost }) => {
   // Format post content with proper paragraphs
   const formatPostContent = (content: string) => {
     return content
-      .split('\n')
-      .filter(line => line.trim())
+      .split("\n")
+      .filter((line) => line.trim())
       .map((paragraph, index) => (
-        <p key={index} className="mb-3 last:mb-0 text-gray-800 dark:text-gray-200 leading-relaxed">
+        <p
+          key={index}
+          className="mb-3 last:mb-0 text-gray-800 dark:text-gray-200 leading-relaxed"
+        >
           {paragraph.trim()}
         </p>
       ));
@@ -128,33 +131,30 @@ const PostCard = ({ post }: { post: PublicPost }) => {
         )}
       >
         {/* Header with badges */}
-        <div className="relative p-5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-b border-gray-200 dark:border-zinc-800">
-          <div className="flex justify-between items-start gap-3">
-            <div className="flex flex-wrap gap-2">
+        <div className="relative p-4 sm:p-5 bg-gradient-to-r from-gray-50 to-gray-100 dark:from-zinc-800 dark:to-zinc-900 border-b border-gray-200 dark:border-zinc-800">
+          <div className="flex items-center justify-between gap-2 overflow-x-auto">
+            {/* Left side badges - Post Type and Trending */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* Post Type Badge */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all",
+                        "inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-semibold transition-all whitespace-nowrap",
                         "shadow-sm border",
-                        post.media[0] 
+                        post.media[0]
                           ? "bg-gradient-to-r from-purple-50 to-purple-100 text-purple-700 border-purple-200 dark:from-purple-950/50 dark:to-purple-900/50 dark:text-purple-300 dark:border-purple-800"
-                          : "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200 dark:from-blue-950/50 dark:to-blue-900/50 dark:text-blue-300 dark:border-blue-800"
+                          : "bg-gradient-to-r from-blue-50 to-blue-100 text-blue-700 border-blue-200 dark:from-blue-950/50 dark:to-blue-900/50 dark:text-blue-300 dark:border-blue-800",
                       )}
                     >
-                      {post.media[0] ? (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-purple-500"></div>
-                          Z mediami
-                        </>
-                      ) : (
-                        <>
-                          <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                          Tekstowy
-                        </>
-                      )}
+                      <div
+                        className={cn(
+                          "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
+                          post.media[0] ? "bg-purple-500" : "bg-blue-500",
+                        )}
+                      ></div>
+                      <span>{post.media[0] ? "Media" : "Tekstowy"}</span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -164,13 +164,14 @@ const PostCard = ({ post }: { post: PublicPost }) => {
               </TooltipProvider>
 
               {/* Trending Badge */}
-              {status === "published" && stats.likes > 30 && (
+              {status === "published" && stats.likes > 20 && (
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border border-orange-200 dark:from-orange-950/50 dark:to-orange-900/50 dark:text-orange-300 dark:border-orange-800 shadow-sm">
+                      <span className="inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-semibold bg-gradient-to-r from-orange-50 to-orange-100 text-orange-700 border border-orange-200 dark:from-orange-950/50 dark:to-orange-900/50 dark:text-orange-300 dark:border-orange-800 shadow-sm whitespace-nowrap">
                         <TrendingUp className="h-3 w-3" />
-                        Trending
+                        <span className="hidden sm:inline">Trending</span>
+                        <span className="sm:hidden">Hot</span>
                       </span>
                     </TooltipTrigger>
                     <TooltipContent>
@@ -181,24 +182,30 @@ const PostCard = ({ post }: { post: PublicPost }) => {
               )}
             </div>
 
-            <div className="flex flex-wrap gap-2">
+            {/* Right side badges - Status and Platform */}
+            <div className="flex items-center gap-2 flex-shrink-0">
               {/* Status Badge */}
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border",
+                        "inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border whitespace-nowrap",
                         getStatusColor(status),
-                        "border-gray-200 dark:border-zinc-700"
+                        "border-gray-200 dark:border-zinc-700",
                       )}
                     >
-                      <div className={cn(
-                        "w-2 h-2 rounded-full",
-                        status === "published" ? "bg-green-500" : 
-                        status === "scheduled" ? "bg-blue-500" : "bg-gray-500"
-                      )}></div>
-                      {getStatusText(status)}
+                      <div
+                        className={cn(
+                          "w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full",
+                          status === "published"
+                            ? "bg-green-500"
+                            : status === "scheduled"
+                              ? "bg-blue-500"
+                              : "bg-gray-500",
+                        )}
+                      ></div>
+                      <span>{getStatusText(status)}</span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -213,9 +220,9 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   <TooltipTrigger asChild>
                     <span
                       className={cn(
-                        "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border",
+                        "inline-flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg text-xs font-semibold transition-all shadow-sm border whitespace-nowrap",
                         getPlatformColor(platform),
-                        "border-gray-200 dark:border-zinc-700"
+                        "border-gray-200 dark:border-zinc-700",
                       )}
                     >
                       {(() => {
@@ -230,7 +237,9 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                         }
                         return <Globe className="h-3 w-3" />;
                       })()}
-                      {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      <span>
+                        {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                      </span>
                     </span>
                   </TooltipTrigger>
                   <TooltipContent>
@@ -249,7 +258,7 @@ const PostCard = ({ post }: { post: PublicPost }) => {
             <div className="prose prose-sm max-w-none dark:prose-invert">
               {formatPostContent(post.content)}
             </div>
-            
+
             {/* Content Stats */}
             <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-zinc-800">
               <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
@@ -258,10 +267,14 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   {post.content.length} znaków
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <div className={cn(
-                    "w-1.5 h-1.5 rounded-full",
-                    post.content.length > 200 ? "bg-green-500" : "bg-blue-500"
-                  )}></div>
+                  <div
+                    className={cn(
+                      "w-1.5 h-1.5 rounded-full",
+                      post.content.length > 200
+                        ? "bg-green-500"
+                        : "bg-blue-500",
+                    )}
+                  ></div>
                   {post.content.length > 200 ? "Długi post" : "Krótki post"}
                 </span>
               </div>
@@ -333,7 +346,7 @@ const PostCard = ({ post }: { post: PublicPost }) => {
                   </Tooltip>
                 </TooltipProvider>
               </div>
-              
+
               <div className="flex items-center gap-2">
                 {/* Copy Button */}
                 <TooltipProvider>
@@ -519,7 +532,7 @@ export default function PostsContent() {
 
     return (
       <>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 2xl:grid-cols-3 gap-6">
           {posts.map((post) => (
             <PostCard key={post.id} post={post} />
           ))}
